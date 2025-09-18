@@ -1,0 +1,49 @@
+<div class="container">
+  <div class="card" style="max-width: 500px; margin: 50px auto;">
+    <h2 style="text-align: center; margin-bottom: 30px; color: #3f51b5;">Login</h2>
+    
+    <div *ngIf="error" class="error">{{ error }}</div>
+    
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <mat-form-field appearance="outline" style="width: 100%;">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" placeholder="Enter your email">
+          <mat-error *ngIf="f['email'].invalid && f['email'].touched">
+            <span *ngIf="f['email'].errors && f['email'].errors['required']">Email is required</span>
+            <span *ngIf="f['email'].errors && f['email'].errors['email']">Please enter a valid email</span>
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-group">
+        <mat-form-field appearance="outline" style="width: 100%;">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" placeholder="Enter your password">
+          <mat-error *ngIf="f['password'].invalid && f['password'].touched">
+            Password is required
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <button mat-raised-button color="primary" type="submit" 
+              [disabled]="loading || loginForm.invalid" 
+              style="width: 100%; margin-top: 20px;">
+        <mat-spinner *ngIf="loading" diameter="20" style="margin-right: 10px;"></mat-spinner>
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <p>Don't have an account? 
+        <a routerLink="/register" style="color: #3f51b5; text-decoration: none;">Register here</a>
+      </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 8px;">
+      <h4 style="margin-bottom: 10px; color: #666;">Demo Credentials:</h4>
+      <p style="margin: 5px 0; font-size: 14px;"><strong>Admin:</strong> admin&#64;gmail.com / Admin123</p>
+      <p style="margin: 5px 0; font-size: 14px;"><strong>User:</strong> tmis.demo&#64;example.com / password123</p>
+    </div>
+  </div>
+</div>

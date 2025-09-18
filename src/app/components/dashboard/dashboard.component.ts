@@ -1,0 +1,152 @@
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthService, User } from '../../services/auth.service';
+import { ClientService, Client } from '../../services/client.service';
+import { UserService } from '../../services/user.service';
+import { ConfirmDeleteDialogComponent } from '../confirm-delete-dialog/confirm-delete-dialog.component';
+
+@Component({
+  selector: 'app-dashboard',
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.scss']
+})
+export class DashboardComponent implements OnInit {
+  currentUser: User | null = null;
+  clients: Client[] = [];
+  loading = true;
+  stats = {
+    totalClients: 0,
+    todayNewClients: 0,
+    pendingClients: 0,
+    interestedClients: 0,
+    notInterestedClients: 0,
+    onHoldClients: 0,
+    processingClients: 0,
+    totalTeam: 0
+  };
+
+  constructor(
+    private authService: AuthService,
+    private clientService: ClientService,
+    private userService: UserService,
+    private router: Router,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
+  ) { }
+
+  ngOnInit(): void {
+    this.currentUser = this.authService.currentUserValue;
+    this.loadClients();
+    this.loadUserStats();
+  }
+
+  loadClients(): void {
+    this.clientService.getClients().subscribe({
+      next: (response) => {
+        this.clients = response.clients;
+        this.calculateStats();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading clients:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  calculateStats(): void {
+    this.stats.totalClients = this.clients.length;
+    this.stats.todayNewClients = this.getTodayNewClientsCount();
+    this.stats.pendingClients = this.clients.filter(c => c.status === 'pending').length;
+    this.stats.interestedClients = this.clients.filter(c => c.status === 'interested').length;
+    this.stats.notInterestedClients = this.clients.filter(c => c.status === 'not_interested').length;
+    this.stats.onHoldClients = this.clients.filter(c => c.status === 'hold').length;
+    this.stats.processingClients = this.clients.filter(c => c.status === 'processing').length;
+  }
+
+  getTodayNewClientsCount(): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return this.clients.filter(client => {
+      if (!client.created_at) return false;
+      const clientDate = new Date(client.created_at);
+      clientDate.setHours(0, 0, 0, 0);
+      return clientDate.getTime() === today.getTime();
+    }).length;
+  }
+
+  loadUserStats(): void {
+    this.userService.getUsers().subscribe({
+      next: (response) => {
+        // Filter users with TMIS email domain
+        const tmisUsers = response.users.filter(user => 
+          user.email && user.email.toLowerCase().includes('tmis')
+        );
+        this.stats.totalTeam = tmisUsers.length;
+      },
+      error: (error) => {
+        console.error('Error loading user stats:', error);
+        this.stats.totalTeam = 1; // Fallback to 1
+      }
+    });
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'interested': return '#4caf50';
+      case 'not_interested': return '#f44336';
+      case 'hold': return '#ff9800';
+      case 'pending': return '#9c27b0';
+      case 'processing': return '#2196f3';
+      default: return '#666';
+    }
+  }
+
+  viewClientDetails(client: Client): void {
+    this.router.navigate(['/clients', client._id]);
+  }
+
+  editClient(client: Client): void {
+    this.router.navigate(['/clients', client._id, 'edit']);
+  }
+
+  openWhatsApp(client: Client): void {
+    const mobileNumber = client.mobile_number;
+    if (mobileNumber) {
+      const whatsappUrl = `https://wa.me/${mobileNumber.replace(/[^0-9]/g, '')}`;
+      window.open(whatsappUrl, '_blank');
+    } else {
+      this.snackBar.open('No mobile number available for this client', 'Close', {
+        duration: 3000
+      });
+    }
+  }
+
+  deleteClient(client: Client): void {
+    const dialogRef = this.dialog.open(ConfirmDeleteDialogComponent, {
+      width: '400px',
+      data: { name: client.legal_name || client.user_name || 'this client' }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.clientService.deleteClient(client._id).subscribe({
+          next: () => {
+            this.clients = this.clients.filter(c => c._id !== client._id);
+            this.calculateStats();
+            this.snackBar.open('Client deleted successfully', 'Close', {
+              duration: 3000
+            });
+          },
+          error: (error) => {
+            this.snackBar.open('Failed to delete client', 'Close', {
+              duration: 3000
+            });
+          }
+        });
+      }
+    });
+  }
+}

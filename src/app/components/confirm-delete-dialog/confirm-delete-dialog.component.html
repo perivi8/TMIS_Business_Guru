@@ -1,0 +1,20 @@
+<div class="confirm-delete-dialog">
+  <div mat-dialog-title class="dialog-header">
+    <mat-icon class="warning-icon">warning</mat-icon>
+    <h2>Confirm Delete</h2>
+  </div>
+
+  <div mat-dialog-content class="dialog-content">
+    <p>Are you sure you want to delete the client:</p>
+    <div class="client-name">{{ data.name }}</div>
+    <p class="warning-text">This action cannot be undone. All client data and documents will be permanently removed.</p>
+  </div>
+
+  <div mat-dialog-actions class="dialog-actions">
+    <button mat-button (click)="onCancel()" class="cancel-btn">Cancel</button>
+    <button mat-raised-button color="warn" (click)="onConfirm()" class="confirm-btn">
+      <mat-icon>delete</mat-icon>
+      Delete Client
+    </button>
+  </div>
+</div>

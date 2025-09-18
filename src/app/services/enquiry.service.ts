@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { Enquiry } from '../models/enquiry.interface';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EnquiryService {
-  private apiUrl = 'http://localhost:5000/api/enquiries';
+  private apiUrl = `${environment.apiUrl}/enquiries`;
   private enquiriesSubject = new BehaviorSubject<Enquiry[]>([]);
   public enquiries$ = this.enquiriesSubject.asObservable();
 

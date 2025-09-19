@@ -114,8 +114,33 @@ export class NotificationService {
   }
 
   private playNotificationSound() {
-    const audio = new Audio('assets/sounds/notification.mp3');
-    audio.play().catch(error => console.error('Error playing notification sound:', error));
+    try {
+      // Check if audio file exists before trying to play
+      const audio = new Audio('assets/sounds/notification.mp3');
+      
+      // Set up error handling
+      audio.onerror = (error) => {
+        console.warn('Notification sound file not found or failed to load. Skipping audio notification.');
+      };
+      
+      // Try to play with better error handling
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          // Handle autoplay policy restrictions or missing file
+          if (error.name === 'NotAllowedError') {
+            console.info('Audio autoplay blocked by browser policy. User interaction required for sound.');
+          } else if (error.name === 'NotSupportedError') {
+            console.warn('Notification sound format not supported or file not found.');
+          } else {
+            console.warn('Could not play notification sound:', error.message);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Notification sound initialization failed:', error);
+    }
   }
 
   /**

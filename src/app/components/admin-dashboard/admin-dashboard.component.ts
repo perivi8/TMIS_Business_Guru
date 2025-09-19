@@ -125,44 +125,66 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     console.log(`Chart initialization attempt ${attempt}`);
     
     if (typeof Chart === 'undefined') {
-      console.error('Chart.js is not loaded');
-      if (attempt < 5) {
+      console.warn('Chart.js is not loaded, retrying...');
+      if (attempt < 10) {
         setTimeout(() => this.initializeChartsWithRetry(attempt + 1), 1000);
+      } else {
+        console.error('Chart.js failed to load after 10 attempts');
       }
       return;
     }
 
     console.log('Chart.js is available');
-    console.log('Weekly chart ref:', this.weeklyChartRef);
-    console.log('Status chart ref:', this.statusChartRef);
-    console.log('Team chart ref:', this.teamChartRef);
 
-    if (!this.weeklyChartRef || !this.weeklyChartRef.nativeElement) {
-      console.error('Weekly chart element not ready');
-      if (attempt < 5) {
+    // Check each chart element individually and initialize only available ones
+    const elementsReady = {
+      weekly: this.weeklyChartRef && this.weeklyChartRef.nativeElement,
+      status: this.statusChartRef && this.statusChartRef.nativeElement,
+      team: this.teamChartRef && this.teamChartRef.nativeElement
+    };
+
+    console.log('Chart elements ready:', elementsReady);
+
+    // If no elements are ready and we haven't exceeded max attempts, retry
+    if (!elementsReady.weekly && !elementsReady.status && !elementsReady.team) {
+      if (attempt < 10) {
+        console.warn('No chart elements ready, retrying...');
         setTimeout(() => this.initializeChartsWithRetry(attempt + 1), 500);
+      } else {
+        console.error('Chart elements failed to initialize after 10 attempts');
       }
       return;
     }
 
-    if (!this.statusChartRef || !this.statusChartRef.nativeElement) {
-      console.error('Status chart element not ready');
-      if (attempt < 5) {
-        setTimeout(() => this.initializeChartsWithRetry(attempt + 1), 500);
+    // Initialize available charts
+    console.log('Initializing available chart elements...');
+    
+    if (elementsReady.weekly) {
+      try {
+        this.initializeWeeklyChart();
+        console.log('Weekly chart initialized successfully');
+      } catch (error) {
+        console.error('Error initializing weekly chart:', error);
       }
-      return;
     }
 
-    if (!this.teamChartRef || !this.teamChartRef.nativeElement) {
-      console.error('Team chart element not ready');
-      if (attempt < 5) {
-        setTimeout(() => this.initializeChartsWithRetry(attempt + 1), 500);
+    if (elementsReady.status) {
+      try {
+        this.initializeStatusChart();
+        console.log('Status chart initialized successfully');
+      } catch (error) {
+        console.error('Error initializing status chart:', error);
       }
-      return;
     }
 
-    console.log('Both chart elements are ready, initializing...');
-    this.initializeCharts();
+    if (elementsReady.team) {
+      try {
+        this.initializeTeamChart();
+        console.log('Team chart initialized successfully');
+      } catch (error) {
+        console.error('Error initializing team chart:', error);
+      }
+    }
     
     // Update charts with data if available
     setTimeout(() => {
@@ -172,7 +194,7 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
       } else {
         console.log('No clients data yet, charts will update when data loads');
       }
-    }, 300);
+    }, 500);
   }
 
   initializeCharts(): void {
@@ -546,10 +568,25 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
         },
         error: (error) => {
           console.error('Error loading clients:', error);
+          
+          // Handle specific error types
+          if (error.status === 404) {
+            console.warn('Clients endpoint returned 404 - API may be deploying or unavailable');
+            this.showError('Unable to load clients. The server may be updating. Please try again in a few moments.');
+          } else if (error.status === 0) {
+            console.warn('Network error - server may be unreachable');
+            this.showError('Network error. Please check your connection and try again.');
+          } else {
+            console.error('Unexpected error loading clients:', error);
+            this.showError('Failed to load clients. Please try again later.');
+          }
+          
           // Set empty array on error to prevent undefined issues
           this.clients = [];
           this.calculateStats(); // Calculate with empty data
-          reject(error);
+          
+          // Don't reject - resolve with empty data to continue loading other components
+          resolve();
         }
       });
     });
@@ -1905,5 +1942,13 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     }
     
     return dailyData;
+  }
+
+  // Error handling method
+  showError(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
   }
 }

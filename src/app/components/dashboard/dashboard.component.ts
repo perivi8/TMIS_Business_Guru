@@ -45,12 +45,33 @@ export class DashboardComponent implements OnInit {
   loadClients(): void {
     this.clientService.getClients().subscribe({
       next: (response) => {
-        this.clients = response.clients;
+        this.clients = response.clients || [];
         this.calculateStats();
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading clients:', error);
+        
+        // Handle specific error types
+        if (error.status === 404) {
+          console.warn('Clients endpoint returned 404 - API may be deploying or unavailable');
+          this.snackBar.open('Unable to load clients. The server may be updating. Please try again in a few moments.', 'Close', {
+            duration: 5000
+          });
+        } else if (error.status === 0) {
+          console.warn('Network error - server may be unreachable');
+          this.snackBar.open('Network error. Please check your connection and try again.', 'Close', {
+            duration: 5000
+          });
+        } else {
+          this.snackBar.open('Failed to load clients. Please try again later.', 'Close', {
+            duration: 3000
+          });
+        }
+        
+        // Set empty array to prevent undefined issues
+        this.clients = [];
+        this.calculateStats();
         this.loading = false;
       }
     });

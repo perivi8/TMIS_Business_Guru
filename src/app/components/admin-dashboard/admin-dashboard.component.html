@@ -232,7 +232,7 @@
         <!-- Weekly Line Chart -->
         <div class="weekly-chart-container">
           <div class="chart-wrapper">
-            <canvas #weeklyChart class="weekly-line-chart" width="600" height="300"></canvas>
+            <canvas #weeklyChart class="weekly-line-chart" data-chart="weekly" width="600" height="300"></canvas>
           </div>
           
           <!-- Chart Legend/Info -->
@@ -269,7 +269,7 @@
           <h3>Client Status Distribution</h3>
           <div class="pie-chart-wrapper">
             <div class="chart-container">
-              <canvas #statusChart class="status-pie-chart" width="400" height="400"></canvas>
+              <canvas #statusChart class="status-pie-chart" data-chart="status" width="400" height="400"></canvas>
             </div>
             
             <!-- Chart Statistics -->
@@ -335,7 +335,7 @@
             <h3>Team Member Client Additions (Excluding Admin)</h3>
             <div class="horizontal-bar-chart">
               <div class="chart-container">
-                <canvas #teamChart class="team-horizontal-chart" width="800" height="400"></canvas>
+                <canvas #teamChart class="team-horizontal-chart" data-chart="team" width="800" height="400"></canvas>
               </div>
               
               <!-- Chart Info -->

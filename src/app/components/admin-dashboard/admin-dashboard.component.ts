@@ -115,10 +115,35 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Wait for DOM to be fully ready
+    // Wait for DOM to be fully ready and ensure loading is complete
     setTimeout(() => {
-      this.initializeChartsWithRetry();
-    }, 200);
+      if (!this.loading) {
+        this.initializeChartsWithRetry();
+      } else {
+        // If still loading, wait for data to load first
+        this.waitForDataAndInitializeCharts();
+      }
+    }, 500);
+  }
+
+  private waitForDataAndInitializeCharts(): void {
+    const checkDataInterval = setInterval(() => {
+      if (!this.loading) {
+        clearInterval(checkDataInterval);
+        setTimeout(() => {
+          this.initializeChartsWithRetry();
+        }, 300);
+      }
+    }, 100);
+
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      clearInterval(checkDataInterval);
+      if (this.loading) {
+        console.warn('Data loading timeout, initializing charts anyway');
+        this.initializeChartsWithRetry();
+      }
+    }, 10000);
   }
 
   initializeChartsWithRetry(attempt: number = 1): void {
@@ -138,12 +163,42 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
 
     // Check each chart element individually and initialize only available ones
     const elementsReady = {
-      weekly: this.weeklyChartRef && this.weeklyChartRef.nativeElement,
-      status: this.statusChartRef && this.statusChartRef.nativeElement,
-      team: this.teamChartRef && this.teamChartRef.nativeElement
+      weekly: this.weeklyChartRef?.nativeElement,
+      status: this.statusChartRef?.nativeElement,
+      team: this.teamChartRef?.nativeElement
     };
 
+    // Also try to find elements by ID as fallback
+    if (!elementsReady.weekly) {
+      const weeklyElement = document.querySelector('canvas[data-chart="weekly"]') as HTMLCanvasElement;
+      if (weeklyElement) {
+        elementsReady.weekly = weeklyElement;
+        console.log('Found weekly chart element by fallback selector');
+      }
+    }
+
+    if (!elementsReady.status) {
+      const statusElement = document.querySelector('canvas[data-chart="status"]') as HTMLCanvasElement;
+      if (statusElement) {
+        elementsReady.status = statusElement;
+        console.log('Found status chart element by fallback selector');
+      }
+    }
+
+    if (!elementsReady.team) {
+      const teamElement = document.querySelector('canvas[data-chart="team"]') as HTMLCanvasElement;
+      if (teamElement) {
+        elementsReady.team = teamElement;
+        console.log('Found team chart element by fallback selector');
+      }
+    }
+
     console.log('Chart elements ready:', elementsReady);
+    console.log('ViewChild references:', {
+      weekly: !!this.weeklyChartRef,
+      status: !!this.statusChartRef,
+      team: !!this.teamChartRef
+    });
 
     // If no elements are ready and we haven't exceeded max attempts, retry
     if (!elementsReady.weekly && !elementsReady.status && !elementsReady.team) {

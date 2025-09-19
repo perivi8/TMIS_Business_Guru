@@ -156,29 +156,49 @@ export class ClientService implements OnDestroy {
 
   createClient(formData: FormData): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/clients`, formData, {
-      headers: this.getFormHeaders()
+      headers: this.getFormHeaders(),
+      withCredentials: true
     });
   }
 
   getClients(): Observable<{ clients: Client[] }> {
-    console.log('=== CLIENT SERVICE DEBUG ===');
-    console.log('Making request to:', `${environment.apiUrl}/clients`);
-    console.log('Token from auth service:', this.authService.getToken());
-    console.log('Current user:', this.authService.currentUserValue);
+    console.log('Fetching clients...');
+    console.log('API URL:', environment.apiUrl);
     console.log('Is authenticated:', this.authService.isAuthenticated());
-    console.log('Headers being sent:', this.getHeaders());
+    
+    const headers = this.getHeaders();
+    console.log('Headers being sent:', headers);
     
     return this.http.get<{ clients: Client[] }>(`${environment.apiUrl}/clients`, {
-      headers: this.getHeaders()
+      headers: headers,
+      withCredentials: true
     }).pipe(
-      tap(response => {
-        console.log('Success response:', response);
+      tap({
+        next: (response) => {
+          console.log('Clients received:', response);
+          this.clientsSubject.next(response.clients);
+        },
+        error: (error) => {
+          console.error('Error in getClients:', {
+            error: error,
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            url: error.url,
+            headers: error.headers
+          });
+        }
       }),
-      catchError((error: any) => {
-        console.error('HTTP Error:', error);
-        console.error('Error status:', error.status);
-        console.error('Error message:', error.message);
-        return throwError(() => error);
+      catchError(error => {
+        console.error('Error fetching clients:', {
+          error: error,
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url
+        });
+        this.notificationService.showError('Failed to load clients. Please try again later.');
+        return throwError(() => new Error('Failed to load clients'));
       })
     );
   }
@@ -188,7 +208,8 @@ export class ClientService implements OnDestroy {
       status,
       feedback
     }, {
-      headers: this.getHeaders()
+      headers: this.getHeaders(),
+      withCredentials: true
     }).pipe(
       tap(response => {
         if (response && response.client) {
@@ -226,7 +247,8 @@ export class ClientService implements OnDestroy {
         headers: {
           'Authorization': `Bearer ${this.authService.getToken()}`
           // Don't set Content-Type, let the browser set it with the correct boundary
-        }
+        },
+        withCredentials: true
       }).toPromise();
       
       console.log('Update response:', response);
@@ -287,7 +309,8 @@ export class ClientService implements OnDestroy {
 
   updateClient(clientId: string, clientData: any): Observable<any> {
     return this.http.put<any>(`${environment.apiUrl}/clients/${clientId}`, clientData, {
-      headers: this.getFormHeaders()
+      headers: this.getFormHeaders(),
+      withCredentials: true
     }).pipe(
       tap(response => {
         if (response && response.client) {
@@ -308,7 +331,8 @@ export class ClientService implements OnDestroy {
 
   updateClientDetailsJson(clientId: string, data: any): Observable<any> {
     return this.http.put<any>(`${environment.apiUrl}/clients/${clientId}/update`, data, {
-      headers: this.getHeaders()
+      headers: this.getHeaders(),
+      withCredentials: true
     }).pipe(
       tap(response => {
         if (response && response.client) {
@@ -326,20 +350,23 @@ export class ClientService implements OnDestroy {
 
   getClientDetails(clientId: string): Observable<{ client: Client }> {
     return this.http.get<{ client: Client }>(`${environment.apiUrl}/clients/${clientId}`, {
-      headers: this.getHeaders()
+      headers: this.getHeaders(),
+      withCredentials: true
     });
   }
 
   downloadDocument(clientId: string, documentType: string): Observable<Blob> {
     return this.http.get(`${environment.apiUrl}/clients/${clientId}/download/${documentType}`, {
       headers: this.getFormHeaders(),
-      responseType: 'blob'
+      responseType: 'blob',
+      withCredentials: true
     });
   }
 
   deleteClient(clientId: string): Observable<any> {
     return this.http.delete<any>(`${environment.apiUrl}/clients/${clientId}`, {
-      headers: this.getHeaders()
+      headers: this.getHeaders(),
+      withCredentials: true
     }).pipe(
       tap(response => {
         if (response && response.client) {

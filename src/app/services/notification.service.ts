@@ -115,8 +115,23 @@ export class NotificationService {
 
   private playNotificationSound() {
     const audio = new Audio('assets/sounds/notification.mp3');
-    audio.volume = 0.3;
-    audio.play().catch(e => console.warn('Could not play notification sound', e));
+    audio.play().catch(error => console.error('Error playing notification sound:', error));
+  }
+
+  /**
+   * Display an error notification to the user
+   * @param message The error message to display
+   * @param title Optional title for the notification (defaults to 'Error')
+   */
+  showError(message: string, title: string = 'Error') {
+    this.addNotification({
+      type: 'system',
+      title: title,
+      message: message
+    });
+    
+    // Also log to console for debugging
+    console.error(`[${title}] ${message}`);
   }
 
   // Helper methods for common notification types

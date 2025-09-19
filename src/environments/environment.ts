@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5000/api'  // Local development server
-};
+  apiUrl: 'https://tmis-business-guru-backend.onrender.com/api'
+};  // Local development server

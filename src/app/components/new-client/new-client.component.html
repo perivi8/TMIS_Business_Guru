@@ -8,7 +8,12 @@
   <div *ngIf="success" class="success">{{ success }}</div>
 
   <mat-card>
-    <mat-horizontal-stepper #stepper [selectedIndex]="currentStep" [linear]="true">
+    <div *ngIf="!formsInitialized" class="loading-forms">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Initializing forms...</p>
+    </div>
+    
+    <mat-horizontal-stepper *ngIf="formsInitialized" #stepper [selectedIndex]="currentStep" [linear]="true">
       <!-- Step 1: Basic Info & GST -->
       <mat-step [stepControl]="step1Form" label="Basic Info & GST">
         <form [formGroup]="step1Form">

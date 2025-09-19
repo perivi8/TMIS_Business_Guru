@@ -16,6 +16,7 @@ export class NewClientComponent implements OnInit {
   step3Form!: FormGroup; // Bank Details
   step4Form!: FormGroup; // Review
   
+  formsInitialized = false; // Add safety flag
   currentStep = 0;
   loading = false;
   error = '';
@@ -187,6 +188,9 @@ export class NewClientComponent implements OnInit {
       required_loan_amount: [0, Validators.required],
       loan_purpose: ['', Validators.required]
     });
+    
+    // Set flag to indicate forms are initialized
+    this.formsInitialized = true;
   }
 
   loadStaffMembers(): void {

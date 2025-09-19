@@ -561,11 +561,11 @@ export class NewClientComponent implements OnInit {
     const value = event.target.value.replace(/[^0-9]/g, '');
     event.target.value = value;
     this.totalCreditAmount = value;
-    this.step3Form.get('total_credit_amount')?.setValue(value);
+    // The form control is already updated automatically since we're using formControlName
   }
 
   getCreditAmountInWords(): string {
-    const amount = this.totalCreditAmount;
+    const amount = this.step3Form.get('total_credit_amount')?.value || this.totalCreditAmount;
     if (amount && !isNaN(parseInt(amount)) && parseInt(amount) > 0) {
       return this.convertNumberToWords(parseInt(amount)) + ' Rupees';
     }

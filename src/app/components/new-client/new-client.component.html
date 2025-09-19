@@ -571,7 +571,7 @@
             <div class="form-group">
               <mat-form-field appearance="outline">
                 <mat-label>Total Credit Amount *</mat-label>
-                <input matInput [(ngModel)]="totalCreditAmount" (input)="onCreditAmountChange($event)" placeholder="Enter credit amount">
+                <input matInput formControlName="total_credit_amount" (input)="onCreditAmountChange($event)" placeholder="Enter credit amount">
                 <mat-error *ngIf="step3Form.get('total_credit_amount')?.invalid && step3Form.get('total_credit_amount')?.touched">
                   Total credit amount is required
                 </mat-error>

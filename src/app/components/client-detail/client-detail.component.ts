@@ -173,16 +173,34 @@ export class ClientDetailComponent implements OnInit {
     if (!this.client || !this.client._id) return;
     
     this.clientService.downloadDocument(this.client._id, docType).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = this.client!.processed_documents![docType].file_name;
-        a.click();
-        window.URL.revokeObjectURL(url);
+      next: (blob: Blob) => {
+        // Create a blob URL for the file
+        const fileURL = URL.createObjectURL(blob);
+        
+        // Create a temporary anchor element
+        const link = document.createElement('a');
+        link.href = fileURL;
+        
+        // Set the download attribute with the correct filename
+        const fileName = this.client!.processed_documents?.[docType]?.file_name || `${docType}.pdf`;
+        link.download = fileName;
+        
+        // Append to body, click and remove
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(fileURL);
+        }, 100);
       },
       error: (error) => {
-        this.snackBar.open('Error downloading document', 'Close', { duration: 3000 });
+        console.error('Error downloading document:', error);
+        this.snackBar.open('Error downloading document. Please try again.', 'Close', { 
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }

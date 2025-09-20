@@ -692,7 +692,7 @@ export class ClientDetailComponent implements OnInit {
       'gst_status', 'business_pan', 'ie_code', 'website', 'business_url',
       'required_loan_amount', 'loan_purpose', 'repayment_period', 
       'monthly_income', 'existing_loans', 'bank_name', 'account_number',
-      'ifsc_code', 'account_type', 'bank_type', 'new_business_account',
+      'ifsc_code', 'bank_type', 'new_business_account',
       'gateway', 'transaction_done_by_client', 'total_credit_amount',
       'average_monthly_balance', 'transaction_months', 'new_current_account',
       'number_of_partners', 'registration_number', 'gst_legal_name',
@@ -792,12 +792,13 @@ export class ClientDetailComponent implements OnInit {
     }
     
     const partners = [];
-    const numberOfPartners = this.client.number_of_partners || 0;
+    const numberOfPartners = this.client.number_of_partners || 10; // Check up to 10 partners
     
     for (let i = 0; i < numberOfPartners; i++) {
+      // Try both field name patterns to ensure compatibility
       const partner = {
-        name: (this.client as any)[`partner_${i}_name`] || '',
-        dob: (this.client as any)[`partner_${i}_dob`] || ''
+        name: (this.client as any)[`partner_name_${i}`] || (this.client as any)[`partner_${i}_name`] || '',
+        dob: (this.client as any)[`partner_dob_${i}`] || (this.client as any)[`partner_${i}_dob`] || ''
       };
       if (partner.name || partner.dob) {
         partners.push(partner);
@@ -807,11 +808,5 @@ export class ClientDetailComponent implements OnInit {
     return partners;
   }
 
-  formatNewCurrentAccount(): string {
-    const value = this.getClientProperty('new_business_account');
-    if (value === 'yes') return 'Yes';
-    if (value === 'no') return 'No';
-    return 'N/A';
-  }
 
 }

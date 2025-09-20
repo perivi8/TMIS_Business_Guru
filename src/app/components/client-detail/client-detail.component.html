@@ -209,28 +209,32 @@
                   <span>₹{{ (client.required_loan_amount | number) || 'N/A' }}</span>
                 </div>
                 <div class="info-item">
+                  <label>Loan Purpose:</label>
+                  <span>{{ client.loan_purpose || 'N/A' }}</span>
+                </div>
+                <div class="info-item">
                   <label>Bank Name:</label>
                   <span>{{ client.bank_name || 'N/A' }}</span>
                 </div>
                 <div class="info-item">
-                  <label>Account Name:</label>
-                  <span>{{ getClientProperty('account_name') || 'N/A' }}</span>
+                  <label>Account Holder Name:</label>
+                  <span>{{ client.legal_name || client.user_name || 'N/A' }}</span>
                 </div>
                 <div class="info-item">
                   <label>Bank Account Number:</label>
-                  <span>{{ getClientProperty('bank_account_number') || 'N/A' }}</span>
+                  <span>{{ client.account_number || 'N/A' }}</span>
                 </div>
                 <div class="info-item">
                   <label>IFSC Code:</label>
-                  <span>{{ getClientProperty('ifsc_code') || 'N/A' }}</span>
+                  <span>{{ client.ifsc_code || 'N/A' }}</span>
                 </div>
                 <div class="info-item">
-                  <label>Bank Type:</label>
-                  <span>{{ getClientProperty('bank_type') || 'N/A' }}</span>
+                  <label>Bank Account Type:</label>
+                  <span>{{ client.bank_type || 'N/A' }}</span>
                 </div>
                 <div class="info-item">
                   <label>New Current Account:</label>
-                  <span>{{ formatNewCurrentAccount() }}</span>
+                  <span>{{ client.new_current_account === 'yes' ? 'Yes' : (client.new_current_account === 'no' ? 'No' : 'N/A') }}</span>
                 </div>
                 <div class="info-item">
                   <label>Total Credit Amount:</label>

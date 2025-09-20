@@ -510,10 +510,10 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Monthly Income</mat-label>
-              <input matInput formControlName="monthly_income" type="number">
-              <mat-error *ngIf="clientForm.get('monthly_income')?.hasError('min')">
-                Income must be positive
+              <mat-label>Total Credit Amount</mat-label>
+              <input matInput formControlName="total_credit_amount" type="number">
+              <mat-error *ngIf="clientForm.get('total_credit_amount')?.hasError('min')">
+                Amount must be positive
               </mat-error>
             </mat-form-field>
           </div>
@@ -560,8 +560,12 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Account Type</mat-label>
-              <input matInput formControlName="account_type">
+              <mat-label>Bank Account Type</mat-label>
+              <mat-select formControlName="bank_type">
+                <mat-option value="">Select Account Type</mat-option>
+                <mat-option value="Savings">Savings</mat-option>
+                <mat-option value="Current">Current</mat-option>
+              </mat-select>
             </mat-form-field>
           </div>
 

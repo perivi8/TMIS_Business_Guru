@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap, catchError, map } from 'rxjs/operators';
 import { Enquiry } from '../models/enquiry.interface';
 import { environment } from '../../environments/environment';
 
@@ -31,7 +31,7 @@ export class EnquiryService {
     const headers = this.getHeaders();
     console.log('Headers being sent:', headers);
     
-    return this.http.get<Enquiry[]>(this.apiUrl, { 
+    return this.http.get<any>(this.apiUrl, { 
       headers: headers,
       withCredentials: true 
     }).pipe(
@@ -39,9 +39,19 @@ export class EnquiryService {
         next: (response) => {
           console.log('=== ENQUIRY SUCCESS RESPONSE ===');
           console.log('Enquiries received:', response);
-          console.log('Enquiries count:', Array.isArray(response) ? response.length : 'Not an array');
+          console.log('Response type:', typeof response);
+          console.log('Is array:', Array.isArray(response));
+          console.log('Has enquiries property:', 'enquiries' in response);
+          
+          if (Array.isArray(response)) {
+            console.log('Direct array - Enquiries count:', response.length);
+          } else if (response && response.enquiries) {
+            console.log('Object with enquiries property - Enquiries count:', response.enquiries.length);
+          } else {
+            console.log('Unexpected response format');
+          }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('=== ENQUIRY ERROR RESPONSE ===');
           console.error('Error in getAllEnquiries:', {
             error: error,
@@ -53,7 +63,18 @@ export class EnquiryService {
           });
         }
       }),
-      catchError(error => {
+      map((response: any) => {
+        // Handle different response formats
+        if (Array.isArray(response)) {
+          return response;
+        } else if (response && response.enquiries && Array.isArray(response.enquiries)) {
+          return response.enquiries;
+        } else {
+          console.warn('Unexpected enquiry response format, returning empty array');
+          return [];
+        }
+      }),
+      catchError((error: any) => {
         console.error('=== ENQUIRY CATCH ERROR ===');
         console.error('Error fetching enquiries:', error);
         

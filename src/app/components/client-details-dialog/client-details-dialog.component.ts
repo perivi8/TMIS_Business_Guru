@@ -350,21 +350,57 @@ export class ClientDetailsDialogComponent implements OnInit {
     if (documentUrl.startsWith('data:')) {
       this.downloadDataUrl(documentUrl, type);
     } else {
-      // Use the client's _id and document type for the download
+      // First try the standard download endpoint
       this.clientService.downloadDocument(this.client._id, type).subscribe({
         next: (blob: Blob) => {
-          const objectUrl = window.URL.createObjectURL(blob);
-          this.downloadFile(objectUrl, type);
-          setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+          // Check if the blob is valid (not empty and has proper size)
+          if (blob.size > 0) {
+            const objectUrl = window.URL.createObjectURL(blob);
+            this.downloadFile(objectUrl, type);
+            setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+          } else {
+            console.warn('Downloaded blob is empty, trying direct download method');
+            this.tryDirectDownload(type);
+          }
         },
         error: (error: any) => {
           console.error('Error downloading file:', error);
-          this.snackBar.open('Error downloading file', 'Close', {
-            duration: 3000
-          });
+          console.log('Trying direct download method as fallback');
+          this.tryDirectDownload(type);
         }
       });
     }
+  }
+
+  private tryDirectDownload(type: string): void {
+    if (!this.client._id) {
+      this.snackBar.open('Client ID is missing', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // Try the direct download endpoint as fallback
+    this.clientService.downloadDocumentDirect(this.client._id, type).subscribe({
+      next: (blob: Blob) => {
+        if (blob.size > 0) {
+          const objectUrl = window.URL.createObjectURL(blob);
+          this.downloadFile(objectUrl, type);
+          setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+          
+          // Show success message for PDF files specifically
+          if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
+            this.snackBar.open('PDF downloaded successfully!', 'Close', { duration: 3000 });
+          }
+        } else {
+          this.snackBar.open('Downloaded file is empty. Please contact support.', 'Close', { duration: 5000 });
+        }
+      },
+      error: (error: any) => {
+        console.error('Direct download also failed:', error);
+        this.snackBar.open('Unable to download file. Please try again or contact support.', 'Close', {
+          duration: 5000
+        });
+      }
+    });
   }
 
   private getDocumentUrl(type: string): string | undefined {
@@ -378,23 +414,40 @@ export class ClientDetailsDialogComponent implements OnInit {
       return;
     }
 
+    // For blob URLs (from our download service), create direct download
+    if (url.startsWith('blob:')) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = this.getDownloadFilename(type, url);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
     // For server URLs, use the client service to ensure proper authentication
     if ((url.startsWith('/') || url.startsWith(window.location.origin)) && this.client._id) {
       const filename = this.getDownloadFilename(type, url);
       this.clientService.downloadDocument(this.client._id, type).subscribe({
         next: (blob: Blob) => {
-          const blobUrl = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(blobUrl);
+          if (blob.size > 0) {
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+          } else {
+            // Try direct download as fallback
+            this.tryDirectDownload(type);
+          }
         },
         error: (error) => {
           console.error('Error downloading file:', error);
-          this.snackBar.open('Error downloading file. Please try again.', 'Close', { duration: 5000 });
+          // Try direct download as fallback
+          this.tryDirectDownload(type);
         }
       });
     } else {

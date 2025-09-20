@@ -395,6 +395,14 @@ export class ClientService implements OnDestroy {
     });
   }
 
+  downloadDocumentDirect(clientId: string, documentType: string): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/clients/${clientId}/download-direct/${documentType}`, {
+      headers: this.getFormHeaders(),
+      responseType: 'blob',
+      withCredentials: true
+    });
+  }
+
   deleteClient(clientId: string): Observable<any> {
     return this.http.delete<any>(`${environment.apiUrl}/clients/${clientId}`, {
       headers: this.getHeaders(),

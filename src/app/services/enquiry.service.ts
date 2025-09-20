@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { Enquiry } from '../models/enquiry.interface';
 import { environment } from '../../environments/environment';
 
@@ -23,7 +24,54 @@ export class EnquiryService {
   }
 
   getAllEnquiries(): Observable<Enquiry[]> {
-    return this.http.get<Enquiry[]>(this.apiUrl, { headers: this.getHeaders() });
+    console.log('=== ENQUIRY SERVICE DEBUG ===');
+    console.log('Fetching enquiries...');
+    console.log('API URL:', this.apiUrl);
+    
+    const headers = this.getHeaders();
+    console.log('Headers being sent:', headers);
+    
+    return this.http.get<Enquiry[]>(this.apiUrl, { 
+      headers: headers,
+      withCredentials: true 
+    }).pipe(
+      tap({
+        next: (response) => {
+          console.log('=== ENQUIRY SUCCESS RESPONSE ===');
+          console.log('Enquiries received:', response);
+          console.log('Enquiries count:', Array.isArray(response) ? response.length : 'Not an array');
+        },
+        error: (error) => {
+          console.error('=== ENQUIRY ERROR RESPONSE ===');
+          console.error('Error in getAllEnquiries:', {
+            error: error,
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            url: error.url,
+            body: error.error
+          });
+        }
+      }),
+      catchError(error => {
+        console.error('=== ENQUIRY CATCH ERROR ===');
+        console.error('Error fetching enquiries:', error);
+        
+        let errorMessage = 'Failed to load enquiries. Please try again later.';
+        
+        if (error.status === 0) {
+          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        } else if (error.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied. You do not have permission to view enquiries.';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        }
+        
+        return throwError(() => new Error(errorMessage));
+      })
+    );
   }
 
   getEnquiryById(id: string): Observable<Enquiry> {

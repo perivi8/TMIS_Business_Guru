@@ -162,43 +162,75 @@ export class ClientService implements OnDestroy {
   }
 
   getClients(): Observable<{ clients: Client[] }> {
+    console.log('=== CLIENT SERVICE DEBUG ===');
     console.log('Fetching clients...');
     console.log('API URL:', environment.apiUrl);
     console.log('Is authenticated:', this.authService.isAuthenticated());
+    console.log('Current user:', this.authService.currentUserValue);
+    console.log('Token exists:', !!this.authService.getToken());
     
     const headers = this.getHeaders();
     console.log('Headers being sent:', headers);
     
-    return this.http.get<{ clients: Client[] }>(`${environment.apiUrl}/clients`, {
+    const fullUrl = `${environment.apiUrl}/clients`;
+    console.log('Full request URL:', fullUrl);
+    
+    return this.http.get<{ clients: Client[] }>(fullUrl, {
       headers: headers,
       withCredentials: true
     }).pipe(
       tap({
         next: (response) => {
+          console.log('=== SUCCESS RESPONSE ===');
           console.log('Clients received:', response);
-          this.clientsSubject.next(response.clients);
+          console.log('Response type:', typeof response);
+          console.log('Has clients property:', 'clients' in response);
+          console.log('Clients count:', response.clients?.length || 0);
+          
+          if (response.clients) {
+            this.clientsSubject.next(response.clients);
+          }
         },
         error: (error) => {
+          console.error('=== ERROR RESPONSE ===');
           console.error('Error in getClients:', {
             error: error,
             status: error.status,
             statusText: error.statusText,
             message: error.message,
             url: error.url,
-            headers: error.headers
+            headers: error.headers,
+            body: error.error
           });
         }
       }),
       catchError(error => {
+        console.error('=== CATCH ERROR ===');
         console.error('Error fetching clients:', {
           error: error,
           status: error.status,
           statusText: error.statusText,
           message: error.message,
-          url: error.url
+          url: error.url,
+          errorBody: error.error
         });
-        this.notificationService.showError('Failed to load clients. Please try again later.');
-        return throwError(() => new Error('Failed to load clients'));
+        
+        let errorMessage = 'Failed to load clients. Please try again later.';
+        
+        if (error.status === 0) {
+          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        } else if (error.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied. You do not have permission to view clients.';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        this.notificationService.showError(errorMessage);
+        return throwError(() => new Error(errorMessage));
       })
     );
   }

@@ -378,7 +378,42 @@ export class ClientDetailsDialogComponent implements OnInit {
       return;
     }
 
-    // Try the direct download endpoint as fallback
+    console.log('Trying direct download method...');
+    
+    // Try the raw download endpoint first
+    this.clientService.downloadDocumentRaw(this.client._id, type).subscribe({
+      next: (blob: Blob) => {
+        if (blob.size > 0) {
+          const objectUrl = window.URL.createObjectURL(blob);
+          this.downloadFile(objectUrl, type);
+          setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+          
+          // Show success message for PDF files specifically
+          if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
+            this.snackBar.open('PDF downloaded successfully!', 'Close', { duration: 3000 });
+          }
+        } else {
+          console.log('Raw download returned empty blob, trying redirect method...');
+          this.tryRedirectDownload(type);
+        }
+      },
+      error: (error: any) => {
+        console.error('Raw download failed:', error);
+        console.log('Trying redirect download method...');
+        this.tryRedirectDownload(type);
+      }
+    });
+  }
+
+  private tryRedirectDownload(type: string): void {
+    if (!this.client._id) {
+      this.snackBar.open('Client ID is missing', 'Close', { duration: 3000 });
+      return;
+    }
+
+    console.log('Trying redirect download method...');
+    
+    // Try the direct redirect endpoint
     this.clientService.downloadDocumentDirect(this.client._id, type).subscribe({
       next: (blob: Blob) => {
         if (blob.size > 0) {
@@ -391,16 +426,43 @@ export class ClientDetailsDialogComponent implements OnInit {
             this.snackBar.open('PDF downloaded successfully!', 'Close', { duration: 3000 });
           }
         } else {
-          this.snackBar.open('Downloaded file is empty. Please contact support.', 'Close', { duration: 5000 });
+          console.log('Redirect download also failed, trying direct URL...');
+          this.tryDirectUrlDownload(type);
         }
       },
       error: (error: any) => {
-        console.error('Direct download also failed:', error);
-        this.snackBar.open('Unable to download file. Please try again or contact support.', 'Close', {
-          duration: 5000
-        });
+        console.error('Redirect download failed:', error);
+        console.log('Trying direct URL download...');
+        this.tryDirectUrlDownload(type);
       }
     });
+  }
+
+  private tryDirectUrlDownload(type: string): void {
+    // As a last resort, try to get the direct Cloudinary URL and open it
+    const documentUrl = this.getDocumentUrl(type);
+    
+    if (documentUrl && (documentUrl.startsWith('https://res.cloudinary.com') || documentUrl.startsWith('http'))) {
+      console.log('Opening direct Cloudinary URL:', documentUrl);
+      
+      // Open the direct URL in a new tab
+      const link = document.createElement('a');
+      link.href = documentUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.download = this.getDownloadFilename(type, documentUrl);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.snackBar.open('Opening document in new tab. If download doesn\'t start, right-click and save.', 'Close', { 
+        duration: 5000 
+      });
+    } else {
+      this.snackBar.open('Unable to download file. Please contact support.', 'Close', {
+        duration: 5000
+      });
+    }
   }
 
   private getDocumentUrl(type: string): string | undefined {
@@ -607,6 +669,52 @@ export class ClientDetailsDialogComponent implements OnInit {
       default: return type.split('_')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
+    }
+  }
+
+  openInNewTab(type: string): void {
+    const documentUrl = this.getDocumentUrl(type);
+    
+    if (!documentUrl) {
+      this.snackBar.open('Document not available', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // If it's a data URL, convert to blob and open
+    if (documentUrl.startsWith('data:')) {
+      try {
+        const matches = documentUrl.match(/^data:(.*?)(;base64)?,(.*)$/);
+        if (!matches) {
+          throw new Error('Invalid data URL format');
+        }
+        
+        const mimeType = matches[1];
+        const isBase64 = !!matches[2];
+        const data = matches[3];
+        
+        const byteCharacters = isBase64 ? atob(data) : decodeURIComponent(data);
+        const byteNumbers = new Array(byteCharacters.length);
+        
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        window.open(blobUrl, '_blank');
+        
+        // Clean up the blob URL after a delay
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        
+      } catch (error) {
+        console.error('Error processing data URL:', error);
+        this.snackBar.open('Error opening document', 'Close', { duration: 3000 });
+      }
+    } else {
+      // For regular URLs, open directly
+      window.open(documentUrl, '_blank', 'noopener,noreferrer');
     }
   }
 

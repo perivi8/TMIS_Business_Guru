@@ -185,6 +185,12 @@
                         matTooltip="Download {{getDocumentName(docType)}}">
                   <mat-icon>download</mat-icon>
                 </button>
+                <button mat-icon-button 
+                        (click)="openInNewTab(docType)" 
+                        matTooltip="Open {{getDocumentName(docType)}} in new tab"
+                        *ngIf="hasDocument(docType)">
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
               </div>
             </div>
           </div>

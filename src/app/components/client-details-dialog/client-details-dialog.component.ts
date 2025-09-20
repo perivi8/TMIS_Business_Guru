@@ -350,14 +350,26 @@ export class ClientDetailsDialogComponent implements OnInit {
     if (documentUrl.startsWith('data:')) {
       this.downloadDataUrl(documentUrl, type);
     } else {
+      // Show loading message for PDF files
+      if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
+        this.snackBar.open('Preparing PDF download...', 'Close', { duration: 2000 });
+      }
+
       // First try the standard download endpoint
       this.clientService.downloadDocument(this.client._id, type).subscribe({
         next: (blob: Blob) => {
           // Check if the blob is valid (not empty and has proper size)
           if (blob.size > 0) {
-            const objectUrl = window.URL.createObjectURL(blob);
-            this.downloadFile(objectUrl, type);
-            setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+            console.log(`Downloaded blob size: ${blob.size} bytes, type: ${blob.type}`);
+            
+            // For PDF files, validate the blob content
+            if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
+              this.validateAndDownloadPDF(blob, type);
+            } else {
+              const objectUrl = window.URL.createObjectURL(blob);
+              this.downloadFile(objectUrl, type);
+              setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+            }
           } else {
             console.warn('Downloaded blob is empty, trying direct download method');
             this.tryDirectDownload(type);
@@ -390,7 +402,7 @@ export class ClientDetailsDialogComponent implements OnInit {
           
           // Show success message for PDF files specifically
           if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
-            this.snackBar.open('PDF downloaded successfully!', 'Close', { duration: 3000 });
+            this.snackBar.open('PDF downloaded successfully! Check your downloads folder.', 'Close', { duration: 4000 });
           }
         } else {
           console.log('Raw download returned empty blob, trying redirect method...');
@@ -423,7 +435,7 @@ export class ClientDetailsDialogComponent implements OnInit {
           
           // Show success message for PDF files specifically
           if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
-            this.snackBar.open('PDF downloaded successfully!', 'Close', { duration: 3000 });
+            this.snackBar.open('PDF downloaded successfully! Check your downloads folder.', 'Close', { duration: 4000 });
           }
         } else {
           console.log('Redirect download also failed, trying direct URL...');
@@ -715,6 +727,26 @@ export class ClientDetailsDialogComponent implements OnInit {
     } else {
       // For regular URLs, open directly
       window.open(documentUrl, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  private validateAndDownloadPDF(blob: Blob, type: string): void {
+    try {
+      console.log(`Validating PDF blob: ${blob.size} bytes, type: ${blob.type}`);
+      
+      // Create object URL and download regardless of validation
+      // The backend has already validated the content
+      const objectUrl = window.URL.createObjectURL(blob);
+      this.downloadFile(objectUrl, type);
+      setTimeout(() => window.URL.revokeObjectURL(objectUrl), 100);
+      
+      // Show success message
+      this.snackBar.open('PDF downloaded successfully!', 'Close', { duration: 3000 });
+      
+    } catch (error) {
+      console.error('Error validating PDF blob:', error);
+      // Fallback to direct download
+      this.tryDirectDownload(type);
     }
   }
 

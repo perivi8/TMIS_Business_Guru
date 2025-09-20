@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Notification {
   id: string;
@@ -73,6 +74,13 @@ export class NotificationService {
 
   getUnreadCount(): number {
     return this.notifications.filter(n => !n.read).length;
+  }
+
+  // Get unread count observable for reactive updates
+  getUnreadCountObservable(): Observable<number> {
+    return this.notificationsSubject.asObservable().pipe(
+      map(notifications => notifications.filter(n => !n.read).length)
+    );
   }
 
   private generateId(): string {

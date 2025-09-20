@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { trigger, state, style, transition, animate } from '@angular/animations';
@@ -33,12 +33,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
   lastVisit: Date | null = null;
   private notificationSubscription: Subscription | null = null;
   private clientSubscription: Subscription | null = null;
+  private unreadCountSubscription: Subscription | null = null;
   hasUnreadNotifications = false;
   lastNotificationCount = 0;
   isLoadingNotifications = false;
+  unreadNotificationCount = 0;
 
   constructor(
-    private router: Router,
+    public router: Router,
     private authService: AuthService,
     private clientService: ClientService,
     private notificationService: NotificationService,
@@ -64,6 +66,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
       }
     });
     this.loadNotifications();
+    this.initializeLastVisit();
+    this.subscribeToUnreadCount();
   }
 
   ngOnDestroy(): void {
@@ -72,6 +76,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
     if (this.clientSubscription) {
       this.clientSubscription.unsubscribe();
+    }
+    if (this.unreadCountSubscription) {
+      this.unreadCountSubscription.unsubscribe();
     }
   }
 
@@ -90,6 +97,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
     );
   }
 
+  subscribeToUnreadCount(): void {
+    this.unreadCountSubscription = this.notificationService.getUnreadCountObservable().subscribe(
+      count => {
+        this.unreadNotificationCount = count;
+      }
+    );
+  }
+
   markAsRead(notification: Notification): void {
     if (!notification.read) {
       this.notificationService.markAsRead(notification.id);
@@ -103,11 +118,24 @@ export class NavbarComponent implements OnInit, OnDestroy {
   clearAllNotifications(): void {
     const now = new Date().toISOString();
     const userRole = this.isAdmin() ? 'admin' : 'user';
-    const lastVisitKey = `lastVisit_${userRole}_${this.currentUser?.id || 'default'}`;
+    const userId = this.currentUser?.id || 'default';
+    const lastVisitKey = `lastVisit_${userRole}_${userId}`;
+    
+    // Update lastVisit timestamp to clear client-based notifications
     localStorage.setItem(lastVisitKey, now);
     this.lastVisit = new Date(now);
     
+    // Also store a separate timestamp for client-related notifications
+    const clientNotificationsKey = `lastClientNotificationsClear_${userRole}_${userId}`;
+    localStorage.setItem(clientNotificationsKey, now);
+    
+    // Clear system notifications from service
     this.notificationService.clearAll();
+    
+    // Reload clients to refresh the counts
+    if (this.currentUser && this.authService.isAdmin()) {
+      this.loadClients();
+    }
     
     this.snackBar.open('All notifications cleared', 'Close', {
       duration: 2000,
@@ -119,16 +147,23 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   getNotificationCount(): number {
-    if (this.isAdmin()) {
-      return this.notifications.filter(n => !n.read).length + 
-             this.getNewClients().length + 
-             this.getUpdatedClients().length;
-    } else {
-      return this.notifications.filter(n => !n.read).length + 
-             this.getNewClients().length + 
-             this.getUpdatedClients().length + 
-             this.getAdminStatusChanges().length;
-    }
+    // Get client-based notification counts
+    const newClientsCount = this.getNewClients().length;
+    const updatedClientsCount = this.getUpdatedClients().length;
+    const adminChangesCount = this.getAdminStatusChanges().length;
+    
+    // Total count includes system notifications + client notifications
+    const totalCount = this.unreadNotificationCount + newClientsCount + updatedClientsCount + adminChangesCount;
+    
+    console.log('Notification count breakdown:', {
+      unreadSystemNotifications: this.unreadNotificationCount,
+      newClients: newClientsCount,
+      updatedClients: updatedClientsCount,
+      adminChanges: adminChangesCount,
+      total: totalCount
+    });
+    
+    return totalCount;
   }
 
   getNotificationIcon(type: string): string {
@@ -240,58 +275,124 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
 
   getNewClients(): Client[] {
-    if (!this.lastVisit) return [];
+    if (!this.clients || this.clients.length === 0) {
+      return [];
+    }
+
+    // Check for client notifications clear timestamp
+    const userRole = this.isAdmin() ? 'admin' : 'user';
+    const userId = this.currentUser?.id || 'default';
+    const clientNotificationsKey = `lastClientNotificationsClear_${userRole}_${userId}`;
+    const lastClearTime = localStorage.getItem(clientNotificationsKey);
+    
+    // Use the more recent timestamp between lastVisit and lastClearTime
+    let filterTime: Date = this.lastVisit || new Date(0);
+    if (lastClearTime) {
+      const clearTime = new Date(lastClearTime);
+      if (this.lastVisit && clearTime > this.lastVisit) {
+        filterTime = clearTime;
+      }
+    }
     
     return this.clients.filter(client => {
       if (!client.created_at) return false;
       const createdAt = new Date(client.created_at);
-      return createdAt > this.lastVisit!;
+      return createdAt > filterTime;
     }).sort((a, b) => {
       const dateA = new Date(a.created_at!).getTime();
       const dateB = new Date(b.created_at!).getTime();
       return dateB - dateA; // Newest first
-    }).slice(0, 10); // Increased limit to show more items
+    }).slice(0, 10);
   }
 
   getUpdatedClients(): Client[] {
-    if (!this.lastVisit) return [];
+    if (!this.clients || this.clients.length === 0) {
+      return [];
+    }
+
+    // Check for client notifications clear timestamp
+    const userRole = this.isAdmin() ? 'admin' : 'user';
+    const userId = this.currentUser?.id || 'default';
+    const clientNotificationsKey = `lastClientNotificationsClear_${userRole}_${userId}`;
+    const lastClearTime = localStorage.getItem(clientNotificationsKey);
     
+    // Use the more recent timestamp between lastVisit and lastClearTime
+    let filterTime: Date = this.lastVisit || new Date(0);
+    if (lastClearTime) {
+      const clearTime = new Date(lastClearTime);
+      if (this.lastVisit && clearTime > this.lastVisit) {
+        filterTime = clearTime;
+      }
+    }
+
     return this.clients.filter(client => {
-      if (!client.updated_at || !client.created_at) return false;
-      const updatedAt = new Date(client.updated_at);
-      const createdAt = new Date(client.created_at);
+      if (!client.updated_at) return false;
       
-      // Skip if this is a new client (handled by getNewClients)
-      if (Math.abs(updatedAt.getTime() - createdAt.getTime()) < 60000) {
+      const updatedAt = new Date(client.updated_at);
+      const createdAt = client.created_at ? new Date(client.created_at) : null;
+      
+      // Skip if this is a new client (created and updated at same time)
+      if (createdAt && Math.abs(updatedAt.getTime() - createdAt.getTime()) < 60000) {
         return false;
       }
       
-      // For admins, show all updates
-      if (this.isAdmin()) {
-        return updatedAt > this.lastVisit!;
-      } else {
-        // For regular users, only show their own updates (not admin updates)
-        return updatedAt > this.lastVisit! && 
-               client.updated_by_name === this.currentUser?.username;
+      // Skip if this is an admin action (updated by someone other than current user)
+      // Admin actions should only appear in Admin Actions section
+      if (client.updated_by_name && client.updated_by_name !== this.currentUser?.username) {
+        return false;
       }
+      
+      // Filter by clear timestamp
+      return updatedAt > filterTime;
     }).sort((a, b) => {
       const dateA = new Date(a.updated_at!).getTime();
       const dateB = new Date(b.updated_at!).getTime();
       return dateB - dateA; // Newest first
-    }).slice(0, 10); // Increased limit to show more items
+    }).slice(0, 10);
   }
 
   // Get admin status changes for regular users
   getAdminStatusChanges(): Client[] {
-    if (!this.lastVisit || this.isAdmin()) return [];
+    // If current user is admin, don't show Admin Actions section at all
+    if (this.isAdmin()) {
+      return [];
+    }
+
+    if (!this.clients || this.clients.length === 0) {
+      return [];
+    }
+
+    // Check for client notifications clear timestamp
+    const userRole = this.isAdmin() ? 'admin' : 'user';
+    const userId = this.currentUser?.id || 'default';
+    const clientNotificationsKey = `lastClientNotificationsClear_${userRole}_${userId}`;
+    const lastClearTime = localStorage.getItem(clientNotificationsKey);
     
+    // Use the more recent timestamp between lastVisit and lastClearTime
+    let filterTime: Date = this.lastVisit || new Date(0);
+    if (lastClearTime) {
+      const clearTime = new Date(lastClearTime);
+      if (this.lastVisit && clearTime > this.lastVisit) {
+        filterTime = clearTime;
+      }
+    }
+
     return this.clients.filter(client => {
-      if (!client.updated_at || !client.updated_by_name || !client.status) return false;
+      if (!client.updated_at || !client.updated_by_name || !client.status) {
+        return false;
+      }
+      
       const updatedAt = new Date(client.updated_at);
       
-      // Show status changes made by admins after the user's last visit
-      return updatedAt > this.lastVisit! && 
-             client.updated_by_name !== this.currentUser?.username;
+      // Filter by clear timestamp first
+      if (updatedAt <= filterTime) {
+        return false;
+      }
+      
+      // Show all updates made by someone other than the current user (admin actions)
+      const isAdminAction = client.updated_by_name !== this.currentUser?.username;
+      
+      return isAdminAction;
     }).sort((a, b) => {
       const dateA = new Date(a.updated_at!).getTime();
       const dateB = new Date(b.updated_at!).getTime();
@@ -319,8 +420,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   toggleNotifications(): void {
-    // Navigate to notifications page instead of showing dropdown
-    this.router.navigate(['/notifications']);
+    this.showNotifications = !this.showNotifications;
+    
+    if (this.showNotifications) {
+      // Mark system notifications as read when opening dropdown
+      this.notificationService.markAllAsRead();
+    }
   }
 
   private updateLastVisit(): void {
@@ -335,6 +440,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showNotifications = false;
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    const notificationWrapper = target.closest('.notifications-wrapper');
+    
+    // Close dropdown if clicking outside of it
+    if (!notificationWrapper && this.showNotifications) {
+      this.showNotifications = false;
+    }
+  }
 
   logout(): void {
     this.authService.logout();

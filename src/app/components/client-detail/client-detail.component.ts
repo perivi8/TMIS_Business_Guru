@@ -5,6 +5,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClientService, Client } from '../../services/client.service';
 import { AuthService } from '../../services/auth.service';
 import { ConfirmDeleteDialogComponent } from '../confirm-delete-dialog/confirm-delete-dialog.component';
+import { catchError, throwError } from 'rxjs';
 
 @Component({
   selector: 'app-client-detail',
@@ -153,56 +154,515 @@ export class ClientDetailComponent implements OnInit {
     return previewableExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
   }
 
+  isPdfDocumentType(docType: string): boolean {
+    const pdfDocumentTypes = [
+      'gst_document',
+      'bank_statement', 
+      'ie_code_document',
+      'partnership_deed_document',
+      'msme_certificate',
+      'incorporation_certificate',
+      'registration_certificate',
+      'license_document'
+    ];
+    return pdfDocumentTypes.includes(docType);
+  }
+
   previewDocument(docType: string): void {
-    if (!this.client || !this.client._id) return;
+    if (!this.client || !this.client._id) {
+      this.snackBar.open('Client information not available', 'Close', { duration: 3000 });
+      return;
+    }
     
-    this.clientService.downloadDocument(this.client._id, docType).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        // Clean up the URL after a delay
-        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    console.log(`👁️ Previewing document: ${docType} for client: ${this.client._id}`);
+    
+    // Show loading message
+    const loadingSnackBar = this.snackBar.open('Loading preview...', 'Cancel', { duration: 10000 });
+    
+    this.clientService.previewDocument(this.client._id, docType).subscribe({
+      next: (blob: Blob) => {
+        loadingSnackBar.dismiss();
+        
+        if (blob.size > 0) {
+          const url = window.URL.createObjectURL(blob);
+          const mimeType = blob.type || 'application/octet-stream';
+          
+          if (mimeType.startsWith('image/')) {
+            // Open image in new tab with proper styling
+            const newWindow = window.open('', '_blank');
+            if (newWindow) {
+              newWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>Image Preview - ${docType}</title>
+                    <style>
+                      body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
+                      img { max-width: 90%; max-height: 90vh; object-fit: contain; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+                    </style>
+                  </head>
+                  <body>
+                    <img src="${url}" onload="setTimeout(() => URL.revokeObjectURL('${url}'), 1000)" />
+                  </body>
+                </html>
+              `);
+              newWindow.document.close();
+            }
+          } else if (mimeType === 'application/pdf') {
+            // Open PDF in new tab
+            const newWindow = window.open('', '_blank');
+            if (newWindow) {
+              newWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>PDF Preview - ${docType}</title>
+                    <style>
+                      body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+                      embed { width: 100%; height: 100vh; border: none; }
+                    </style>
+                  </head>
+                  <body>
+                    <embed src="${url}" type="application/pdf" onload="setTimeout(() => URL.revokeObjectURL('${url}'), 1000)" />
+                  </body>
+                </html>
+              `);
+              newWindow.document.close();
+            }
+          } else {
+            // For other types, just open the blob URL
+            window.open(url, '_blank');
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }
+        } else {
+          console.warn('Preview blob is empty, trying direct download method');
+          this.tryDirectPreview(docType);
+        }
       },
       error: (error) => {
-        this.snackBar.open('Error previewing document', 'Close', { duration: 3000 });
+        loadingSnackBar.dismiss();
+        console.error('Error previewing document:', error);
+        
+        // Provide specific error messages
+        let errorMessage = 'Error previewing document. ';
+        if (error.message) {
+          errorMessage += error.message;
+        } else if (error.status === 404) {
+          errorMessage += 'Document not found.';
+        } else if (error.status === 403) {
+          errorMessage += 'Access denied.';
+        } else if (error.status === 500) {
+          errorMessage += 'Server error.';
+        } else {
+          errorMessage += 'Please try again.';
+        }
+        
+        this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
+        
+        // Try fallback method
+        this.tryDirectPreview(docType);
       }
     });
   }
 
-  downloadDocument(docType: string): void {
-    if (!this.client || !this.client._id) return;
+  private tryDirectPreview(docType: string): void {
+    if (!this.client?._id) {
+      this.snackBar.open('Client information not available.', 'Close', { duration: 3000 });
+      return;
+    }
+
+    console.log('Trying direct URL preview...');
     
-    this.clientService.downloadDocument(this.client._id, docType).subscribe({
-      next: (blob: Blob) => {
-        // Create a blob URL for the file
-        const fileURL = URL.createObjectURL(blob);
-        
-        // Create a temporary anchor element
-        const link = document.createElement('a');
-        link.href = fileURL;
-        
-        // Set the download attribute with the correct filename
-        const fileName = this.client!.processed_documents?.[docType]?.file_name || `${docType}.pdf`;
-        link.download = fileName;
-        
-        // Append to body, click and remove
-        document.body.appendChild(link);
-        link.click();
-        
-        // Clean up
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(fileURL);
-        }, 100);
+    // Use the service method to get direct URL
+    this.clientService.getDirectDocumentUrl(this.client._id, docType).subscribe({
+      next: (directUrl: string) => {
+        console.log('Opening direct URL for preview:', directUrl);
+        this.openDocumentForViewing(directUrl, docType);
       },
       error: (error) => {
-        console.error('Error downloading document:', error);
-        this.snackBar.open('Error downloading document. Please try again.', 'Close', { 
-          duration: 5000,
-          panelClass: ['error-snackbar']
-        });
+        console.error('Failed to get direct URL:', error);
+        
+        // Final fallback: try to get URL from local client data
+        if (this.client?.documents && this.client.documents[docType]) {
+          const documentUrl = this.client.documents[docType];
+          if (typeof documentUrl === 'string' && documentUrl.startsWith('https://')) {
+            console.log('Using local client data URL:', documentUrl);
+            this.openDocumentForViewing(documentUrl, docType);
+          } else if (typeof documentUrl === 'object' && documentUrl.url) {
+            console.log('Using local client data object URL:', documentUrl.url);
+            this.openDocumentForViewing(documentUrl.url, docType);
+          } else {
+            this.snackBar.open('Unable to preview document. Please try downloading instead.', 'Close', { duration: 3000 });
+          }
+        } else {
+          this.snackBar.open('Document not available for preview.', 'Close', { duration: 3000 });
+        }
       }
     });
+  }
+
+  private openDocumentForViewing(url: string, docType: string): void {
+    console.log('Opening document for viewing:', url);
+    
+    // For PDFs, open in new tab for viewing (not downloading)
+    if (this.isPdfDocumentType(docType) || url.toLowerCase().includes('.pdf')) {
+      // Open PDF in new tab for viewing
+      const newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+      if (newWindow) {
+        this.snackBar.open('PDF opened for viewing in new tab', 'Close', { duration: 3000 });
+      } else {
+        this.snackBar.open('Please allow popups to view the document', 'Close', { duration: 3000 });
+      }
+    } else {
+      // For images, open in new tab with better styling
+      const newWindow = window.open('', '_blank', 'noopener,noreferrer');
+      if (newWindow) {
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Document Preview - ${docType}</title>
+              <style>
+                body { 
+                  margin: 0; 
+                  padding: 20px; 
+                  display: flex; 
+                  justify-content: center; 
+                  align-items: center; 
+                  min-height: 100vh; 
+                  background: #f5f5f5; 
+                  font-family: Arial, sans-serif;
+                }
+                img { 
+                  max-width: 90%; 
+                  max-height: 90vh; 
+                  object-fit: contain; 
+                  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                  border-radius: 8px;
+                }
+                .title {
+                  position: absolute;
+                  top: 10px;
+                  left: 20px;
+                  background: rgba(0,0,0,0.7);
+                  color: white;
+                  padding: 8px 16px;
+                  border-radius: 4px;
+                  font-size: 14px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="title">${this.formatDocumentName(docType)}</div>
+              <img src="${url}" alt="Document Preview" />
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+        this.snackBar.open('Document opened for viewing in new tab', 'Close', { duration: 3000 });
+      } else {
+        this.snackBar.open('Please allow popups to view the document', 'Close', { duration: 3000 });
+      }
+    }
+  }
+
+  downloadDocument(docType: string): void {
+    if (!this.client || !this.client._id) {
+      this.snackBar.open('Client information not available', 'Close', { duration: 3000 });
+      return;
+    }
+    
+    console.log(`📥 Downloading document: ${docType} for client: ${this.client._id}`);
+    
+    // Show loading message
+    const loadingSnackBar = this.snackBar.open('Preparing download...', 'Cancel', { duration: 10000 });
+    
+    // Since backend endpoints are failing with 500 errors, go directly to URL-based download
+    // This is more reliable and faster than trying multiple failing endpoints
+    console.log('Skipping backend endpoints due to server errors, using direct URL method...');
+    loadingSnackBar.dismiss();
+    this.tryDirectUrlDownload(docType);
+  }
+
+  private tryAlternativeDownload(docType: string): void {
+    if (!this.client?._id) return;
+    
+    console.log('Trying alternative download methods...');
+    
+    // Try direct download method
+    this.clientService.downloadDocumentDirect(this.client._id, docType).subscribe({
+      next: (blob: Blob) => {
+        if (blob.size > 0) {
+          const fileURL = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = fileURL;
+          link.download = this.getDownloadFilename(docType);
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(fileURL);
+          }, 100);
+          this.snackBar.open('Download completed via alternative method!', 'Close', { duration: 3000 });
+        } else {
+          this.tryRawDownload(docType);
+        }
+      },
+      error: () => {
+        this.tryRawDownload(docType);
+      }
+    });
+  }
+
+  private tryRawDownload(docType: string): void {
+    if (!this.client?._id) return;
+    
+    console.log('Trying raw download method...');
+    
+    // Try raw download method
+    this.clientService.downloadDocumentRaw(this.client._id, docType).subscribe({
+      next: (blob: Blob) => {
+        if (blob.size > 0) {
+          const fileURL = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = fileURL;
+          link.download = this.getDownloadFilename(docType);
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(fileURL);
+          }, 100);
+          this.snackBar.open('Download completed via raw method!', 'Close', { duration: 3000 });
+        } else {
+          this.tryDirectUrlDownload(docType);
+        }
+      },
+      error: () => {
+        this.tryDirectUrlDownload(docType);
+      }
+    });
+  }
+
+  private tryDirectUrlDownload(docType: string): void {
+    if (!this.client?._id) {
+      this.snackBar.open('Client information not available.', 'Close', { duration: 3000 });
+      return;
+    }
+
+    console.log('Trying direct URL download...');
+    
+    // Use the service method to get direct URL
+    this.clientService.getDirectDocumentUrl(this.client._id, docType).subscribe({
+      next: (directUrl: string) => {
+        console.log('Using direct URL for download:', directUrl);
+        this.downloadFileFromUrl(directUrl, docType);
+      },
+      error: (error) => {
+        console.error('Failed to get direct URL for download:', error);
+        
+        // Final fallback: try to get URL from local client data
+        if (this.client?.documents && this.client.documents[docType]) {
+          const documentUrl = this.client.documents[docType];
+          if (typeof documentUrl === 'string' && documentUrl.startsWith('https://')) {
+            console.log('Using local client data URL for download:', documentUrl);
+            this.downloadFileFromUrl(documentUrl, docType);
+          } else if (typeof documentUrl === 'object' && documentUrl.url) {
+            console.log('Using local client data object URL for download:', documentUrl.url);
+            this.downloadFileFromUrl(documentUrl.url, docType);
+          } else {
+            this.snackBar.open('Unable to download file. Please contact support.', 'Close', { duration: 5000 });
+          }
+        } else {
+          this.snackBar.open('Document not available for download.', 'Close', { duration: 3000 });
+        }
+      }
+    });
+  }
+
+  private downloadFileFromUrl(url: string, docType: string): void {
+    console.log('Downloading file from URL:', url);
+    
+    // Show downloading message
+    const downloadingSnackBar = this.snackBar.open('Downloading file...', '', { duration: 5000 });
+    
+    // Check if it's a PDF file - PDFs from Cloudinary often have CORS issues with fetch
+    const isPdf = url.toLowerCase().includes('.pdf') || 
+                  docType.includes('gst') || 
+                  docType.includes('bank_statement') || 
+                  docType.includes('certificate') || 
+                  docType.includes('deed') ||
+                  docType.includes('ie_code') ||
+                  docType === 'ie_code_document' ||
+                  this.isPdfDocumentType(docType);
+    
+    if (isPdf) {
+      // For PDFs, use direct download method to avoid corruption
+      console.log('PDF detected, using direct download method to avoid corruption...');
+      downloadingSnackBar.dismiss();
+      this.downloadPdfDirectly(url, docType);
+      return;
+    }
+    
+    // For images, use fetch method which works better
+    fetch(url, {
+      mode: 'cors',
+      credentials: 'omit' // Don't send credentials to avoid CORS issues
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        downloadingSnackBar.dismiss();
+        
+        // Create object URL from blob
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = this.getDownloadFilename(docType, url);
+        
+        // Force download by not setting target="_blank"
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up blob URL
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        
+        this.snackBar.open('File downloaded successfully!', 'Close', { duration: 3000 });
+      })
+      .catch(error => {
+        downloadingSnackBar.dismiss();
+        console.error('Error downloading file:', error);
+        
+        // Fallback to direct download method
+        this.downloadPdfDirectly(url, docType);
+      });
+  }
+
+  private downloadPdfDirectly(url: string, docType: string): void {
+    console.log('Using direct download method for PDF:', url);
+    
+    // For PDFs, avoid fetch/blob completely to prevent corruption
+    // Use XMLHttpRequest with responseType 'arraybuffer' for binary integrity
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'arraybuffer';
+    
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        // Create blob from array buffer (preserves binary data)
+        const blob = new Blob([xhr.response], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = this.getDownloadFilename(docType, url);
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        
+        this.snackBar.open('PDF saved to Downloads folder!', 'Close', { duration: 3000 });
+      } else {
+        console.error('XHR failed, trying direct link method');
+        this.downloadPdfAlternative(url, docType);
+      }
+    };
+    
+    xhr.onerror = () => {
+      console.error('XHR error, trying direct link method');
+      this.downloadPdfAlternative(url, docType);
+    };
+    
+    xhr.send();
+  }
+
+  private downloadPdfAlternative(url: string, docType: string): void {
+    console.log('Using direct link method for PDF (no processing):', url);
+    
+    // Method 1: Try creating a temporary anchor with download attribute
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = this.getDownloadFilename(docType, url);
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Method 2: If that doesn't work, try modifying Cloudinary URL for forced download
+    setTimeout(() => {
+      if (confirm('If the download didn\'t start, click OK to try an alternative method.')) {
+        // For Cloudinary URLs, add fl_attachment flag to force download
+        let downloadUrl = url;
+        if (url.includes('cloudinary.com')) {
+          // Insert fl_attachment before the file path to force download
+          downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
+        } else {
+          // For other URLs, try adding download parameter
+          downloadUrl = url + (url.includes('?') ? '&' : '?') + 'response-content-disposition=attachment';
+        }
+        
+        console.log('Trying forced download URL:', downloadUrl);
+        window.open(downloadUrl, '_blank');
+      }
+    }, 2000);
+    
+    this.snackBar.open('PDF download initiated. If it doesn\'t start, you\'ll see a confirmation dialog.', 'Close', { 
+      duration: 4000 
+    });
+  }
+
+  private getDownloadFilename(docType: string, url?: string): string {
+    // Try to get filename from processed_documents first
+    if (this.client?.processed_documents?.[docType]?.file_name) {
+      return this.client.processed_documents[docType].file_name;
+    }
+    
+    // Try to extract extension from URL if provided
+    let extension = 'bin';
+    if (url) {
+      const urlParts = url.split('.');
+      const urlExtension = urlParts[urlParts.length - 1].split('?')[0].toLowerCase();
+      if (['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(urlExtension)) {
+        extension = urlExtension;
+      }
+    }
+    
+    // If no extension from URL, use document type mapping
+    if (extension === 'bin') {
+      const extensionMap: {[key: string]: string} = {
+        'gst_document': 'pdf',
+        'bank_statement': 'pdf',
+        'ie_code_document': 'pdf',
+        'business_pan_document': 'jpg',
+        'owner_pan_document': 'jpg',
+        'owner_aadhaar_document': 'jpg',
+        'owner_aadhar': 'jpg',
+        'partnership_deed_document': 'pdf',
+        'msme_certificate': 'pdf',
+        'incorporation_certificate': 'pdf'
+      };
+      extension = extensionMap[docType] || 'bin';
+    }
+    
+    // Generate a filename based on client name and document type
+    const clientName = this.client?.legal_name || this.client?.user_name || 'document';
+    const sanitizedName = clientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const friendlyType = docType.replace(/_/g, '-');
+    
+    return `${sanitizedName}-${friendlyType}.${extension}`;
   }
 
   startEdit(): void {

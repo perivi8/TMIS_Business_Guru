@@ -255,6 +255,12 @@ export class ClientDetailsDialogComponent implements OnInit {
 
   previewDocument(type: string, url?: string): void {
     event?.preventDefault();
+    
+    if (!this.client._id) {
+      this.snackBar.open('Client ID is missing', 'Close', { duration: 3000 });
+      return;
+    }
+
     const documentUrl = url || this.getDocumentUrl(type);
     
     if (!documentUrl) {
@@ -325,11 +331,83 @@ export class ClientDetailsDialogComponent implements OnInit {
         this.downloadDataUrl(documentUrl, type);
       }
     } else {
-      // Handle direct URLs
-      const newWindow = window.open('', '_blank');
-      if (newWindow) {
-        newWindow.location.href = documentUrl;
-      }
+      // Use backend preview endpoint for better handling
+      this.clientService.previewDocument(this.client._id, type).subscribe({
+        next: (blob: Blob) => {
+          if (blob.size > 0) {
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Determine content type from blob
+            const mimeType = blob.type || 'application/octet-stream';
+            
+            if (mimeType.startsWith('image/')) {
+              // Open image in new tab
+              const newWindow = window.open('', '_blank');
+              if (newWindow) {
+                newWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <title>Image Preview</title>
+                      <style>
+                        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f5f5f5; }
+                        img { max-width: 90%; max-height: 90%; object-fit: contain; }
+                      </style>
+                    </head>
+                    <body>
+                      <img src="${blobUrl}" onload="setTimeout(() => URL.revokeObjectURL('${blobUrl}'), 1000)" />
+                    </body>
+                  </html>
+                `);
+                newWindow.document.close();
+              }
+            } else if (mimeType === 'application/pdf') {
+              // Open PDF in new tab
+              const newWindow = window.open('', '_blank');
+              if (newWindow) {
+                newWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <title>PDF Preview</title>
+                      <style>
+                        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+                        embed { width: 100%; height: 100vh; border: none; }
+                      </style>
+                    </head>
+                    <body>
+                      <embed src="${blobUrl}" type="application/pdf" onload="setTimeout(() => URL.revokeObjectURL('${blobUrl}'), 1000)" />
+                    </body>
+                  </html>
+                `);
+                newWindow.document.close();
+              }
+            } else {
+              // For other types, just open the blob URL
+              window.open(blobUrl, '_blank');
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            }
+          } else {
+            console.warn('Preview blob is empty, trying direct URL');
+            this.tryDirectPreview(documentUrl);
+          }
+        },
+        error: (error: any) => {
+          console.error('Error previewing document:', error);
+          this.snackBar.open('Error previewing document. Please try again.', 'Close', { duration: 3000 });
+          // Fallback to direct URL
+          this.tryDirectPreview(documentUrl);
+        }
+      });
+    }
+  }
+
+  private tryDirectPreview(documentUrl: string): void {
+    // Fallback: try to open the direct URL
+    if (documentUrl.startsWith('https://res.cloudinary.com') || documentUrl.startsWith('http')) {
+      window.open(documentUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      this.snackBar.open('Unable to preview document. Please try downloading instead.', 'Close', { duration: 3000 });
     }
   }
 
@@ -350,34 +428,53 @@ export class ClientDetailsDialogComponent implements OnInit {
     if (documentUrl.startsWith('data:')) {
       this.downloadDataUrl(documentUrl, type);
     } else {
-      // Show loading message for PDF files
-      if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
-        this.snackBar.open('Preparing PDF download...', 'Close', { duration: 2000 });
-      }
-
+      // Show loading message
+      const loadingSnackBar = this.snackBar.open('Preparing download...', 'Cancel', { duration: 10000 });
+      
       // First try the standard download endpoint
       this.clientService.downloadDocument(this.client._id, type).subscribe({
         next: (blob: Blob) => {
+          loadingSnackBar.dismiss();
+          
           // Check if the blob is valid (not empty and has proper size)
           if (blob.size > 0) {
             console.log(`Downloaded blob size: ${blob.size} bytes, type: ${blob.type}`);
             
-            // For PDF files, validate the blob content
-            if (type.toLowerCase().includes('pdf') || type.includes('gst') || type.includes('bank')) {
-              this.validateAndDownloadPDF(blob, type);
-            } else {
-              const objectUrl = window.URL.createObjectURL(blob);
-              this.downloadFile(objectUrl, type);
-              setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
-            }
+            // Create object URL and download immediately - no validation needed
+            // The backend has already handled validation and format conversion
+            const objectUrl = window.URL.createObjectURL(blob);
+            this.downloadFile(objectUrl, type);
+            setTimeout(() => window.URL.revokeObjectURL(objectUrl), 100);
+            
+            // Show success message
+            this.snackBar.open('Download completed successfully!', 'Close', { duration: 3000 });
           } else {
             console.warn('Downloaded blob is empty, trying direct download method');
             this.tryDirectDownload(type);
           }
         },
         error: (error: any) => {
+          loadingSnackBar.dismiss();
           console.error('Error downloading file:', error);
-          console.log('Trying direct download method as fallback');
+          
+          // Provide more specific error messages
+          let errorMessage = 'Download failed. ';
+          if (error.status === 404) {
+            errorMessage += 'Document not found.';
+          } else if (error.status === 403) {
+            errorMessage += 'Access denied.';
+          } else if (error.status === 500) {
+            errorMessage += 'Server error.';
+          } else if (error.status === 0) {
+            errorMessage += 'Network connection issue.';
+          } else {
+            errorMessage += 'Please try again.';
+          }
+          
+          this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
+          
+          // Try alternative download methods
+          console.log('Trying alternative download methods...');
           this.tryDirectDownload(type);
         }
       });
@@ -730,25 +827,6 @@ export class ClientDetailsDialogComponent implements OnInit {
     }
   }
 
-  private validateAndDownloadPDF(blob: Blob, type: string): void {
-    try {
-      console.log(`Validating PDF blob: ${blob.size} bytes, type: ${blob.type}`);
-      
-      // Create object URL and download regardless of validation
-      // The backend has already validated the content
-      const objectUrl = window.URL.createObjectURL(blob);
-      this.downloadFile(objectUrl, type);
-      setTimeout(() => window.URL.revokeObjectURL(objectUrl), 100);
-      
-      // Show success message
-      this.snackBar.open('PDF downloaded successfully!', 'Close', { duration: 3000 });
-      
-    } catch (error) {
-      console.error('Error validating PDF blob:', error);
-      // Fallback to direct download
-      this.tryDirectDownload(type);
-    }
-  }
 
   private handleDocumentError(error: any): void {
     console.error('Error with document operation:', error);

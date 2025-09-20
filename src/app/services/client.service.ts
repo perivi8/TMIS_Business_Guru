@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subscription, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { tap, catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService, User } from './auth.service';
 import { NotificationService } from './notification.service';
@@ -388,27 +388,132 @@ export class ClientService implements OnDestroy {
   }
 
   downloadDocument(clientId: string, documentType: string): Observable<Blob> {
+    console.log(`📥 Downloading document: ${documentType} for client: ${clientId}`);
     return this.http.get(`${environment.apiUrl}/clients/${clientId}/download/${documentType}`, {
       headers: this.getFormHeaders(),
       responseType: 'blob',
       withCredentials: true
-    });
+    }).pipe(
+      tap(blob => {
+        console.log(`✅ Download successful: ${documentType} (${blob.size} bytes)`);
+      }),
+      catchError(error => {
+        console.error(`❌ Download failed for ${documentType}:`, error);
+        let errorMessage = 'Download failed';
+        if (error.status === 404) {
+          errorMessage = 'Document not found';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error - please try again';
+        } else if (error.status === 0) {
+          errorMessage = 'Network connection issue';
+        }
+        return throwError(() => new Error(errorMessage));
+      })
+    );
   }
 
   downloadDocumentDirect(clientId: string, documentType: string): Observable<Blob> {
+    console.log(`📥 Direct downloading document: ${documentType} for client: ${clientId}`);
     return this.http.get(`${environment.apiUrl}/clients/${clientId}/download-direct/${documentType}`, {
       headers: this.getFormHeaders(),
       responseType: 'blob',
       withCredentials: true
-    });
+    }).pipe(
+      tap(blob => {
+        console.log(`✅ Direct download successful: ${documentType} (${blob.size} bytes)`);
+      }),
+      catchError(error => {
+        console.error(`❌ Direct download failed for ${documentType}:`, error);
+        return throwError(() => error);
+      })
+    );
   }
 
   downloadDocumentRaw(clientId: string, documentType: string): Observable<Blob> {
+    console.log(`📥 Raw downloading document: ${documentType} for client: ${clientId}`);
     return this.http.get(`${environment.apiUrl}/clients/${clientId}/download-raw/${documentType}`, {
       headers: this.getFormHeaders(),
       responseType: 'blob',
       withCredentials: true
-    });
+    }).pipe(
+      tap(blob => {
+        console.log(`✅ Raw download successful: ${documentType} (${blob.size} bytes)`);
+      }),
+      catchError(error => {
+        console.error(`❌ Raw download failed for ${documentType}:`, error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  previewDocument(clientId: string, documentType: string): Observable<Blob> {
+    console.log(`👁️ Previewing document: ${documentType} for client: ${clientId}`);
+    return this.http.get(`${environment.apiUrl}/clients/${clientId}/preview/${documentType}`, {
+      headers: this.getFormHeaders(),
+      responseType: 'blob',
+      withCredentials: false  // Disable credentials to avoid CORS issues with Cloudinary redirects
+    }).pipe(
+      tap(blob => {
+        console.log(`✅ Preview successful: ${documentType} (${blob.size} bytes, type: ${blob.type})`);
+      }),
+      catchError(error => {
+        console.error(`❌ Preview failed for ${documentType}:`, error);
+        let errorMessage = 'Preview failed';
+        if (error.status === 404) {
+          errorMessage = 'Document not found';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error - please try again';
+        } else if (error.status === 0) {
+          errorMessage = 'Network connection issue';
+        }
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
+
+  // Method to get direct document URL from Cloudinary (bypasses backend)
+  getDirectDocumentUrl(clientId: string, documentType: string): Observable<string> {
+    return this.getClientDetails(clientId).pipe(
+      tap(response => {
+        console.log(`📋 Getting direct URL for ${documentType} from client data`);
+      }),
+      catchError(error => {
+        console.error(`❌ Failed to get client details for direct URL:`, error);
+        return throwError(() => new Error('Failed to get document URL'));
+      })
+    ).pipe(
+      tap(response => {
+        const client = response.client;
+        if (client.documents && client.documents[documentType]) {
+          const docInfo = client.documents[documentType];
+          if (typeof docInfo === 'string' && docInfo.startsWith('https://')) {
+            console.log(`✅ Found direct URL: ${docInfo}`);
+          } else if (typeof docInfo === 'object' && docInfo.url) {
+            console.log(`✅ Found direct URL from object: ${docInfo.url}`);
+          }
+        }
+      })
+    ).pipe(
+      map((response: { client: Client }) => {
+        const client = response.client;
+        if (!client.documents || !client.documents[documentType]) {
+          throw new Error('Document not found in client data');
+        }
+        
+        const docInfo = client.documents[documentType];
+        if (typeof docInfo === 'string' && docInfo.startsWith('https://')) {
+          return docInfo;
+        } else if (typeof docInfo === 'object' && docInfo.url) {
+          return docInfo.url;
+        } else {
+          throw new Error('Invalid document URL format');
+        }
+      })
+    );
   }
 
   deleteClient(clientId: string): Observable<any> {

@@ -545,9 +545,18 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Account Name</mat-label>
+              <input matInput formControlName="account_name">
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
               <mat-label>Account Number</mat-label>
               <input matInput formControlName="account_number">
             </mat-form-field>
+
+            <div class="form-field"></div> <!-- Empty div for layout balance -->
           </div>
 
           <div class="form-row">

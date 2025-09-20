@@ -691,7 +691,7 @@ export class ClientDetailComponent implements OnInit {
       'state', 'pincode', 'business_name', 'constitution_type', 'gst_number',
       'gst_status', 'business_pan', 'ie_code', 'website', 'business_url',
       'required_loan_amount', 'loan_purpose', 'repayment_period', 
-      'monthly_income', 'existing_loans', 'bank_name', 'account_number',
+      'monthly_income', 'existing_loans', 'bank_name', 'account_name', 'account_number',
       'ifsc_code', 'bank_type', 'new_business_account',
       'gateway', 'transaction_done_by_client', 'total_credit_amount',
       'average_monthly_balance', 'transaction_months', 'new_current_account',

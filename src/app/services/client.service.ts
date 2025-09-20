@@ -43,6 +43,7 @@ export interface Client {
   existing_loans?: string;
   bank_account: string;
   bank_name?: string;
+  account_name?: string;
   account_number?: string;
   ifsc_code?: string;
   account_type?: string;

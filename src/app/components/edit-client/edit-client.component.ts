@@ -100,6 +100,7 @@ export class EditClientComponent implements OnInit {
       
       // Bank Information
       bank_name: [''],
+      account_name: [''],
       account_number: [''],
       ifsc_code: ['', Validators.pattern('^[A-Z]{4}0[A-Z0-9]{6}$')],
       bank_type: [''],
@@ -235,6 +236,7 @@ export class EditClientComponent implements OnInit {
       monthly_income: client.monthly_income || 0,
       existing_loans: client.existing_loans || '',
       bank_name: client.bank_name || '',
+      account_name: client.account_name || '',
       account_number: client.account_number || '',
       ifsc_code: client.ifsc_code || '',
       bank_type: client.bank_type || '',

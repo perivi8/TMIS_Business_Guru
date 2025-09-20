@@ -115,31 +115,44 @@ export class NotificationService {
 
   private playNotificationSound() {
     try {
-      // Check if audio file exists before trying to play
-      const audio = new Audio('assets/sounds/notification.mp3');
-      
-      // Set up error handling
-      audio.onerror = (error) => {
-        console.warn('Notification sound file not found or failed to load. Skipping audio notification.');
-      };
-      
-      // Try to play with better error handling
-      const playPromise = audio.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          // Handle autoplay policy restrictions or missing file
-          if (error.name === 'NotAllowedError') {
-            console.info('Audio autoplay blocked by browser policy. User interaction required for sound.');
-          } else if (error.name === 'NotSupportedError') {
-            console.warn('Notification sound format not supported or file not found.');
-          } else {
-            console.warn('Could not play notification sound:', error.message);
-          }
-        });
+      // Create a simple beep sound using Web Audio API as fallback
+      // This avoids the need for external sound files
+      this.playBeepSound();
+    } catch (error) {
+      console.warn('Notification sound failed:', error);
+    }
+  }
+
+  private playBeepSound() {
+    try {
+      // Check if Web Audio API is supported
+      if (typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined') {
+        const AudioContextClass = AudioContext || (window as any).webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        
+        // Create a simple beep sound
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Configure the beep
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800 Hz frequency
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Low volume
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2); // Fade out
+        
+        // Play the beep for 200ms
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+        
+        console.log('Notification beep played successfully');
+      } else {
+        console.info('Web Audio API not supported - notification sound disabled');
       }
     } catch (error) {
-      console.warn('Notification sound initialization failed:', error);
+      // Silently fail if audio is not supported or blocked
+      console.info('Audio notification not available:', error instanceof Error ? error.message : 'Unknown error');
     }
   }
 

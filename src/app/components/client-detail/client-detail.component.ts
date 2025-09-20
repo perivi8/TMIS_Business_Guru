@@ -30,13 +30,17 @@ export class ClientDetailComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    const clientId = this.route.snapshot.paramMap.get('id');
-    if (clientId) {
-      this.loadClientDetails(clientId);
-    } else {
-      this.error = 'Client ID not found';
-      this.loading = false;
-    }
+    this.route.paramMap.subscribe(params => {
+      const clientId = params.get('id');
+      if (clientId) {
+        this.loading = true;
+        this.error = '';
+        this.loadClientDetails(clientId);
+      } else {
+        this.error = 'Client ID not found';
+        this.loading = false;
+      }
+    });
   }
 
   loadClientDetails(clientId: string): void {

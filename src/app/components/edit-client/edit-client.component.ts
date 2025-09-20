@@ -668,11 +668,16 @@ export class EditClientComponent implements OnInit {
     console.log('company_email from form:', formValue.company_email);
     console.log('optional_mobile_number from form:', formValue.optional_mobile_number);
     
+    // Fields that should always be included, even if empty
+    const alwaysIncludeFields = ['account_name', 'registration_number', 'company_email', 'optional_mobile_number'];
+    
     Object.keys(formValue).forEach(key => {
       const value = formValue[key];
-      if (value !== null && value !== undefined && value !== '') {
+      const shouldInclude = value !== null && value !== undefined && value !== '' || alwaysIncludeFields.includes(key);
+      
+      if (shouldInclude) {
         // Debug the specific fields we're tracking
-        if (key === 'registration_number' || key === 'company_email' || key === 'optional_mobile_number') {
+        if (key === 'registration_number' || key === 'company_email' || key === 'optional_mobile_number' || key === 'account_name') {
           console.log(`Adding to FormData - ${key}: ${value}`);
         }
         
@@ -680,11 +685,11 @@ export class EditClientComponent implements OnInit {
         if (typeof value === 'object' && value !== null) {
           formData.append(key, JSON.stringify(value));
         } else {
-          formData.append(key, value.toString());
+          formData.append(key, value ? value.toString() : '');
         }
       } else {
-        // Log when fields are empty/null/undefined
-        if (key === 'registration_number' || key === 'company_email' || key === 'optional_mobile_number') {
+        // Log when fields are empty/null/undefined and not in always include list
+        if (key === 'registration_number' || key === 'company_email' || key === 'optional_mobile_number' || key === 'account_name') {
           console.log(`NOT adding to FormData - ${key}: ${value} (empty/null/undefined)`);
         }
       }
@@ -707,7 +712,7 @@ export class EditClientComponent implements OnInit {
       .then(() => {
         this.snackBar.open('Client updated successfully', 'Close', { duration: 3000 });
         this.saving = false;
-        this.router.navigate(['/clients']);
+        this.router.navigate(['/client-detail', this.clientId]);
       })
       .catch((error) => {
         console.error('Error updating client:', error);

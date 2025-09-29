@@ -7,9 +7,17 @@
 
   <!-- Dashboard Content -->
   <div *ngIf="!loading">
-    <div class="welcome-section">
-      <h1>Admin Dashboard</h1>
-      <p>Welcome, {{ currentUser && currentUser.username }}! Manage all clients and system operations</p>
+    <!-- Modern Header Section -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-title">
+          <mat-icon class="header-icon">dashboard</mat-icon>
+          <div class="title-text">
+            <h1>Admin Dashboard</h1>
+            <p>Welcome, {{ currentUser && currentUser.username }}! Manage all clients and system operations</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Stats Cards -->
@@ -101,7 +109,7 @@
       <mat-card class="stat-card">
         <mat-card-content>
           <div class="stat-content">
-            <mat-icon class="stat-icon total">group</mat-icon>
+            <mat-icon class="stat-icon total" style="color: #673ab7;" >group</mat-icon>
             <div class="stat-info">
               <h3>{{ stats.totalTeam }}</h3>
               <p>Total Team</p>
@@ -308,7 +316,7 @@
           <!-- Team Stats Overview -->
           <div class="team-overview">
             <div class="overview-card total-team" [style.animation-delay]="'0.1s'">
-              <mat-icon>group</mat-icon>
+              <mat-icon style="color: #673ab7;">group</mat-icon>
               <div class="overview-info">
                 <h3>{{ stats.totalTeam }}</h3>
                 <p>Total Team Members</p>

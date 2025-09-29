@@ -1,25 +1,32 @@
-<div class="enquiry-container">
-  <!-- Header Section -->
-  <div class="enquiry-header">
+<div class="container">
+  <!-- Modern Header Section -->
+  <div class="page-header">
     <div class="header-content">
-      <h1 class="page-title">
-        <mat-icon>assignment</mat-icon>
-        Enquiry Management
-      </h1>
-      <div class="header-actions">
-        <mat-form-field appearance="outline" class="search-field">
-          <mat-label>Search enquiries...</mat-label>
-          <input matInput [(ngModel)]="searchTerm" (keyup)="applyFilters()" placeholder="Search by name, mobile, staff...">
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
-        <button mat-raised-button color="primary" class="add-button" (click)="showAddForm()">
-          <mat-icon>add</mat-icon>
-          Add New Enquiry
-        </button>
+      <div class="header-title">
+        <mat-icon class="header-icon">assignment</mat-icon>
+        <div class="title-text">
+          <h1>Enquiry Management</h1>
+          <p>Manage and track all customer enquiries and leads</p>
+        </div>
       </div>
     </div>
-    
-    <!-- Filters and Sort Section -->
+  </div>
+
+  <!-- Header Actions -->
+  <div class="header-actions">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search enquiries...</mat-label>
+      <input matInput [(ngModel)]="searchTerm" (keyup)="applyFilters()" placeholder="Search by name, mobile, staff...">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+    <button mat-raised-button color="primary" class="add-button" (click)="showAddForm()">
+      <mat-icon>add</mat-icon>
+      Add New Enquiry
+    </button>
+  </div>
+
+  <!-- Filters and Sort Section -->
+  <mat-card class="filters-card">
     <div class="filters-section">
       <div class="filters-row">
         <!-- Sort Options -->
@@ -111,7 +118,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </mat-card>
 
   <!-- Registration Form Modal -->
   <div class="form-overlay" *ngIf="showRegistrationForm">
@@ -220,14 +227,16 @@
     </div>
   </div>
 
-  <!-- Excel-like Table -->
-  <div class="table-container">
-    <div class="table-header">
-      <h3>
+  <!-- Enquiry Records Table -->
+  <mat-card class="enquiry-records-card">
+    <mat-card-header>
+      <mat-card-title>
         <mat-icon>table_chart</mat-icon>
-        Enquiry Records ({{ filteredEnquiries.length }})
-      </h3>
-    </div>
+        Enquiry Records
+      </mat-card-title>
+      <mat-card-subtitle>{{ filteredEnquiries.length }} total enquiries</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
 
     <div class="table-wrapper" *ngIf="!loading">
       <table mat-table [dataSource]="filteredEnquiries" class="enquiry-table">
@@ -346,5 +355,6 @@
         Add First Enquiry
       </button>
     </div>
-  </div>
+    </mat-card-content>
+  </mat-card>
 </div>

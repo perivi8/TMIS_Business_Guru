@@ -581,16 +581,50 @@
           <div class="form-row">
             <mat-form-field appearance="outline" class="form-field">
               <mat-label>New Current Account</mat-label>
-              <mat-select formControlName="new_current_account">
+              <mat-select formControlName="new_current_account" (selectionChange)="onNewCurrentAccountChange($event.value)">
                 <mat-option value="yes">Yes</mat-option>
                 <mat-option value="no">No</mat-option>
               </mat-select>
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Gateway</mat-label>
-              <input matInput formControlName="gateway">
-            </mat-form-field>
+            <div class="form-field"></div> <!-- Empty div for layout balance -->
+          </div>
+
+          <!-- New Bank Details Section (Show when New Current Account is Yes) -->
+          <div class="new-bank-details-section" *ngIf="clientForm.get('new_current_account')?.value === 'yes'">
+            <h4>New Bank Account Details</h4>
+            
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>New Bank Name</mat-label>
+                <input matInput formControlName="new_bank_name" (input)="onNewBankNameInput($event)" placeholder="Type to search new bank name" autocomplete="off">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>New Account Name</mat-label>
+                <input matInput formControlName="new_account_name" placeholder="Enter new account holder name">
+              </mat-form-field>
+            </div>
+            
+            <div class="bank-suggestions" *ngIf="filteredNewBankNames.length > 0">
+              <div *ngFor="let bank of filteredNewBankNames.slice(0, 10)" 
+                   class="bank-suggestion-item" 
+                   (click)="selectNewBank(bank)">
+                {{ bank }}
+              </div>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>New Bank Account Number</mat-label>
+                <input matInput formControlName="new_bank_account_number" placeholder="Enter new bank account number">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>New IFSC Code</mat-label>
+                <input matInput formControlName="new_ifsc_code" placeholder="Enter new IFSC code">
+              </mat-form-field>
+            </div>
           </div>
 
           <!-- Bank Statements Section -->
@@ -679,6 +713,42 @@
                 <mat-option value="no">No</mat-option>
               </mat-select>
             </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Payment Gateway Section -->
+      <mat-card class="section-card">
+        <mat-card-header>
+          <mat-card-title>Type of Gateway</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="payment-gateway-section">
+            <h4>Payment Gateways Available</h4>
+            <p>Select one or more payment gateways:</p>
+            
+            <div class="gateway-options">
+              <mat-checkbox 
+                *ngFor="let gateway of availableGateways" 
+                [checked]="isGatewaySelected(gateway)"
+                (change)="onGatewayChange(gateway, $event.checked)"
+                class="gateway-checkbox">
+                {{ gateway }}
+              </mat-checkbox>
+            </div>
+            
+            <div class="selected-gateways" *ngIf="getSelectedGateways().length > 0">
+              <h5>Selected Payment Gateways:</h5>
+              <div class="selected-gateway-list">
+                <span *ngFor="let gateway of getSelectedGateways(); let last = last" class="selected-gateway">
+                  {{ gateway }}<span *ngIf="!last">, </span>
+                </span>
+              </div>
+            </div>
+            
+            <div class="no-gateways" *ngIf="getSelectedGateways().length === 0">
+              <p><em>No payment gateways selected</em></p>
+            </div>
           </div>
         </mat-card-content>
       </mat-card>

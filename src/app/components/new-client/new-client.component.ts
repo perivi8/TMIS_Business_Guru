@@ -31,10 +31,12 @@ export class NewClientComponent implements OnInit {
   numberOfPartners = 0;
   hasBusinessPan = false;
   filteredBankNames: string[] = [];
+  filteredNewBankNames: string[] = [];
   filteredDistricts: string[] = [];
   selectedState = '';
   bankStatements: { file: File | null }[] = [{ file: null }];
   businessPanDetails: any = {};
+  hasNewCurrentAccount = false;
   
   // Indian States and Districts mapping
   stateDistrictMapping: { [key: string]: string[] } = {
@@ -179,7 +181,12 @@ export class NewClientComponent implements OnInit {
       bank_type: ['', Validators.required],
       transaction_months: [6, Validators.required],
       total_credit_amount: ['', Validators.required],
-      new_current_account: ['', Validators.required]
+      new_current_account: ['', Validators.required],
+      // New bank details fields (conditional)
+      new_bank_account_number: [''],
+      new_ifsc_code: [''],
+      new_account_name: [''],
+      new_bank_name: ['']
     });
 
     // Step 4: Review (no form controls, just display)
@@ -706,5 +713,55 @@ export class NewClientComponent implements OnInit {
 
   get Object() {
     return Object;
+  }
+
+  // New Current Account Management
+  onNewCurrentAccountChange(value: string): void {
+    this.hasNewCurrentAccount = value === 'yes';
+    
+    if (this.hasNewCurrentAccount) {
+      // Set validators for new bank details fields
+      this.step3Form.get('new_bank_account_number')?.setValidators([Validators.required]);
+      this.step3Form.get('new_ifsc_code')?.setValidators([Validators.required]);
+      this.step3Form.get('new_account_name')?.setValidators([Validators.required]);
+      this.step3Form.get('new_bank_name')?.setValidators([Validators.required]);
+    } else {
+      // Clear validators and values for new bank details fields
+      this.step3Form.get('new_bank_account_number')?.clearValidators();
+      this.step3Form.get('new_ifsc_code')?.clearValidators();
+      this.step3Form.get('new_account_name')?.clearValidators();
+      this.step3Form.get('new_bank_name')?.clearValidators();
+      
+      this.step3Form.get('new_bank_account_number')?.setValue('');
+      this.step3Form.get('new_ifsc_code')?.setValue('');
+      this.step3Form.get('new_account_name')?.setValue('');
+      this.step3Form.get('new_bank_name')?.setValue('');
+    }
+    
+    // Update validity
+    this.step3Form.get('new_bank_account_number')?.updateValueAndValidity();
+    this.step3Form.get('new_ifsc_code')?.updateValueAndValidity();
+    this.step3Form.get('new_account_name')?.updateValueAndValidity();
+    this.step3Form.get('new_bank_name')?.updateValueAndValidity();
+  }
+
+  onNewBankNameInput(event: any): void {
+    const value = event.target.value;
+    this.filterNewBankNames(value);
+  }
+
+  filterNewBankNames(searchTerm: string): void {
+    if (!searchTerm || searchTerm.trim() === '' || searchTerm.length < 2) {
+      this.filteredNewBankNames = [];
+    } else {
+      this.filteredNewBankNames = this.bankNames.filter(bank =>
+        bank.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      ).slice(0, 10);
+    }
+  }
+
+  selectNewBank(bankName: string): void {
+    this.step3Form.get('new_bank_name')?.setValue(bankName);
+    this.filteredNewBankNames = [];
   }
 }

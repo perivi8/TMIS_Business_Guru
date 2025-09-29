@@ -3,40 +3,88 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  padding: var(--spacing-lg);
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 40px;
+  background: var(--surface);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-2xl);
+  padding: var(--spacing-2xl);
   width: 100%;
   max-width: 500px;
+  border: 1px solid var(--border-light);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--success), var(--primary), var(--accent));
+  }
 }
 
 h2 {
-  font-weight: 300;
-  margin-bottom: 30px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  margin-bottom: var(--spacing-xl);
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: -0.025em;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg);
 }
 
 .mat-mdc-form-field {
   width: 100%;
+  
+  .mat-mdc-form-field-outline {
+    border-radius: var(--radius-lg) !important;
+  }
+  
+  &.mat-focused .mat-mdc-form-field-outline {
+    border-color: var(--primary) !important;
+    border-width: 2px !important;
+  }
 }
 
 .mat-mdc-raised-button {
   height: 48px;
-  font-size: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-2xl) !important;
+  width: 100%;
+  margin-top: var(--spacing);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+  }
 }
 
 a {
   font-weight: 500;
+  color: var(--primary);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
   &:hover {
+    color: var(--primary-dark);
     text-decoration: underline !important;
   }
+}
+
+.text-center {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  color: var(--text-secondary);
 }

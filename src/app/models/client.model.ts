@@ -28,10 +28,61 @@ export interface Client {
   updated_by?: string;
   updated_by_name?: string;
   trade_name?: string;
+  
+  // Bank information fields
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
+  ifsc_code?: string;
+  bank_type?: string;
+  new_current_account?: string;
+  total_credit_amount?: number;
+  transaction_months?: number;
+  
+  // New bank details fields (when new_current_account is 'yes')
+  new_bank_account_number?: string;
+  new_ifsc_code?: string;
+  new_account_name?: string;
+  new_bank_name?: string;
+  
+  // Payment gateway fields
+  payment_gateways?: string[] | string;
+  
+  // Financial information
+  required_loan_amount?: number;
+  loan_purpose?: string;
+  
+  // Business information
+  constitution_type?: string;
+  gst_status?: string;
+  registration_number?: string;
+  company_email?: string;
+  optional_mobile_number?: string;
+  website?: string;
+  
+  // Owner/Partner information
+  owner_name?: string;
+  owner_dob?: string;
+  number_of_partners?: number;
+  
+  // Business PAN details
+  business_pan_name?: string;
+  business_pan_date?: string;
+  has_business_pan?: string;
+  
   documents?: {
     gst_document?: string;
     bank_statement?: string;
     [key: string]: any;
   };
+  
+  processed_documents?: {
+    [key: string]: {
+      file_name: string;
+      file_size: number;
+      url?: string;
+    };
+  };
+  
   [key: string]: any; // For any additional properties
 }

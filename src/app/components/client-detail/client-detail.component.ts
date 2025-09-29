@@ -812,5 +812,28 @@ export class ClientDetailComponent implements OnInit {
     return partners;
   }
 
+  getPaymentGateways(): string[] {
+    if (!this.client) return [];
+    
+    // Try to get payment gateways from client data
+    const gateways = (this.client as any).payment_gateways;
+    
+    if (Array.isArray(gateways)) {
+      return gateways;
+    }
+    
+    // If it's a string (JSON), try to parse it
+    if (typeof gateways === 'string') {
+      try {
+        const parsed = JSON.parse(gateways);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('Failed to parse payment gateways:', gateways);
+        return [];
+      }
+    }
+    
+    return [];
+  }
 
 }

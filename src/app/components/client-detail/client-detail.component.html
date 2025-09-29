@@ -236,6 +236,33 @@
                   <label>New Current Account:</label>
                   <span>{{ client.new_current_account === 'yes' ? 'Yes' : (client.new_current_account === 'no' ? 'No' : 'N/A') }}</span>
                 </div>
+                
+                <!-- New Bank Details (Show when New Current Account is Yes) -->
+                <div *ngIf="client.new_current_account === 'yes'" class="new-bank-details">
+                  <div class="info-item" *ngIf="getClientProperty('new_bank_name')">
+                    <label>New Bank Name:</label>
+                    <span>{{ getClientProperty('new_bank_name') }}</span>
+                  </div>
+                  <div class="info-item" *ngIf="getClientProperty('new_account_name')">
+                    <label>New Account Name:</label>
+                    <span>{{ getClientProperty('new_account_name') }}</span>
+                  </div>
+                  <div class="info-item" *ngIf="getClientProperty('new_bank_account_number')">
+                    <label>New Bank Account Number:</label>
+                    <span>{{ getClientProperty('new_bank_account_number') }}</span>
+                  </div>
+                  <div class="info-item" *ngIf="getClientProperty('new_ifsc_code')">
+                    <label>New IFSC Code:</label>
+                    <span>{{ getClientProperty('new_ifsc_code') }}</span>
+                  </div>
+                </div>
+                
+                <!-- Show "No" when New Current Account is No -->
+                <div *ngIf="client.new_current_account === 'no'" class="info-item">
+                  <label>Bank Information:</label>
+                  <span>No</span>
+                </div>
+                
                 <div class="info-item">
                   <label>Total Credit Amount:</label>
                   <span>₹{{ (client.total_credit_amount | number) || 'N/A' }}</span>
@@ -315,6 +342,31 @@
         </mat-card-content>
         </mat-card>
       </div>
+
+      <!-- Payment Gateway Information Card -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>payment</mat-icon>
+            Payment Gateway
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="info-grid">
+            <div class="info-item full-width">
+              <label>Payment Gateways:</label>
+              <div *ngIf="getPaymentGateways().length > 0" class="payment-gateways-list">
+                <span *ngFor="let gateway of getPaymentGateways(); let last = last" class="payment-gateway-item">
+                  {{ gateway }}<span *ngIf="!last">, </span>
+                </span>
+              </div>
+              <div *ngIf="getPaymentGateways().length === 0" class="no-payment-gateways">
+                <span>No payment gateway</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
 
       <!-- Status and Feedback Card (Editable for Admin) -->
       <mat-card class="info-card" *ngIf="isAdmin()">

@@ -22,6 +22,9 @@ export class EditClientComponent implements OnInit {
   bankStatementsCount = 1;
   businessImagesCount = 1;
   has_business_pan = false;
+  filteredNewBankNames: string[] = [];
+  hasNewCurrentAccount = false;
+  selectedPaymentGateways: string[] = [];
   documentTypes = [
     'gst_document',
     'pan_document',
@@ -111,6 +114,12 @@ export class EditClientComponent implements OnInit {
       average_monthly_balance: [0, Validators.min(0)],
       transaction_months: [1, Validators.min(1)],
       new_business_account: [''],
+      
+      // New bank details fields (conditional)
+      new_bank_account_number: [''],
+      new_ifsc_code: [''],
+      new_account_name: [''],
+      new_bank_name: [''],
       
       // Partnership Information
       number_of_partners: [0, Validators.min(0)],
@@ -242,6 +251,12 @@ export class EditClientComponent implements OnInit {
       bank_type: client.bank_type || '',
       new_current_account: client.new_current_account || '',
       gateway: client.gateway || '',
+      
+      // New bank details
+      new_bank_account_number: (client as any).new_bank_account_number || '',
+      new_ifsc_code: (client as any).new_ifsc_code || '',
+      new_account_name: (client as any).new_account_name || '',
+      new_bank_name: (client as any).new_bank_name || '',
       transaction_done_by_client: client.transaction_done_by_client || 0,
       total_credit_amount: client.total_credit_amount || 0,
       average_monthly_balance: client.average_monthly_balance || 0,
@@ -262,6 +277,9 @@ export class EditClientComponent implements OnInit {
       owner_name: client.owner_name || '',
       owner_dob: client.owner_dob || ''
     });
+    
+    // Initialize payment gateways
+    this.selectedPaymentGateways = (client as any).payment_gateways || [];
     
     // Use timeout to ensure form is fully initialized before populating partner data
     setTimeout(() => {
@@ -698,6 +716,9 @@ export class EditClientComponent implements OnInit {
     // Debug FormData contents
     console.log('FormData contents logged above in individual field processing');
 
+    // Add payment gateways
+    formData.append('payment_gateways', JSON.stringify(this.selectedPaymentGateways));
+
     // Add files
     Object.keys(this.documents).forEach(key => {
       if (this.documents[key]) {
@@ -852,5 +873,139 @@ export class EditClientComponent implements OnInit {
       delete this.documents[lastStatementKey];
       this.bankStatementsCount--;
     }
+  }
+
+  // Bank names list (same as in new-client component)
+  bankNames = [
+    // Major Public Sector Banks
+    'State Bank of India', 'Punjab National Bank', 'Bank of Baroda', 'Canara Bank', 'Union Bank of India',
+    'Bank of India', 'Central Bank of India', 'Indian Bank', 'Indian Overseas Bank', 'UCO Bank',
+    'Bank of Maharashtra', 'Punjab & Sind Bank',
+    
+    // Major Private Sector Banks
+    'HDFC Bank', 'ICICI Bank', 'Axis Bank', 'Kotak Mahindra Bank', 'Yes Bank', 'IndusInd Bank',
+    'Federal Bank', 'South Indian Bank', 'Karnataka Bank', 'City Union Bank', 'DCB Bank',
+    'RBL Bank', 'IDFC First Bank', 'Bandhan Bank', 'CSB Bank', 'Equitas Small Finance Bank',
+    
+    // Small Finance Banks
+    'AU Small Finance Bank', 'Capital Small Finance Bank', 'Esaf Small Finance Bank',
+    'Fincare Small Finance Bank', 'Jana Small Finance Bank', 'North East Small Finance Bank',
+    'Suryoday Small Finance Bank', 'Ujjivan Small Finance Bank', 'Utkarsh Small Finance Bank',
+    
+    // Regional Rural Banks
+    'Andhra Pradesh Grameena Vikas Bank', 'Andhra Pragathi Grameena Bank', 'Arunachal Pradesh Rural Bank',
+    'Assam Gramin Vikash Bank', 'Bihar Gramin Bank', 'Chhattisgarh Rajya Gramin Bank',
+    'Ellaquai Dehati Bank', 'Himachal Pradesh Gramin Bank', 'J&K Grameen Bank',
+    'Jharkhand Rajya Gramin Bank', 'Karnataka Gramin Bank', 'Kerala Gramin Bank',
+    'Madhya Pradesh Gramin Bank', 'Maharashtra Gramin Bank', 'Manipur Rural Bank',
+    'Meghalaya Rural Bank', 'Mizoram Rural Bank', 'Nagaland Rural Bank', 'Odisha Gramya Bank',
+    'Paschim Banga Gramin Bank', 'Puduvai Bharathiar Grama Bank', 'Punjab Gramin Bank',
+    'Rajasthan Marudhara Gramin Bank', 'Sarva Haryana Gramin Bank', 'Tamil Nadu Grama Bank',
+    'Telangana Grameena Bank', 'Tripura Gramin Bank', 'Utkal Grameen Bank', 'Uttar Bihar Gramin Bank',
+    'Uttarakhand Gramin Bank', 'Uttaranchal Gramin Bank', 'Vidharbha Konkan Gramin Bank',
+    
+    // Cooperative Banks
+    'Saraswat Cooperative Bank', 'Cosmos Cooperative Bank', 'Abhyudaya Cooperative Bank',
+    'TJSB Sahakari Bank', 'Bassein Catholic Cooperative Bank', 'Kalupur Commercial Cooperative Bank',
+    'Nutan Nagarik Sahakari Bank', 'Shamrao Vithal Cooperative Bank', 'The Mumbai District Central Cooperative Bank',
+    
+    // Foreign Banks
+    'Citibank', 'Standard Chartered Bank', 'HSBC Bank', 'Deutsche Bank', 'Barclays Bank',
+    'Bank of America', 'JPMorgan Chase Bank', 'DBS Bank', 'Mizuho Bank', 'MUFG Bank',
+    
+    // Payment Banks
+    'Paytm Payments Bank', 'Airtel Payments Bank', 'India Post Payments Bank', 'Fino Payments Bank',
+    'Jio Payments Bank', 'NSDL Payments Bank'
+  ];
+
+  // New Current Account Management
+  onNewCurrentAccountChange(value: string): void {
+    this.hasNewCurrentAccount = value === 'yes';
+    
+    if (this.hasNewCurrentAccount) {
+      // Set validators for new bank details fields
+      this.clientForm.get('new_bank_account_number')?.setValidators([Validators.required]);
+      this.clientForm.get('new_ifsc_code')?.setValidators([Validators.required]);
+      this.clientForm.get('new_account_name')?.setValidators([Validators.required]);
+      this.clientForm.get('new_bank_name')?.setValidators([Validators.required]);
+    } else {
+      // Clear validators and values for new bank details fields
+      this.clientForm.get('new_bank_account_number')?.clearValidators();
+      this.clientForm.get('new_ifsc_code')?.clearValidators();
+      this.clientForm.get('new_account_name')?.clearValidators();
+      this.clientForm.get('new_bank_name')?.clearValidators();
+      
+      this.clientForm.get('new_bank_account_number')?.setValue('');
+      this.clientForm.get('new_ifsc_code')?.setValue('');
+      this.clientForm.get('new_account_name')?.setValue('');
+      this.clientForm.get('new_bank_name')?.setValue('');
+    }
+    
+    // Update validity
+    this.clientForm.get('new_bank_account_number')?.updateValueAndValidity();
+    this.clientForm.get('new_ifsc_code')?.updateValueAndValidity();
+    this.clientForm.get('new_account_name')?.updateValueAndValidity();
+    this.clientForm.get('new_bank_name')?.updateValueAndValidity();
+  }
+
+  onNewBankNameInput(event: any): void {
+    const value = event.target.value;
+    this.filterNewBankNames(value);
+  }
+
+  filterNewBankNames(searchTerm: string): void {
+    if (!searchTerm || searchTerm.trim() === '' || searchTerm.length < 2) {
+      this.filteredNewBankNames = [];
+    } else {
+      this.filteredNewBankNames = this.bankNames.filter(bank =>
+        bank.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      ).slice(0, 10);
+    }
+  }
+
+  selectNewBank(bankName: string): void {
+    this.clientForm.get('new_bank_name')?.setValue(bankName);
+    this.filteredNewBankNames = [];
+  }
+
+  // Payment Gateway Management
+  availableGateways = [
+    'Razorpay',
+    'PayU',
+    'CCAvenue',
+    'Paytm',
+    'Instamojo',
+    'PayPal',
+    'Stripe',
+    'Cashfree',
+    'PayKun',
+    'EBS',
+    'Atom',
+    'BillDesk',
+    'HDFC Payment Gateway',
+    'ICICI Payment Gateway',
+    'SBI ePay',
+    'Axis Bank Payment Gateway'
+  ];
+
+  isGatewaySelected(gateway: string): boolean {
+    return this.selectedPaymentGateways.includes(gateway);
+  }
+
+  onGatewayChange(gateway: string, isSelected: boolean): void {
+    if (isSelected) {
+      if (!this.selectedPaymentGateways.includes(gateway)) {
+        this.selectedPaymentGateways.push(gateway);
+      }
+    } else {
+      const index = this.selectedPaymentGateways.indexOf(gateway);
+      if (index > -1) {
+        this.selectedPaymentGateways.splice(index, 1);
+      }
+    }
+  }
+
+  getSelectedGateways(): string[] {
+    return this.selectedPaymentGateways;
   }
 }

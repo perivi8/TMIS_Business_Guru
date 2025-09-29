@@ -1,7 +1,15 @@
 <div class="container">
-  <div class="header-section">
-    <h1>Add New Client</h1>
-    <p>Upload documents and create a new client profile</p>
+  <!-- Modern Header Section -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title">
+        <mat-icon class="header-icon">person_add</mat-icon>
+        <div class="title-text">
+          <h1>Add New Client</h1>
+          <p>Upload documents and create a new client profile</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="error" class="error">{{ error }}</div>
@@ -558,13 +566,69 @@
             <!-- New Current Account -->
             <div class="form-group">
               <label>New Current Account *</label>
-              <mat-radio-group formControlName="new_current_account" class="radio-group">
+              <mat-radio-group formControlName="new_current_account" class="radio-group" (change)="onNewCurrentAccountChange($event.value)">
                 <mat-radio-button value="yes">Yes</mat-radio-button>
                 <mat-radio-button value="no">No</mat-radio-button>
               </mat-radio-group>
               <mat-error *ngIf="step3Form.get('new_current_account')?.invalid && step3Form.get('new_current_account')?.touched">
                 Please select if this is a new current account
               </mat-error>
+            </div>
+
+            <!-- New Bank Details Section (Show when New Current Account is Yes) -->
+            <div class="new-bank-details-section" *ngIf="step3Form.get('new_current_account')?.value === 'yes'">
+              <h4>New Bank Account Details</h4>
+              
+              <!-- New Bank Account Number -->
+              <div class="form-group">
+                <mat-form-field appearance="outline" style="width: 100%;">
+                  <mat-label>New Bank Account Number *</mat-label>
+                  <input matInput formControlName="new_bank_account_number" placeholder="Enter new bank account number">
+                  <mat-error *ngIf="step3Form.get('new_bank_account_number')?.invalid && step3Form.get('new_bank_account_number')?.touched">
+                    New bank account number is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- New IFSC Code -->
+              <div class="form-group">
+                <mat-form-field appearance="outline" style="width: 100%;">
+                  <mat-label>New IFSC Code *</mat-label>
+                  <input matInput formControlName="new_ifsc_code" placeholder="Enter new IFSC code">
+                  <mat-error *ngIf="step3Form.get('new_ifsc_code')?.invalid && step3Form.get('new_ifsc_code')?.touched">
+                    New IFSC code is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- New Account Name -->
+              <div class="form-group">
+                <mat-form-field appearance="outline" style="width: 100%;">
+                  <mat-label>New Account Name *</mat-label>
+                  <input matInput formControlName="new_account_name" placeholder="Enter new account holder name">
+                  <mat-error *ngIf="step3Form.get('new_account_name')?.invalid && step3Form.get('new_account_name')?.touched">
+                    New account name is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- New Bank Name -->
+              <div class="form-group">
+                <mat-form-field appearance="outline" style="width: 100%;">
+                  <mat-label>New Bank Name *</mat-label>
+                  <input matInput formControlName="new_bank_name" (input)="onNewBankNameInput($event)" placeholder="Type to search new bank name" autocomplete="off">
+                  <mat-error *ngIf="step3Form.get('new_bank_name')?.invalid && step3Form.get('new_bank_name')?.touched">
+                    New bank name is required
+                  </mat-error>
+                </mat-form-field>
+                <div class="bank-suggestions" *ngIf="filteredNewBankNames.length > 0">
+                  <div *ngFor="let bank of filteredNewBankNames.slice(0, 10)" 
+                       class="bank-suggestion-item" 
+                       (click)="selectNewBank(bank)">
+                    {{ bank }}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Total Credit Amount -->

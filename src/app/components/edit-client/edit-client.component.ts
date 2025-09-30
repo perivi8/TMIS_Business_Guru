@@ -278,8 +278,22 @@ export class EditClientComponent implements OnInit {
       owner_dob: client.owner_dob || ''
     });
     
-    // Initialize payment gateways
-    this.selectedPaymentGateways = (client as any).payment_gateways || [];
+    // Initialize payment gateways - handle both array and JSON string formats
+    const paymentGateways = (client as any).payment_gateways;
+    if (Array.isArray(paymentGateways)) {
+      this.selectedPaymentGateways = paymentGateways;
+    } else if (typeof paymentGateways === 'string') {
+      try {
+        this.selectedPaymentGateways = JSON.parse(paymentGateways);
+      } catch (e) {
+        console.warn('Failed to parse payment gateways:', paymentGateways);
+        this.selectedPaymentGateways = [];
+      }
+    } else {
+      this.selectedPaymentGateways = [];
+    }
+    
+    console.log('Payment gateways loaded:', this.selectedPaymentGateways);
     
     // Use timeout to ensure form is fully initialized before populating partner data
     setTimeout(() => {
@@ -993,6 +1007,7 @@ export class EditClientComponent implements OnInit {
   }
 
   onGatewayChange(gateway: string, isSelected: boolean): void {
+    console.log(`Gateway change: ${gateway} - ${isSelected ? 'selected' : 'deselected'}`);
     if (isSelected) {
       if (!this.selectedPaymentGateways.includes(gateway)) {
         this.selectedPaymentGateways.push(gateway);
@@ -1003,6 +1018,7 @@ export class EditClientComponent implements OnInit {
         this.selectedPaymentGateways.splice(index, 1);
       }
     }
+    console.log('Updated payment gateways:', this.selectedPaymentGateways);
   }
 
   getSelectedGateways(): string[] {

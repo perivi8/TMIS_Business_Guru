@@ -1,17 +1,4 @@
 <div class="container">
-  <!-- Modern Header Section -->
-  <div class="page-header">
-    <div class="header-content">
-      <div class="header-title">
-        <mat-icon class="header-icon">person_add</mat-icon>
-        <div class="title-text">
-          <h1>Add New Client</h1>
-          <p>Upload documents and create a new client profile</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div *ngIf="error" class="error">{{ error }}</div>
   <div *ngIf="success" class="success">{{ success }}</div>
 
@@ -36,13 +23,13 @@
               <!-- Document Uploads Row -->
               <div class="form-row">
                 <div class="form-group">
-                  <label>GST Document *</label>
+                  <label>📄 GST Registration Certificate *</label>
                   <div class="file-upload" [class.file-uploaded]="uploadedFiles['gst_document']">
                     <input type="file" (change)="onFileSelected($event, 'gst_document')" accept=".pdf,.jpg,.jpeg,.png" data-field="gst_document">
                     <mat-icon>{{ uploadedFiles['gst_document'] ? 'check_circle' : 'cloud_upload' }}</mat-icon>
-                    <p *ngIf="!uploadedFiles['gst_document']">Upload GST Document (PDF, JPG, PNG)</p>
+                    <p *ngIf="!uploadedFiles['gst_document']">Drag & drop or click to upload<br><small>GST Certificate (PDF, JPG, PNG - Max 10MB)</small></p>
                     <div *ngIf="uploadedFiles['gst_document']" class="file-info">
-                      <p class="file-name">{{ uploadedFiles['gst_document'].name }}</p>
+                      <p class="file-name">✅ {{ uploadedFiles['gst_document'].name }}</p>
                       <button type="button" class="delete-btn" (click)="removeFile('gst_document')" title="Remove file">
                         <mat-icon>delete</mat-icon>
                       </button>
@@ -50,13 +37,13 @@
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>MSME/Udyam Document</label>
+                  <label class="optional">🏭 MSME/Udyam Registration</label>
                   <div class="file-upload" [class.file-uploaded]="uploadedFiles['msme_document']">
                     <input type="file" (change)="onFileSelected($event, 'msme_document')" accept=".pdf,.jpg,.jpeg,.png" data-field="msme_document">
                     <mat-icon>{{ uploadedFiles['msme_document'] ? 'check_circle' : 'cloud_upload' }}</mat-icon>
-                    <p *ngIf="!uploadedFiles['msme_document']">Upload MSME/Udyam Document</p>
+                    <p *ngIf="!uploadedFiles['msme_document']">Drag & drop or click to upload<br><small>MSME/Udyam Certificate (Optional)</small></p>
                     <div *ngIf="uploadedFiles['msme_document']" class="file-info">
-                      <p class="file-name">{{ uploadedFiles['msme_document'].name }}</p>
+                      <p class="file-name">✅ {{ uploadedFiles['msme_document'].name }}</p>
                       <button type="button" class="delete-btn" (click)="removeFile('msme_document')" title="Remove file">
                         <mat-icon>delete</mat-icon>
                       </button>
@@ -115,15 +102,16 @@
               </div>
 
               <!-- State, District, Pincode Row -->
-              <div class="form-row">
+              <div class="form-row three-columns">
                 <div class="form-group">
                   <mat-form-field appearance="outline">
                     <mat-label>State *</mat-label>
                     <mat-select formControlName="state" (selectionChange)="onStateChange($event.value)">
                       <mat-option *ngFor="let state of states" [value]="state">{{ state }}</mat-option>
                     </mat-select>
+                    <mat-icon matSuffix>location_on</mat-icon>
                     <mat-error *ngIf="step1Form.get('state')?.invalid && step1Form.get('state')?.touched">
-                      State is required
+                      Please select your state
                     </mat-error>
                   </mat-form-field>
                 </div>
@@ -133,17 +121,19 @@
                     <mat-select formControlName="district" [disabled]="!selectedState">
                       <mat-option *ngFor="let district of filteredDistricts" [value]="district">{{ district }}</mat-option>
                     </mat-select>
+                    <mat-icon matSuffix>place</mat-icon>
                     <mat-error *ngIf="step1Form.get('district')?.invalid && step1Form.get('district')?.touched">
-                      District is required
+                      Please select your district
                     </mat-error>
                   </mat-form-field>
                 </div>
                 <div class="form-group">
                   <mat-form-field appearance="outline">
                     <mat-label>Pincode *</mat-label>
-                    <input matInput formControlName="pincode" placeholder="Enter pincode" maxlength="6">
+                    <input matInput formControlName="pincode" placeholder="Enter 6-digit pincode" maxlength="6">
+                    <mat-icon matSuffix>pin_drop</mat-icon>
                     <mat-error *ngIf="step1Form.get('pincode')?.invalid && step1Form.get('pincode')?.touched">
-                      Valid 6-digit pincode is required
+                      Please enter a valid 6-digit pincode
                     </mat-error>
                   </mat-form-field>
                 </div>
@@ -155,75 +145,86 @@
             <div class="address-section">
               <h4>Contact Details</h4>
               
-              <!-- User Email/Company Email -->
-              <div class="form-group">
-                <mat-form-field appearance="outline" style="width: 100%;">
-                  <mat-label>User Email/Company Email (Optional)</mat-label>
-                  <input matInput formControlName="user_email" type="email" placeholder="Enter user or company email">
-                  <mat-error *ngIf="step1Form.get('user_email')?.invalid && step1Form.get('user_email')?.touched">
-                    Please enter a valid email
-                  </mat-error>
-                </mat-form-field>
+              <!-- Email Addresses Row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>User Email (Optional)</mat-label>
+                    <input matInput formControlName="user_email" type="email" placeholder="user@example.com">
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error *ngIf="step1Form.get('user_email')?.invalid && step1Form.get('user_email')?.touched">
+                      Please enter a valid email address
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="form-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Company Email (Optional)</mat-label>
+                    <input matInput formControlName="company_email" type="email" placeholder="company@example.com">
+                    <mat-icon matSuffix>business</mat-icon>
+                    <mat-error *ngIf="step1Form.get('company_email')?.invalid && step1Form.get('company_email')?.touched">
+                      Please enter a valid company email
+                    </mat-error>
+                  </mat-form-field>
+                </div>
               </div>
 
-              <!-- Company Email -->
-              <div class="form-group">
-                <mat-form-field appearance="outline" style="width: 100%;">
-                  <mat-label>Company Email (Optional)</mat-label>
-                  <input matInput formControlName="company_email" type="email" placeholder="Enter company email">
-                  <mat-error *ngIf="step1Form.get('company_email')?.invalid && step1Form.get('company_email')?.touched">
-                    Please enter a valid email
-                  </mat-error>
-                </mat-form-field>
-              </div>
-
-              <!-- Mobile Number -->
-              <div class="form-group">
-                <mat-form-field appearance="outline" style="width: 100%;">
-                  <mat-label>Mobile Number *</mat-label>
-                  <input matInput formControlName="mobile_number" placeholder="Enter 10-digit mobile number">
-                  <mat-error *ngIf="step1Form.get('mobile_number')?.invalid && step1Form.get('mobile_number')?.touched">
-                    Valid 10-digit mobile number is required
-                  </mat-error>
-                </mat-form-field>
-              </div>
-
-              <!-- Optional Mobile Number -->
-              <div class="form-group">
-                <mat-form-field appearance="outline" style="width: 100%;">
-                  <mat-label>Optional Mobile Number</mat-label>
-                  <input matInput formControlName="optional_mobile_number" placeholder="Enter additional mobile number">
-                  <mat-error *ngIf="step1Form.get('optional_mobile_number')?.invalid && step1Form.get('optional_mobile_number')?.touched">
-                    Please enter a valid 10-digit mobile number
-                  </mat-error>
-                </mat-form-field>
+              <!-- Mobile Numbers Row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Primary Mobile Number *</mat-label>
+                    <input matInput formControlName="mobile_number" placeholder="9876543210" maxlength="10">
+                    <mat-icon matSuffix>phone</mat-icon>
+                    <mat-error *ngIf="step1Form.get('mobile_number')?.invalid && step1Form.get('mobile_number')?.touched">
+                      Please enter a valid 10-digit mobile number
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="form-group">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Secondary Mobile (Optional)</mat-label>
+                    <input matInput formControlName="optional_mobile_number" placeholder="9876543210" maxlength="10">
+                    <mat-icon matSuffix>phone_android</mat-icon>
+                    <mat-error *ngIf="step1Form.get('optional_mobile_number')?.invalid && step1Form.get('optional_mobile_number')?.touched">
+                      Please enter a valid 10-digit mobile number
+                    </mat-error>
+                  </mat-form-field>
+                </div>
               </div>
             </div>
 
-            <!-- GST Status -->
-            <div class="form-group">
-              <label>GST Status *</label>
-              <mat-radio-group formControlName="gst_status">
-                <mat-radio-button value="Active">Active</mat-radio-button>
-                <mat-radio-button value="Not Active">Not Active</mat-radio-button>
-                <mat-radio-button value="Cancel">Cancel</mat-radio-button>
-                <mat-radio-button value="No GST">No GST</mat-radio-button>
-              </mat-radio-group>
-            </div>
+            <!-- Business Status Section -->
+            <div class="address-section">
+              <h4>Business Status & Type</h4>
+              
+              <!-- GST Status -->
+              <div class="form-group">
+                <label>GST Registration Status *</label>
+                <mat-radio-group formControlName="gst_status">
+                  <mat-radio-button value="Active">✅ Active</mat-radio-button>
+                  <mat-radio-button value="Not Active">⏸️ Not Active</mat-radio-button>
+                  <mat-radio-button value="Cancel">❌ Cancelled</mat-radio-button>
+                  <mat-radio-button value="No GST">🚫 No GST</mat-radio-button>
+                </mat-radio-group>
+              </div>
 
-            <!-- Constitution of Business -->
-            <div class="form-group">
-              <label>Constitution of Business *</label>
-              <mat-radio-group formControlName="constitution_type" (change)="onConstitutionChange($event.value)">
-                <mat-radio-button value="Proprietorship">Proprietorship</mat-radio-button>
-                <mat-radio-button value="Partnership">Partnership</mat-radio-button>
-                <mat-radio-button value="Private Limited">Private Limited</mat-radio-button>
-              </mat-radio-group>
+              <!-- Constitution of Business -->
+              <div class="form-group">
+                <label>Business Constitution Type *</label>
+                <mat-radio-group formControlName="constitution_type" (change)="onConstitutionChange($event.value)">
+                  <mat-radio-button value="Proprietorship">👤 Proprietorship</mat-radio-button>
+                  <mat-radio-button value="Partnership">🤝 Partnership</mat-radio-button>
+                  <mat-radio-button value="Private Limited">🏢 Private Limited</mat-radio-button>
+                </mat-radio-group>
+              </div>
             </div>
 
 
             <div class="step-actions">
+              <div></div>
               <button mat-raised-button color="primary" (click)="nextStep()" [disabled]="!canProceedToNextStep()">
+                <mat-icon>arrow_forward</mat-icon>
                 Next: Upload Documents
               </button>
             </div>
@@ -274,13 +275,13 @@
 
               <!-- Upload Business PAN -->
               <div class="form-group">
-                <label>Upload Business PAN *</label>
+                <label>🆔 Business PAN Card *</label>
                 <div class="file-upload" [class.file-uploaded]="uploadedFiles['business_pan_document']">
                   <input type="file" (change)="onFileSelected($event, 'business_pan_document')" accept=".pdf,.jpg,.jpeg,.png" data-field="business_pan_document">
                   <mat-icon>{{ uploadedFiles['business_pan_document'] ? 'check_circle' : 'cloud_upload' }}</mat-icon>
-                  <p *ngIf="!uploadedFiles['business_pan_document']">Upload Business PAN Document</p>
+                  <p *ngIf="!uploadedFiles['business_pan_document']">Drag & drop or click to upload<br><small>Business PAN Card (PDF, JPG, PNG)</small></p>
                   <div *ngIf="uploadedFiles['business_pan_document']" class="file-info">
-                    <p class="file-name">{{ uploadedFiles['business_pan_document'].name }}</p>
+                    <p class="file-name">✅ {{ uploadedFiles['business_pan_document'].name }}</p>
                     <button type="button" class="delete-btn" (click)="removeFile('business_pan_document')" title="Remove file">
                       <mat-icon>delete</mat-icon>
                     </button>
@@ -454,13 +455,14 @@
             </div>
 
             <div class="step-actions">
-              <button mat-button (click)="previousStep()">Back</button>
+              <button mat-button (click)="previousStep()">
+                <mat-icon>arrow_back</mat-icon>
+                Back to Basic Info
+              </button>
               <button mat-raised-button color="primary" (click)="nextStep(); debugNextButton()" 
                       [disabled]="!canProceedToNextStep()">
+                <mat-icon>arrow_forward</mat-icon>
                 Next: Bank Details
-                <span *ngIf="!canProceedToNextStep()" style="font-size: 10px; display: block;">
-                  (Debug: {{ getDebugInfo() }})
-                </span>
               </button>
             </div>
           </div>
@@ -475,14 +477,14 @@
             
             <!-- Bank Statements (Multiple Upload) -->
             <div class="form-group">
-              <label>Bank Statements (PDF) * (Min: 1, Max: 6)</label>
+              <label>🏦 Bank Statements (PDF Format) * <small>(Minimum 1, Maximum 6 statements)</small></label>
               <div *ngFor="let statement of bankStatements; let i = index" class="bank-statement-upload">
                 <div class="file-upload" [class.file-uploaded]="statement.file">
                   <input type="file" (change)="onBankStatementSelected($event, i)" accept=".pdf" [attr.data-field]="'bank_statement_' + i">
                   <mat-icon>{{ statement.file ? 'check_circle' : 'cloud_upload' }}</mat-icon>
-                  <p *ngIf="!statement.file">Upload Bank Statement {{ i + 1 }} (PDF only)</p>
+                  <p *ngIf="!statement.file">📊 Upload Bank Statement {{ i + 1 }}<br><small>PDF format only - Last 6-24 months</small></p>
                   <div *ngIf="statement.file" class="file-info">
-                    <p class="file-name">{{ statement.file.name }}</p>
+                    <p class="file-name">✅ {{ statement.file.name }}</p>
                     <button type="button" class="delete-btn" (click)="removeBankStatement(i)" title="Remove file">
                       <mat-icon>delete</mat-icon>
                     </button>
@@ -493,7 +495,7 @@
                       *ngIf="bankStatements.length < 6" 
                       [disabled]="!canAddBankStatement()">
                 <mat-icon>add</mat-icon>
-                Add Bank Statement
+                Add Another Statement
               </button>
             </div>
 
@@ -646,8 +648,12 @@
             </div>
 
             <div class="step-actions">
-              <button mat-button (click)="previousStep()">Back</button>
+              <button mat-button (click)="previousStep()">
+                <mat-icon>arrow_back</mat-icon>
+                Back to Documents
+              </button>
               <button mat-raised-button color="primary" (click)="nextStep()" [disabled]="!canProceedToNextStep()">
+                <mat-icon>arrow_forward</mat-icon>
                 Next: Review & Submit
               </button>
             </div>
@@ -761,11 +767,15 @@
             </div>
 
             <div class="step-actions">
-              <button mat-button (click)="previousStep()">Back</button>
+              <button mat-button (click)="previousStep()">
+                <mat-icon>arrow_back</mat-icon>
+                Back to Bank Details
+              </button>
               <button mat-raised-button color="primary" type="submit" (click)="onSubmit()" 
                       [disabled]="loading || step4Form.invalid">
                 <mat-spinner *ngIf="loading" diameter="20" style="margin-right: 10px;"></mat-spinner>
-                {{ loading ? 'Creating...' : 'Create Client' }}
+                <mat-icon *ngIf="!loading">check_circle</mat-icon>
+                {{ loading ? 'Creating Client...' : 'Create Client' }}
               </button>
             </div>
           </div>

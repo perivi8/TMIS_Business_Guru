@@ -764,4 +764,8 @@ export class NewClientComponent implements OnInit {
     this.step3Form.get('new_bank_name')?.setValue(bankName);
     this.filteredNewBankNames = [];
   }
+
+  goBack(): void {
+    window.history.back();
+  }
 }

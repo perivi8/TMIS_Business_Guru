@@ -25,6 +25,62 @@ export class EditClientComponent implements OnInit {
   filteredNewBankNames: string[] = [];
   hasNewCurrentAccount = false;
   selectedPaymentGateways: string[] = [];
+  
+  // Step management properties
+  currentStep = 0;
+  totalSteps = 8;
+  
+  steps = [
+    {
+      title: 'Personal Info',
+      description: 'Basic personal information',
+      icon: 'person',
+      completed: false
+    },
+    {
+      title: 'GST Details',
+      description: 'GST and registration details',
+      icon: 'receipt',
+      completed: false
+    },
+    {
+      title: 'Address',
+      description: 'Address information',
+      icon: 'location_on',
+      completed: false
+    },
+    {
+      title: 'Business',
+      description: 'Business information',
+      icon: 'business',
+      completed: false
+    },
+    {
+      title: 'Partnership',
+      description: 'Partnership details',
+      icon: 'group',
+      completed: false
+    },
+    {
+      title: 'Financial',
+      description: 'Financial information',
+      icon: 'account_balance_wallet',
+      completed: false
+    },
+    {
+      title: 'Banking',
+      description: 'Bank account details',
+      icon: 'account_balance',
+      completed: false
+    },
+    {
+      title: 'Documents',
+      description: 'Upload documents',
+      icon: 'upload_file',
+      completed: false
+    }
+  ];
+  
   documentTypes = [
     'gst_document',
     'pan_document',
@@ -280,20 +336,25 @@ export class EditClientComponent implements OnInit {
     
     // Initialize payment gateways - handle both array and JSON string formats
     const paymentGateways = (client as any).payment_gateways;
+    console.log('🔍 Raw payment_gateways from client:', paymentGateways, 'Type:', typeof paymentGateways);
+    
     if (Array.isArray(paymentGateways)) {
       this.selectedPaymentGateways = paymentGateways;
+      console.log('✅ Payment gateways loaded as array:', this.selectedPaymentGateways);
     } else if (typeof paymentGateways === 'string') {
       try {
         this.selectedPaymentGateways = JSON.parse(paymentGateways);
+        console.log('✅ Payment gateways parsed from string:', this.selectedPaymentGateways);
       } catch (e) {
-        console.warn('Failed to parse payment gateways:', paymentGateways);
+        console.warn('❌ Failed to parse payment gateways:', paymentGateways);
         this.selectedPaymentGateways = [];
       }
     } else {
       this.selectedPaymentGateways = [];
+      console.log('⚠️ Payment gateways not found, defaulting to empty array');
     }
     
-    console.log('Payment gateways loaded:', this.selectedPaymentGateways);
+    console.log('💾 Final selectedPaymentGateways:', this.selectedPaymentGateways);
     
     // Use timeout to ensure form is fully initialized before populating partner data
     setTimeout(() => {
@@ -731,7 +792,9 @@ export class EditClientComponent implements OnInit {
     console.log('FormData contents logged above in individual field processing');
 
     // Add payment gateways
+    console.log('💾 Saving payment gateways:', this.selectedPaymentGateways);
     formData.append('payment_gateways', JSON.stringify(this.selectedPaymentGateways));
+    console.log('💾 Payment gateways JSON string:', JSON.stringify(this.selectedPaymentGateways));
 
     // Add files
     Object.keys(this.documents).forEach(key => {
@@ -996,11 +1059,60 @@ export class EditClientComponent implements OnInit {
     'EBS',
     'Atom',
     'BillDesk',
+    'Easebuzz',
     'HDFC Payment Gateway',
     'ICICI Payment Gateway',
     'SBI ePay',
     'Axis Bank Payment Gateway'
   ];
+
+  // Get appropriate icon for each payment gateway
+  getGatewayIcon(gateway: string): string {
+    const iconMap: { [key: string]: string } = {
+      'Razorpay': 'credit_card',
+      'PayU': 'payment',
+      'CCAvenue': 'account_balance_wallet',
+      'Paytm': 'mobile_friendly',
+      'Instamojo': 'storefront',
+      'PayPal': 'account_balance',
+      'Stripe': 'credit_score',
+      'Cashfree': 'monetization_on',
+      'PayKun': 'local_atm',
+      'EBS': 'account_balance_wallet',
+      'Atom': 'payments',
+      'BillDesk': 'receipt_long',
+      'Easebuzz': 'flash_on',
+      'HDFC Payment Gateway': 'account_balance',
+      'ICICI Payment Gateway': 'account_balance',
+      'SBI ePay': 'account_balance',
+      'Axis Bank Payment Gateway': 'account_balance'
+    };
+    return iconMap[gateway] || 'payment';
+  }
+
+  // Get gateway color theme
+  getGatewayColor(gateway: string): string {
+    const colorMap: { [key: string]: string } = {
+      'Razorpay': '#3395ff',
+      'PayU': '#17b978',
+      'CCAvenue': '#ff6b35',
+      'Paytm': '#00baf2',
+      'Instamojo': '#3d5afe',
+      'PayPal': '#0070ba',
+      'Stripe': '#635bff',
+      'Cashfree': '#0d47a1',
+      'PayKun': '#f57c00',
+      'EBS': '#4caf50',
+      'Atom': '#9c27b0',
+      'BillDesk': '#ff5722',
+      'Easebuzz': '#ff9800',
+      'HDFC Payment Gateway': '#004c8f',
+      'ICICI Payment Gateway': '#b8860b',
+      'SBI ePay': '#1976d2',
+      'Axis Bank Payment Gateway': '#8e24aa'
+    };
+    return colorMap[gateway] || 'var(--primary)';
+  }
 
   isGatewaySelected(gateway: string): boolean {
     return this.selectedPaymentGateways.includes(gateway);
@@ -1023,5 +1135,106 @@ export class EditClientComponent implements OnInit {
 
   getSelectedGateways(): string[] {
     return this.selectedPaymentGateways;
+  }
+
+  // Step Navigation Methods
+  goToStep(stepIndex: number): void {
+    if (stepIndex >= 0 && stepIndex < this.totalSteps) {
+      this.currentStep = stepIndex;
+    }
+  }
+
+  nextStep(): void {
+    if (this.currentStep < this.totalSteps - 1) {
+      // Mark current step as completed
+      this.steps[this.currentStep].completed = this.isStepValid(this.currentStep);
+      this.currentStep++;
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 0) {
+      this.currentStep--;
+    }
+  }
+
+  isStepValid(stepIndex: number): boolean {
+    // Validate each step based on required fields
+    switch (stepIndex) {
+      case 0: // Personal Info
+        return (this.clientForm.get('legal_name')?.valid ?? false) && 
+               (this.clientForm.get('mobile_number')?.valid ?? false);
+      case 1: // GST Details
+        return true; // Optional fields
+      case 2: // Address
+        return this.clientForm.get('address')?.valid ?? false;
+      case 3: // Business
+        return this.clientForm.get('constitution_type')?.valid ?? false;
+      case 4: // Partnership
+        const constitutionType = this.clientForm.get('constitution_type')?.value;
+        if (constitutionType === 'Partnership') {
+          return this.clientForm.get('number_of_partners')?.valid ?? false;
+        }
+        return true;
+      case 5: // Financial
+        return this.clientForm.get('required_loan_amount')?.valid ?? false;
+      case 6: // Banking
+        return (this.clientForm.get('bank_name')?.valid ?? false) && 
+               (this.clientForm.get('account_number')?.valid ?? false);
+      case 7: // Documents
+        return true; // Optional files
+      default:
+        return true;
+    }
+  }
+
+  isCurrentStepValid(): boolean {
+    return this.isStepValid(this.currentStep);
+  }
+
+  canProceedToNext(): boolean {
+    return this.isCurrentStepValid() && this.currentStep < this.totalSteps - 1;
+  }
+
+  canGoBack(): boolean {
+    return this.currentStep > 0;
+  }
+
+  isLastStep(): boolean {
+    return this.currentStep === this.totalSteps - 1;
+  }
+
+  getStepTitle(): string {
+    return this.steps[this.currentStep]?.title || 'Unknown Step';
+  }
+
+  getStepDescription(): string {
+    return this.steps[this.currentStep]?.description || '';
+  }
+
+  // Check if we should show Partnership step
+  shouldShowPartnershipStep(): boolean {
+    return this.clientForm.get('constitution_type')?.value === 'Partnership';
+  }
+
+  // Check if we should show Business PAN step
+  shouldShowBusinessPANStep(): boolean {
+    const constitutionType = this.clientForm.get('constitution_type')?.value;
+    const hasBusinessPan = this.clientForm.get('has_business_pan')?.value;
+    return (constitutionType === 'Proprietorship' || 
+            constitutionType === 'Partnership' || 
+            constitutionType === 'Private Limited') && 
+           (hasBusinessPan === 'yes' || this.hasExistingDocument('business_pan_document'));
+  }
+
+  // Check if we should show Owner Details step
+  shouldShowOwnerDetailsStep(): boolean {
+    const constitutionType = this.clientForm.get('constitution_type')?.value;
+    const hasBusinessPan = this.clientForm.get('has_business_pan')?.value;
+    return constitutionType === 'Private Limited' || 
+           (constitutionType === 'Proprietorship' && 
+            (hasBusinessPan === 'yes' || 
+             this.hasExistingDocument('owner_aadhar') || 
+             this.hasExistingDocument('owner_pan')));
   }
 }

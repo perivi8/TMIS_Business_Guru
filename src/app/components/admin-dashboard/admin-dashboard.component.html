@@ -7,18 +7,6 @@
 
   <!-- Dashboard Content -->
   <div *ngIf="!loading">
-    <!-- Modern Header Section -->
-    <div class="page-header">
-      <div class="header-content">
-        <div class="header-title">
-          <mat-icon class="header-icon">dashboard</mat-icon>
-          <div class="title-text">
-            <h1>Admin Dashboard</h1>
-            <p>Welcome, {{ currentUser && currentUser.username }}! Manage all clients and system operations</p>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Stats Cards -->
     <div class="stats-grid">
@@ -263,7 +251,7 @@
     </mat-card>
 
     <!-- Report 2: Client Status Report -->
-    <mat-card class="report-card">
+    <mat-card class="report-card" id="client-status-report">
       <mat-card-header>
         <mat-card-title>
           <mat-icon>pie_chart</mat-icon>

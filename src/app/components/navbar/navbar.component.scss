@@ -1,12 +1,23 @@
 .navbar {
   background: var(--surface);
   box-shadow: var(--shadow-lg);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: var(--navbar-height);
   z-index: 1000;
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-light);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // Ensure header stays fixed and doesn't move
+  will-change: transform;
+  transform: translateZ(0); // Force hardware acceleration
+  
+  // Prevent any content from pushing the navbar
+  flex-shrink: 0;
   
   &::before {
     content: '';
@@ -46,11 +57,15 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  max-width: 1400px;
+  max-width: calc(100vw - 2rem); // Prevent horizontal overflow
   margin: 0 auto;
   padding: var(--spacing) var(--spacing-lg);
   position: relative;
   z-index: 2;
+  box-sizing: border-box;
+  overflow: hidden;
+  height: 100%; // Fill the navbar height
+  min-height: var(--navbar-height); // Ensure minimum height
 }
 
 .nav-brand {
@@ -104,6 +119,46 @@
     align-items: center !important;
     justify-content: center !important;
     line-height: 1 !important;
+  }
+}
+
+// Back Button Styling
+.back-button {
+  color: var(--primary) !important;
+  background: rgba(37, 99, 235, 0.1) !important;
+  border: 1px solid rgba(37, 99, 235, 0.2) !important;
+  border-radius: var(--radius-lg) !important;
+  margin-right: var(--spacing) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  
+  &:hover {
+    background: rgba(37, 99, 235, 0.15) !important;
+    border-color: rgba(37, 99, 235, 0.3) !important;
+    transform: translateX(-2px) !important;
+  }
+  
+  mat-icon {
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    color: var(--primary) !important;
+  }
+}
+
+// Status Link Styling
+.status-link {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  border-radius: var(--radius-lg) !important;
+  
+  &:hover {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+    transform: translateY(-1px) !important;
+  }
+  
+  mat-icon {
+    color: var(--accent) !important;
   }
 }
 
@@ -186,7 +241,7 @@
   color: var(--text-primary);
   margin-left: var(--spacing);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 50%;
+  border-radius: var(--radius-lg); // Reduced from 50% (circle) to rounded rectangle
   border: 2px solid var(--border);
   background: var(--surface);
   width: 48px !important;
@@ -271,28 +326,35 @@
   margin-left: var(--spacing-sm);
   color: var(--text-secondary);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 40px !important;
-  height: 40px !important;
+  width: 44px !important;
+  height: 44px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-light);
   
   &:hover {
     color: var(--primary);
     background-color: var(--secondary);
     transform: scale(1.05);
+    box-shadow: var(--shadow-sm);
   }
   
   mat-icon {
-    font-size: 24px !important;
-    width: 24px !important;
-    height: 24px !important;
+    font-size: 22px !important;
+    width: 22px !important;
+    height: 22px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     line-height: 1 !important;
     margin: 0 !important;
+    // Ensure icon is not compressed
+    flex-shrink: 0 !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
   }
   
   .mat-icon.shake {
@@ -877,17 +939,21 @@
   box-shadow: var(--shadow-2xl) !important;
   border: 1px solid var(--border-light) !important;
   overflow: hidden !important;
-  min-width: 280px !important;
+  min-width: 240px !important; // Reduced from 280px
+  max-height: 300px !important; // Added max height constraint
   
   .mat-mdc-menu-content {
     padding: 0 !important;
+    max-height: 280px !important; // Reduced content height
+    overflow-y: auto !important;
   }
   
   .mat-mdc-menu-item {
     height: auto !important;
-    padding: var(--spacing) var(--spacing-lg) !important;
+    padding: var(--spacing-sm) var(--spacing) !important; // Reduced padding
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     border-bottom: 1px solid var(--border-light) !important;
+    min-height: 40px !important; // Set minimum height
     
     &:last-child {
       border-bottom: none !important;
@@ -956,8 +1022,21 @@
 }
 
 @media (max-width: 768px) {
+  .navbar {
+    // Ensure fixed positioning works on mobile
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: var(--navbar-height) !important;
+    z-index: 1000 !important;
+  }
+  
   .nav-container {
     padding: 0 10px;
+    height: 100%;
+    min-height: var(--navbar-height);
   }
   
   .nav-menu {
@@ -983,10 +1062,16 @@
   
   // Mobile profile dropdown adjustments
   ::ng-deep .mat-mdc-menu-panel {
-    min-width: 250px !important;
+    min-width: 220px !important; // Reduced for mobile
+    max-height: 250px !important; // Reduced height for mobile
+    
+    .mat-mdc-menu-content {
+      max-height: 230px !important;
+    }
     
     .mat-mdc-menu-item {
-      padding: var(--spacing-sm) var(--spacing) !important;
+      padding: var(--spacing-xs) var(--spacing-sm) !important; // Further reduced padding for mobile
+      min-height: 36px !important; // Smaller minimum height for mobile
       
       mat-icon {
         font-size: 18px !important;

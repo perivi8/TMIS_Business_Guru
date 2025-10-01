@@ -114,6 +114,9 @@ export interface Client {
   created_by_name?: string;
   updated_by?: string;
   updated_by_name?: string;
+  
+  // Payment Gateway Information
+  payment_gateways?: string[];
 }
 
 @Injectable({
@@ -121,8 +124,11 @@ export interface Client {
 })
 export class ClientService implements OnDestroy {
   private clientsSubject = new BehaviorSubject<Client[]>([]);
+  private clientUpdatedSubject = new BehaviorSubject<string | null>(null);
   private currentUser: User | null = null;
   private userSubscription: Subscription;
+
+  public clientUpdated$ = this.clientUpdatedSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -309,6 +315,9 @@ export class ClientService implements OnDestroy {
           });
         }
       }
+      
+      // Notify other components about client update
+      this.clientUpdatedSubject.next(clientId);
       
       return response;
     } catch (error: any) {

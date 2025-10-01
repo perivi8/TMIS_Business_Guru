@@ -40,6 +40,14 @@ export class DashboardComponent implements OnInit {
     this.currentUser = this.authService.currentUserValue;
     this.loadClients();
     this.loadUserStats();
+    
+    // Subscribe to client updates
+    this.clientService.clientUpdated$.subscribe(clientId => {
+      if (clientId) {
+        console.log('Client updated notification received in dashboard for ID:', clientId);
+        this.refreshClientData(clientId);
+      }
+    });
   }
 
   loadClients(): void {
@@ -125,6 +133,21 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  getLoanStatusColor(status: string): string {
+    switch (status) {
+      case 'approved': return '#4caf50'; // Green
+      case 'rejected': return '#f44336'; // Red
+      case 'hold': return '#ff9800'; // Orange
+      case 'processing': return '#00bcd4'; // Sky Blue
+      case 'soon': return '#9e9e9e'; // Gray
+      default: return '#9e9e9e'; // Gray
+    }
+  }
+
+  getLoanStatus(client: Client): string {
+    return (client as any)?.loan_status || 'soon';
+  }
+
   viewClientDetails(client: Client): void {
     this.router.navigate(['/clients', client._id]);
   }
@@ -167,6 +190,30 @@ export class DashboardComponent implements OnInit {
             });
           }
         });
+      }
+    });
+  }
+
+  refreshClientData(clientId: string): void {
+    // Refresh specific client data by fetching updated details
+    this.clientService.getClientDetails(clientId).subscribe({
+      next: (response) => {
+        if (response && response.client) {
+          // Find and update the client in the current array
+          const clientIndex = this.clients.findIndex(c => c._id === clientId);
+          if (clientIndex !== -1) {
+            this.clients[clientIndex] = response.client;
+            // Recalculate stats since loan status might have changed
+            this.calculateStats();
+          }
+          
+          console.log('Client data refreshed in dashboard for ID:', clientId);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to refresh client data in dashboard:', error);
+        // Fallback: reload all clients
+        this.loadClients();
       }
     });
   }

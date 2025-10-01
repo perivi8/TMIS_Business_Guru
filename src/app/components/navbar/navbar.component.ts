@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Location } from '@angular/common';
 import { AuthService, User } from '../../services/auth.service';
 import { ClientService, Client } from '../../services/client.service';
 import { NotificationService, Notification } from '../../services/notification.service';
@@ -38,9 +39,24 @@ export class NavbarComponent implements OnInit, OnDestroy {
   lastNotificationCount = 0;
   isLoadingNotifications = false;
   unreadNotificationCount = 0;
+  showBackButton = false;
+  currentRoute = '';
+
+  // Routes that should show back button
+  private backButtonRoutes = [
+    '/clients',
+    '/contact-us', 
+    '/enquiry',
+    '/new-client',
+    '/team',
+    '/client-detail',
+    '/edit-client',
+    '/notifications'
+  ];
 
   constructor(
     public router: Router,
+    private location: Location,
     private authService: AuthService,
     private clientService: ClientService,
     private notificationService: NotificationService,
@@ -65,6 +81,19 @@ export class NavbarComponent implements OnInit, OnDestroy {
         console.log('Not admin or no user, skipping client load');
       }
     });
+    
+    // Subscribe to router events to show/hide back button
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.currentRoute = event.url;
+        this.updateBackButtonVisibility();
+      }
+    });
+    
+    // Initial check for back button
+    this.currentRoute = this.router.url;
+    this.updateBackButtonVisibility();
+    
     this.loadNotifications();
     this.initializeLastVisit();
     this.subscribeToUnreadCount();
@@ -454,5 +483,39 @@ export class NavbarComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  // Back button functionality
+  updateBackButtonVisibility(): void {
+    // Check if current route should show back button
+    this.showBackButton = this.backButtonRoutes.some(route => 
+      this.currentRoute.startsWith(route)
+    );
+  }
+
+  goBack(): void {
+    this.location.back();
+  }
+
+  // Navigate to admin dashboard and scroll to Client Status Report section
+  navigateToStatusReport(): void {
+    this.router.navigate(['/admin-dashboard']).then(() => {
+      // Wait for navigation to complete, then scroll to the section
+      setTimeout(() => {
+        const element = document.getElementById('client-status-report');
+        if (element) {
+          // Get the navbar height (70px) and add some padding
+          const navbarHeight = 70;
+          const additionalOffset = 20; // Extra space for better visibility
+          const elementPosition = element.offsetTop - navbarHeight - additionalOffset;
+          
+          // Smooth scroll to the calculated position
+          window.scrollTo({
+            top: elementPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+    });
   }
 }

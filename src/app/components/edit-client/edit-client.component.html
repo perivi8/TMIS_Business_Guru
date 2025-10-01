@@ -1,6 +1,22 @@
 <div class="edit-client-container">
+  <!-- Modern Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title">
+        <div class="header-icon">
+          <mat-icon>edit</mat-icon>
+        </div>
+        <div>
+          <h1>Edit Client</h1>
+          <p class="header-subtitle">Update client information and details</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Actions -->
   <div class="header">
-    <h1>Edit Client</h1>
+    <div></div>
     <div class="header-actions">
       <button mat-button (click)="cancel()" color="warn">Cancel</button>
       <button mat-raised-button (click)="saveClient()" color="primary" [disabled]="saving">
@@ -17,9 +33,15 @@
   <div *ngIf="!loading && client" class="form-container">
     <form [formGroup]="clientForm" class="client-form">
       <!-- Personal Information Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>Personal Information</mat-card-title>
+      <mat-card class="section-card personal-info-card">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Personal Information</mat-card-title>
+            <mat-card-subtitle>Basic business and contact details</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -85,9 +107,15 @@
       </mat-card>
 
       <!-- GST Details Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>GST Details</mat-card-title>
+      <mat-card class="section-card gst-details-card">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>receipt</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>GST Details</mat-card-title>
+            <mat-card-subtitle>GST registration and tax information</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <!-- GST Status -->
@@ -225,9 +253,15 @@
       </mat-card>
 
       <!-- Address Information Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>Address Information</mat-card-title>
+      <mat-card class="section-card address-info-card">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>location_on</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Address Information</mat-card-title>
+            <mat-card-subtitle>Business location and contact address</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -261,9 +295,15 @@
       </mat-card>
 
       <!-- Business Information Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>Business Information</mat-card-title>
+      <mat-card class="section-card business-info-card">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>business</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Business Information</mat-card-title>
+            <mat-card-subtitle>Company structure and registration details</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -297,9 +337,15 @@
       </mat-card>
 
       <!-- Business PAN Details Section -->
-      <mat-card class="section-card" *ngIf="(clientForm.get('constitution_type')?.value === 'Proprietorship' || clientForm.get('constitution_type')?.value === 'Partnership' || clientForm.get('constitution_type')?.value === 'Private Limited') && (clientForm.get('has_business_pan')?.value === 'yes' || hasExistingDocument('business_pan_document'))">
-        <mat-card-header>
-          <mat-card-title>Business PAN Details</mat-card-title>
+      <mat-card class="section-card business-pan-card" *ngIf="(clientForm.get('constitution_type')?.value === 'Proprietorship' || clientForm.get('constitution_type')?.value === 'Partnership' || clientForm.get('constitution_type')?.value === 'Private Limited') && (clientForm.get('has_business_pan')?.value === 'yes' || hasExistingDocument('business_pan_document'))">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>credit_card</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Business PAN Details</mat-card-title>
+            <mat-card-subtitle>Business PAN card information and documentation</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -343,9 +389,15 @@
       </mat-card>
 
       <!-- Owner Details Section -->
-      <mat-card class="section-card" *ngIf="clientForm.get('constitution_type')?.value === 'Private Limited' || (clientForm.get('constitution_type')?.value === 'Proprietorship' && (clientForm.get('has_business_pan')?.value === 'yes' || hasExistingDocument('owner_aadhar') || hasExistingDocument('owner_pan')))">
-        <mat-card-header>
-          <mat-card-title>Owner Details</mat-card-title>
+      <mat-card class="section-card owner-details-card" *ngIf="clientForm.get('constitution_type')?.value === 'Private Limited' || (clientForm.get('constitution_type')?.value === 'Proprietorship' && (clientForm.get('has_business_pan')?.value === 'yes' || hasExistingDocument('owner_aadhar') || hasExistingDocument('owner_pan')))">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>person_outline</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Owner Details</mat-card-title>
+            <mat-card-subtitle>Owner information and documentation</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -413,9 +465,15 @@
       </mat-card>
 
       <!-- Partnership Details Section -->
-      <mat-card class="section-card" *ngIf="clientForm.get('constitution_type')?.value === 'Partnership'">
-        <mat-card-header>
-          <mat-card-title>Partnership Details</mat-card-title>
+      <mat-card class="section-card partnership-details-card" *ngIf="clientForm.get('constitution_type')?.value === 'Partnership'">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>group</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Partnership Details</mat-card-title>
+            <mat-card-subtitle>Partner information and documentation</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -495,9 +553,15 @@
       </mat-card>
 
       <!-- Financial Information Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>Financial Information</mat-card-title>
+      <mat-card class="section-card financial-info-card">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>account_balance</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Financial Information</mat-card-title>
+            <mat-card-subtitle>Banking details and financial requirements</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -533,9 +597,15 @@
       </mat-card>
 
       <!-- Bank Information Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>Bank Information</mat-card-title>
+      <mat-card class="section-card bank-info-card">
+        <mat-card-header class="modern-header">
+          <div class="header-icon">
+            <mat-icon>account_balance_wallet</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Bank Information</mat-card-title>
+            <mat-card-subtitle>Current banking details and account information</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="form-row">
@@ -629,51 +699,80 @@
 
           <!-- Bank Statements Section -->
           <div class="bank-statements-section">
-            <h4>Bank Statements</h4>
+            <div class="statements-header">
+              <div class="header-info">
+                <mat-icon class="section-icon">description</mat-icon>
+                <div class="header-text">
+                  <h4>Bank Statements</h4>
+                  <p>Upload your recent bank statements for verification</p>
+                </div>
+              </div>
+            </div>
             
             <!-- Existing Bank Statements -->
-            <div *ngIf="getExistingBankStatements().length > 0" class="existing-bank-statements">
-              <h5>Existing Bank Statements</h5>
-              <div class="bank-statements-grid">
-                <div *ngFor="let statement of getExistingBankStatements(); let i = index" class="bank-statement-item">
-                  <div class="document-info">
-                    <mat-icon>account_balance</mat-icon>
-                    <span>Bank Statement {{ i + 1 }}</span>
-                    <small *ngIf="statement.file_name">({{ statement.file_name }})</small>
-                    <small *ngIf="statement.file_size"> - {{ formatFileSize(statement.file_size) }}</small>
+            <div *ngIf="getExistingBankStatements().length > 0" class="existing-statements-container">
+              <div class="subsection-header">
+                <mat-icon>folder</mat-icon>
+                <h5>Existing Bank Statements</h5>
+              </div>
+              <div class="statements-grid">
+                <div *ngFor="let statement of getExistingBankStatements(); let i = index" class="statement-card existing">
+                  <div class="card-header">
+                    <mat-icon class="file-icon">insert_drive_file</mat-icon>
+                    <div class="file-details">
+                      <span class="file-title">Bank Statement {{ i + 1 }}</span>
+                      <div class="file-meta">
+                        <small *ngIf="statement.file_name" class="file-name">{{ statement.file_name }}</small>
+                        <small *ngIf="statement.file_size" class="file-size">{{ formatFileSize(statement.file_size) }}</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button mat-icon-button color="primary" matTooltip="Download">
+                      <mat-icon>download</mat-icon>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- New Bank Statement Uploads -->
-            <div class="new-bank-statements">
-              <h5>{{ getExistingBankStatements().length > 0 ? 'Update Bank Statements' : 'Upload Bank Statements' }}</h5>
-              <div class="bank-statements-upload">
-                <div *ngFor="let i of [].constructor(bankStatementsCount); let idx = index" class="bank-statement-upload-item">
-                  <div class="file-upload">
-                    <input type="file" [id]="'bank_statement_' + idx" (change)="onFileSelected($event, 'bank_statement_' + idx)" accept=".pdf,.jpg,.jpeg,.png">
-                    <label [for]="'bank_statement_' + idx" class="file-label">
-                      <mat-icon>upload_file</mat-icon>
-                      Bank Statement {{ idx + 1 }}
+            <div class="upload-statements-container">
+              <div class="subsection-header">
+                <mat-icon>cloud_upload</mat-icon>
+                <h5>{{ getExistingBankStatements().length > 0 ? 'Update Bank Statements' : 'Upload Bank Statements' }}</h5>
+              </div>
+              <div class="upload-grid">
+                <div *ngFor="let i of [].constructor(bankStatementsCount); let idx = index" class="upload-card">
+                  <div class="upload-area" [class.has-file]="documents['bank_statement_' + idx]">
+                    <input type="file" [id]="'bank_statement_' + idx" (change)="onFileSelected($event, 'bank_statement_' + idx)" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+                    <label [for]="'bank_statement_' + idx" class="upload-label">
+                      <div class="upload-content">
+                        <mat-icon class="upload-icon">{{ documents['bank_statement_' + idx] ? 'check_circle' : 'cloud_upload' }}</mat-icon>
+                        <span class="upload-text">{{ documents['bank_statement_' + idx] ? 'File Selected' : 'Bank Statement ' + (idx + 1) }}</span>
+                        <small class="upload-hint" *ngIf="!documents['bank_statement_' + idx]">Click to upload PDF, JPG, PNG</small>
+                      </div>
                     </label>
-                    <div *ngIf="documents['bank_statement_' + idx]" class="file-info">
-                      <small>{{ documents['bank_statement_' + idx].name }}</small>
-                      <button mat-icon-button color="warn" (click)="removeDocument('bank_statement_' + idx)" matTooltip="Remove">
-                        <mat-icon>delete</mat-icon>
+                    <div *ngIf="documents['bank_statement_' + idx]" class="file-preview">
+                      <div class="preview-info">
+                        <mat-icon class="preview-icon">insert_drive_file</mat-icon>
+                        <span class="preview-name">{{ documents['bank_statement_' + idx].name }}</span>
+                      </div>
+                      <button type="button" class="remove-file-btn" (click)="removeDocument('bank_statement_' + idx)" matTooltip="Remove file">
+                        <mat-icon>close</mat-icon>
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="bank-statement-actions">
-                <button type="button" class="add-statement-btn" (click)="addBankStatement()" *ngIf="bankStatementsCount < 6" matTooltip="Add more bank statements">
+              <div class="statement-controls">
+                <button type="button" class="control-btn add-btn" (click)="addBankStatement()" *ngIf="bankStatementsCount < 6" matTooltip="Add more bank statements">
                   <mat-icon>add</mat-icon>
-                  Add Statement
+                  <span>Add Statement</span>
                 </button>
-                <button type="button" class="remove-statement-btn" (click)="removeBankStatement()" *ngIf="bankStatementsCount > 1" matTooltip="Remove last statement">
+                <button type="button" class="control-btn remove-btn" (click)="removeBankStatement()" *ngIf="bankStatementsCount > 1" matTooltip="Remove last statement">
                   <mat-icon>remove</mat-icon>
-                  Remove Statement
+                  <span>Remove Statement</span>
                 </button>
               </div>
             </div>
@@ -718,102 +817,75 @@
       </mat-card>
 
       <!-- Payment Gateway Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>Type of Gateway</mat-card-title>
+      <mat-card class="section-card payment-gateway-card">
+        <mat-card-header class="gateway-header">
+          <div class="header-icon">
+            <mat-icon>payment</mat-icon>
+          </div>
+          <div class="header-content">
+            <mat-card-title>Payment Gateway Configuration</mat-card-title>
+            <mat-card-subtitle>Select available payment methods for your business</mat-card-subtitle>
+          </div>
         </mat-card-header>
         <mat-card-content>
           <div class="payment-gateway-section">
-            <h4>Payment Gateways Available</h4>
-            <p>Select one or more payment gateways:</p>
-            
-            <div class="gateway-options">
-              <mat-checkbox 
-                *ngFor="let gateway of availableGateways" 
-                [checked]="isGatewaySelected(gateway)"
-                (change)="onGatewayChange(gateway, $event.checked)"
-                class="gateway-checkbox">
-                {{ gateway }}
-              </mat-checkbox>
-            </div>
-            
-            <div class="selected-gateways" *ngIf="getSelectedGateways().length > 0">
-              <h5>Selected Payment Gateways:</h5>
-              <div class="selected-gateway-list">
-                <span *ngFor="let gateway of getSelectedGateways(); let last = last" class="selected-gateway">
-                  {{ gateway }}<span *ngIf="!last">, </span>
-                </span>
+            <div class="gateway-selection">
+              <div class="section-title">
+                <mat-icon>tune</mat-icon>
+                <h4>Available Payment Gateways</h4>
               </div>
-            </div>
-            
-            <div class="no-gateways" *ngIf="getSelectedGateways().length === 0">
-              <p><em>No payment gateways selected</em></p>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Documents Section -->
-      <mat-card class="section-card">
-        <mat-card-header>
-          <mat-card-title>Documents</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <!-- Existing Documents -->
-          <div class="existing-documents-section">
-            <h4>Uploaded Documents</h4>
-            <div class="documents-grid">
-              <div *ngFor="let doc of getExistingDocuments()" class="document-item">
-                <div class="document-info">
-                  <mat-icon>description</mat-icon>
-                  <span>{{ doc.file_name }}</span>
-                  <small>({{ formatFileSize(doc.file_size) }})</small>
+              <p class="section-description">Choose one or more payment gateways that your business will support:</p>
+              
+              <div class="gateway-options">
+                <div class="gateway-grid">
+                  <mat-checkbox 
+                    *ngFor="let gateway of availableGateways" 
+                    [checked]="isGatewaySelected(gateway)"
+                    (change)="onGatewayChange(gateway, $event.checked)"
+                    class="gateway-checkbox"
+                    [attr.data-gateway]="gateway">
+                    <div class="gateway-item">
+                      <div class="gateway-icon-wrapper" [style.background-color]="getGatewayColor(gateway) + '20'">
+                        <mat-icon class="gateway-icon" [style.color]="getGatewayColor(gateway)">{{ getGatewayIcon(gateway) }}</mat-icon>
+                      </div>
+                      <div class="gateway-info">
+                        <span class="gateway-name">{{ gateway }}</span>
+                      </div>
+                    </div>
+                  </mat-checkbox>
                 </div>
               </div>
-              <div *ngIf="getExistingDocuments().length === 0" class="no-documents">
-                <p>No documents uploaded</p>
-              </div>
             </div>
-          </div>
-
-          <!-- Additional Document Uploads -->
-          <div class="additional-documents-section">
-            <h4>Additional Document Uploads</h4>
             
-            <!-- Business Images Upload (1-10 images) -->
-            <div class="business-images-upload">
-              <h5>Business Images (1-10 images)</h5>
-              <div class="images-grid">
-                <div *ngFor="let i of [].constructor(businessImagesCount); let idx = index" class="image-upload-item">
-                  <div class="file-upload">
-                    <input type="file" [id]="'business_image_' + idx" (change)="onFileSelected($event, 'business_image_' + idx)" accept=".jpg,.jpeg,.png">
-                    <label [for]="'business_image_' + idx" class="file-label">
-                      <mat-icon>add_photo_alternate</mat-icon>
-                      Business Image {{ idx + 1 }}
-                    </label>
-                    <div *ngIf="documents['business_image_' + idx]" class="file-info">
-                      <small>{{ documents['business_image_' + idx].name }}</small>
-                      <button mat-icon-button color="warn" (click)="removeDocument('business_image_' + idx)" matTooltip="Remove">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </div>
+            <div class="gateway-summary">
+              <div class="selected-gateways" *ngIf="getSelectedGateways().length > 0">
+                <div class="summary-header">
+                  <mat-icon>check_circle</mat-icon>
+                  <h5>Selected Payment Gateways ({{ getSelectedGateways().length }})</h5>
+                </div>
+                <div class="selected-gateway-tags">
+                  <div class="gateway-chip" *ngFor="let gateway of getSelectedGateways()" [style.background]="'linear-gradient(135deg, ' + getGatewayColor(gateway) + ' 0%, ' + getGatewayColor(gateway) + 'dd 100%)'">
+                    <mat-icon class="chip-icon">{{ getGatewayIcon(gateway) }}</mat-icon>
+                    <span class="chip-text">{{ gateway }}</span>
+                    <button class="chip-remove" (click)="onGatewayChange(gateway, false)" matTooltip="Remove {{ gateway }}">
+                      <mat-icon>close</mat-icon>
+                    </button>
                   </div>
                 </div>
               </div>
-              <div class="image-actions">
-                <button type="button" class="add-image-btn" (click)="addBusinessImage()" *ngIf="businessImagesCount < 10" matTooltip="Add more business images">
-                  <mat-icon>add</mat-icon>
-                  Add Image
-                </button>
-                <button type="button" class="remove-image-btn" (click)="removeBusinessImage()" *ngIf="businessImagesCount > 1" matTooltip="Remove last image">
-                  <mat-icon>remove</mat-icon>
-                  Remove Image
-                </button>
+              
+              <div class="no-gateways" *ngIf="getSelectedGateways().length === 0">
+                <div class="empty-state">
+                  <mat-icon>info</mat-icon>
+                  <p>No payment gateways selected yet</p>
+                  <small>Please select at least one payment gateway above</small>
+                </div>
               </div>
             </div>
           </div>
         </mat-card-content>
       </mat-card>
+
     </form>
   </div>
 </div>

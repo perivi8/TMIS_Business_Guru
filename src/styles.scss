@@ -52,12 +52,31 @@
   --spacing-lg: 2rem;
   --spacing-xl: 3rem;
   --spacing-2xl: 4rem;
+  
+  // Layout
+  --navbar-height: 70px;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html {
+  // Prevent horizontal scrolling and layout shifts
+  overflow-x: hidden !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  
+  // Force consistent scrollbar
+  overflow-y: scroll !important;
+  
+  // Smooth scrolling
+  scroll-behavior: smooth !important;
+  
+  // Prevent overscroll on mobile
+  overscroll-behavior: none !important;
 }
 
 body {
@@ -68,6 +87,23 @@ body {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  // Prevent horizontal movement and layout shifts
+  overflow-x: hidden !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  position: relative !important;
+  
+  // Force scrollbar to always be visible to prevent layout shifts
+  overflow-y: scroll !important;
+  
+  // Lock body to prevent any horizontal scrolling
+  touch-action: pan-y !important;
+  overscroll-behavior-x: none !important;
+  scroll-behavior: smooth !important;
+  
+  // Add padding for fixed header
+  padding-top: var(--navbar-height);
 }
 
 // Typography
@@ -92,11 +128,21 @@ p {
   line-height: 1.7;
 }
 
-// Layout
+// Layout - Stable container system
 .container {
   max-width: 1400px;
   margin: 0 auto;
   padding: var(--spacing-lg);
+  
+  // Prevent horizontal movement
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  position: relative;
+  
+  // Lock container to screen width
+  min-width: 0;
+  max-width: calc(100vw - 2rem); // Account for padding
 }
 
 .container-sm { max-width: 640px; }
@@ -126,7 +172,7 @@ p {
 
 // Form Components
 .form-group {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .form-control {
@@ -159,6 +205,135 @@ p {
     background-color: var(--secondary);
     color: var(--text-muted);
     cursor: not-allowed;
+  }
+}
+
+// Enhanced Angular Material Form Field Styling
+.mat-mdc-form-field {
+  width: 100%;
+  margin-bottom: 0px !important;
+  padding-top: var(--spacing) !important;
+  
+  .mat-mdc-form-field-wrapper {
+    padding-bottom: 0px !important;
+    padding-top: var(--spacing-sm) !important;
+  }
+  
+  .mat-mdc-form-field-infix {
+    min-height: 40px !important;
+    padding: var(--spacing-sm) 0 !important;
+  }
+  
+  .mat-mdc-input-element {
+    padding: var(--spacing-sm) var(--spacing) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+    height: auto !important;
+    min-height: 20px !important;
+  }
+  
+  .mat-mdc-form-field-outline {
+    border-radius: var(--radius-lg) !important;
+    border-width: 2px !important;
+  }
+  
+  .mat-mdc-form-field-label {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: var(--text-secondary) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  // Label positioning for empty/unfocused state
+  &:not(.mat-mdc-form-field-has-icon-suffix):not(.mat-focused):not(.ng-invalid) {
+    .mat-mdc-form-field-label:not(.mat-mdc-form-field-label-floating) {
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+    }
+  }
+  
+  // Label positioning for focused or filled state
+  &.mat-focused,
+  &.mat-mdc-form-field-has-icon-suffix,
+  &.ng-invalid {
+    .mat-mdc-form-field-label {
+      top: 0.25rem !important;
+      transform: translateY(0) scale(0.75) !important;
+      color: var(--primary) !important;
+      background: var(--surface) !important;
+      padding: 0 var(--spacing-xs) !important;
+    }
+  }
+  
+  &.mat-focused {
+    .mat-mdc-form-field-outline {
+      border-color: var(--primary) !important;
+      border-width: 2px !important;
+    }
+  }
+  
+  // Handle floating labels properly
+  .mat-mdc-form-field-label.mat-mdc-form-field-label-floating {
+    top: 0.25rem !important;
+    transform: translateY(0) scale(0.75) !important;
+    background: var(--surface) !important;
+    padding: 0 var(--spacing-xs) !important;
+    z-index: 2 !important;
+  }
+  
+  // Ensure label floats when input has value
+  &.mat-mdc-form-field-has-icon-suffix .mat-mdc-form-field-label,
+  &.mat-focused .mat-mdc-form-field-label,
+  &.ng-invalid .mat-mdc-form-field-label {
+    top: 0.25rem !important;
+    transform: translateY(0) scale(0.75) !important;
+    background: var(--surface) !important;
+    padding: 0 var(--spacing-xs) !important;
+    z-index: 2 !important;
+  }
+  
+  &:not(.mat-focused):hover {
+    .mat-mdc-form-field-outline {
+      border-color: var(--text-muted) !important;
+    }
+  }
+}
+
+// Fix for select fields
+.mat-mdc-select {
+  .mat-mdc-select-value {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+  
+  .mat-mdc-select-placeholder {
+    color: var(--text-muted) !important;
+  }
+}
+
+// Custom form labels (for non-material fields)
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  
+  &.required::after {
+    content: ' *';
+    color: var(--error);
+  }
+  
+  &.optional {
+    color: var(--text-secondary);
+    font-weight: 400;
+    
+    &::after {
+      content: ' (Optional)';
+      font-style: italic;
+      font-size: 0.75rem;
+    }
   }
 }
 
@@ -654,6 +829,11 @@ p {
 }
 
 @media (max-width: 768px) {
+  body {
+    // Ensure proper spacing for fixed header on mobile
+    padding-top: var(--navbar-height) !important;
+  }
+  
   .navbar .nav-menu {
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -737,4 +917,79 @@ mat-icon {
   h1 { font-size: 1.75rem; }
   h2 { font-size: 1.5rem; }
   h3 { font-size: 1.25rem; }
+}
+
+// Global layout stability rules - prevent horizontal movement
+* {
+  // Prevent any element from causing horizontal overflow
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+// Ensure Angular Material components don't cause horizontal overflow
+.mat-mdc-form-field,
+.mat-mdc-card,
+.mat-mdc-table,
+.mat-stepper-horizontal,
+.mat-horizontal-stepper {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+// Prevent router-outlet content from causing horizontal movement
+router-outlet + * {
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+// Ensure app-root doesn't allow horizontal overflow
+app-root {
+  display: block;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
+}
+
+// Utility class for content that needs to account for fixed header
+.fixed-header-offset {
+  padding-top: var(--navbar-height);
+}
+
+// Ensure main content area accounts for fixed header
+main, .main-content {
+  min-height: calc(100vh - var(--navbar-height));
+  padding-top: var(--spacing);
+}
+
+// Global back button styling for page headers
+.page-header .back-button {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: var(--radius-lg) !important;
+  color: white !important;
+  width: 48px !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  backdrop-filter: blur(10px) !important;
+  margin-right: var(--spacing) !important;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    transform: translateX(-2px) scale(1.05) !important;
+    box-shadow: var(--shadow-lg) !important;
+  }
+  
+  mat-icon {
+    font-size: 24px !important;
+    width: 24px !important;
+    height: 24px !important;
+    color: white !important;
+    margin: 0 !important;
+  }
 }

@@ -1,5 +1,8 @@
 <mat-toolbar color="primary" class="navbar">
   <div class="nav-container">
+    <button mat-icon-button *ngIf="showBackButton" class="back-button" (click)="goBack()" matTooltip="Go Back">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
     <a routerLink="/" class="nav-brand">
       <mat-icon>business</mat-icon>
       TMIS Business Guru
@@ -11,6 +14,10 @@
         <a routerLink="/admin-dashboard" routerLinkActive="active" class="nav-link">
           <mat-icon>dashboard</mat-icon>
           Home
+        </a>
+        <a routerLink="/team" routerLinkActive="active" class="nav-link">
+          <mat-icon>group</mat-icon>
+          Team
         </a>
         <a routerLink="/clients" routerLinkActive="active" class="nav-link">
           <mat-icon>people</mat-icon>
@@ -24,9 +31,13 @@
           <mat-icon>contact_mail</mat-icon>
           Contact Us
         </a>
+        <a (click)="navigateToStatusReport()" class="nav-link status-link">
+          <mat-icon>pie_chart</mat-icon>
+          Status
+        </a>
         <div class="notifications-wrapper">
           <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications">
-            <mat-icon [class.shake]="hasUnreadNotifications">notifications</mat-icon>
+            <mat-icon [class.shake]="hasUnreadNotifications">notifications_active</mat-icon>
             <span class="notification-count" *ngIf="getNotificationCount() > 0">{{ getNotificationCount() }}</span>
           </button>
           
@@ -143,7 +154,7 @@
         </a>
         <div class="notifications-wrapper">
           <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications">
-            <mat-icon [class.shake]="hasUnreadNotifications">notifications</mat-icon>
+            <mat-icon [class.shake]="hasUnreadNotifications">notifications_active</mat-icon>
             <span class="notification-count" *ngIf="getNotificationCount() > 0">{{ getNotificationCount() }}</span>
           </button>
           

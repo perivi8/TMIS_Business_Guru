@@ -19,6 +19,8 @@ export class ClientDetailComponent implements OnInit {
   error = '';
   isEditing = false;
   editableClient: Client | null = null;
+  updatingLoanStatus = false;
+  updatingGatewayStatus: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -48,16 +50,29 @@ export class ClientDetailComponent implements OnInit {
       next: (response) => {
         this.client = response.client;
         this.loading = false;
+        
+        // Ensure UI is updated after data reload
+        console.log('Client details reloaded:', {
+          payment_gateways_status: (this.client as any).payment_gateways_status,
+          loan_status: (this.client as any).loan_status
+        });
       },
       error: (error) => {
         this.error = 'Failed to load client details';
         this.loading = false;
+        console.error('Error loading client details:', error);
       }
     });
   }
 
   isAdmin(): boolean {
     return this.authService.isAdmin();
+  }
+
+  isTmisUser(): boolean {
+    // Check if user email contains '@tmis.' domain
+    const userEmail = localStorage.getItem('userEmail') || '';
+    return userEmail.includes('@tmis.');
   }
 
   getStatusColor(status: string): string {
@@ -672,6 +687,23 @@ export class ClientDetailComponent implements OnInit {
   startEdit(): void {
     this.isEditing = true;
     this.editableClient = { ...this.client! };
+    
+    // Ensure all necessary fields like payment_gateways and status fields are initialized to prevent data loss
+    if (!this.editableClient.payment_gateways) {
+      this.editableClient.payment_gateways = (this.client as any).payment_gateways || [];
+    }
+    if (!(this.editableClient as any).payment_gateways_status) {
+      (this.editableClient as any).payment_gateways_status = (this.client as any).payment_gateways_status || {};
+    }
+    if (!(this.editableClient as any).loan_status) {
+      (this.editableClient as any).loan_status = (this.client as any).loan_status || 'soon';
+    }
+    
+    console.log('Edit mode started with initialized fields:', {
+      payment_gateways: this.editableClient.payment_gateways,
+      payment_gateways_status: (this.editableClient as any).payment_gateways_status,
+      loan_status: (this.editableClient as any).loan_status
+    });
   }
 
   cancelEdit(): void {
@@ -725,6 +757,9 @@ export class ClientDetailComponent implements OnInit {
         if (dobValue) formData.append(dobField, dobValue);
       }
     }
+
+    // Note: Payment gateways are not included in this update since client-detail page 
+    // doesn't have editing UI for payment gateways. The backend will preserve existing values.
 
     // Use the updateClientDetails method which handles all fields
     this.clientService.updateClientDetails(this.client._id, formData)
@@ -813,12 +848,17 @@ export class ClientDetailComponent implements OnInit {
   }
 
   getPaymentGateways(): string[] {
-    if (!this.client) return [];
+    if (!this.client) {
+      console.log('🚫 No client data available for payment gateways');
+      return [];
+    }
     
     // Try to get payment gateways from client data
     const gateways = (this.client as any).payment_gateways;
+    console.log('🔍 Payment gateways from client data:', gateways, 'Type:', typeof gateways);
     
     if (Array.isArray(gateways)) {
+      console.log('✅ Payment gateways is array:', gateways);
       return gateways;
     }
     
@@ -826,14 +866,111 @@ export class ClientDetailComponent implements OnInit {
     if (typeof gateways === 'string') {
       try {
         const parsed = JSON.parse(gateways);
+        console.log('✅ Parsed payment gateways from string:', parsed);
         return Array.isArray(parsed) ? parsed : [];
       } catch (e) {
-        console.warn('Failed to parse payment gateways:', gateways);
+        console.warn('❌ Failed to parse payment gateways:', gateways);
         return [];
       }
     }
     
+    console.log('⚠️ Payment gateways not found or invalid format');
     return [];
+  }
+
+  getPaymentGatewayStatus(gateway: string): 'approved' | 'not_approved' | 'pending' {
+    if (!this.client) return 'pending';
+    const gatewayStatus = (this.client as any).payment_gateways_status;
+    return gatewayStatus && gatewayStatus[gateway] ? gatewayStatus[gateway] : 'pending';
+  }
+
+  toggleGatewayApproval(gateway: string, status: 'approved' | 'not_approved'): void {
+    if (!this.client || !this.isAdmin() || this.updatingGatewayStatus === gateway) return;
+    
+    // Set loading state for this specific gateway
+    this.updatingGatewayStatus = gateway;
+    
+    // Initialize payment_gateways_status if it doesn't exist
+    if (!(this.client as any).payment_gateways_status) {
+      (this.client as any).payment_gateways_status = {};
+    }
+    
+    // Store original status for rollback
+    const originalStatus = this.getPaymentGatewayStatus(gateway);
+    
+    // Toggle status - if clicking the same status, set to pending, otherwise set to the clicked status
+    const newStatus = originalStatus === status ? 'pending' : status;
+    
+    // Update in database without local state change first
+    const formData = new FormData();
+    const updatedGatewayStatus = { ...(this.client as any).payment_gateways_status };
+    updatedGatewayStatus[gateway] = newStatus;
+    formData.append('payment_gateways_status', JSON.stringify(updatedGatewayStatus));
+    
+    this.clientService.updateClientDetails(this.client._id, formData)
+      .then(() => {
+        this.updatingGatewayStatus = null;
+        this.snackBar.open(`Gateway ${gateway} marked as ${newStatus}`, 'Close', { duration: 3000 });
+        // Reload client details to ensure consistency and update other views
+        this.loadClientDetails(this.client!._id);
+      })
+      .catch((error) => {
+        this.updatingGatewayStatus = null;
+        console.error('Error updating gateway status:', error);
+        this.snackBar.open('Failed to update gateway status', 'Close', { duration: 3000 });
+        // No need to revert since we didn't change local state first
+      });
+  }
+
+  getLoanStatus(): string {
+    return (this.client as any)?.loan_status || 'soon';
+  }
+
+  updateLoanStatus(status: 'approved' | 'hold' | 'processing' | 'rejected'): void {
+    if (!this.client || !this.isAdmin() || this.updatingLoanStatus) return;
+    
+    // Set loading state
+    this.updatingLoanStatus = true;
+    
+    // Store the original status for potential rollback
+    const originalStatus = (this.client as any).loan_status || 'soon';
+    
+    // Update in database first without changing local state
+    const formData = new FormData();
+    formData.append('loan_status', status);
+    
+    this.clientService.updateClientDetails(this.client._id, formData)
+      .then(() => {
+        this.updatingLoanStatus = false;
+        this.snackBar.open(`Loan status updated to ${status}`, 'Close', { duration: 3000 });
+        // Reload client details to ensure consistency and update other views
+        this.loadClientDetails(this.client!._id);
+      })
+      .catch((error) => {
+        this.updatingLoanStatus = false;
+        console.error('Error updating loan status:', error);
+        this.snackBar.open('Failed to update loan status', 'Close', { duration: 3000 });
+        // No need to revert since we didn't change local state first
+      });
+  }
+
+  getLoanStatusColor(status: string): string {
+    switch (status) {
+      case 'approved': return '#4caf50'; // Green
+      case 'rejected': return '#f44336'; // Red
+      case 'hold': return '#ff9800'; // Yellow/Orange
+      case 'processing': return '#00bcd4'; // Sky Blue
+      case 'soon': return '#9e9e9e'; // Gray
+      default: return '#9e9e9e'; // Gray
+    }
+  }
+
+  isGatewayUpdating(gateway: string): boolean {
+    return this.updatingGatewayStatus === gateway;
+  }
+
+  isLoanStatusUpdating(): boolean {
+    return this.updatingLoanStatus;
   }
 
 }

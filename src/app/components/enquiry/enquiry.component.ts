@@ -524,4 +524,8 @@ export class EnquiryComponent implements OnInit {
   formatDate(date: Date): string {
     return new Date(date).toLocaleDateString('en-IN');
   }
+
+  goBack(): void {
+    window.history.back();
+  }
 }

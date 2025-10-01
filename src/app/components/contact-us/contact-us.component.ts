@@ -41,4 +41,8 @@ export class ContactUsComponent implements OnInit {
       this.contactForm.reset();
     }, 2000);
   }
+
+  goBack(): void {
+    window.history.back();
+  }
 }

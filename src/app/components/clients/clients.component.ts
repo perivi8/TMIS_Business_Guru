@@ -27,10 +27,11 @@ export class ClientsComponent implements OnInit {
   applyNewClientsFilter: Date | null = null;
   applyUpdatedClientsFilter: Date | null = null;
   updatingClientId: string | null = null;
+  viewMode: 'table' | 'card' = 'table';
   
-  displayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'created', 'actions'];
-  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'created', 'actions'];
-  adminDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'created', 'actions'];
+  displayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions'];
+  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions'];
+  adminDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions'];
 
   constructor(
     private clientService: ClientService,
@@ -46,6 +47,14 @@ export class ClientsComponent implements OnInit {
     this.handleQueryParams();
     this.loadClients();
     this.loadUsers();
+    
+    // Subscribe to client updates
+    this.clientService.clientUpdated$.subscribe(clientId => {
+      if (clientId) {
+        console.log('Client updated notification received for ID:', clientId);
+        this.refreshClientData(clientId);
+      }
+    });
   }
 
   handleQueryParams(): void {
@@ -259,6 +268,43 @@ export class ClientsComponent implements OnInit {
     }
   }
 
+  getStatusIcon(status: string): string {
+    switch (status) {
+      case 'interested': return 'check_circle';
+      case 'not_interested': return 'cancel';
+      case 'hold': return 'pause';
+      case 'pending': return 'schedule';
+      case 'processing': return 'autorenew';
+      default: return 'help_outline';
+    }
+  }
+
+  getLoanStatusColor(status: string): string {
+    switch (status) {
+      case 'approved': return '#4caf50'; // Green
+      case 'rejected': return '#f44336'; // Red
+      case 'hold': return '#ff9800'; // Orange
+      case 'processing': return '#00bcd4'; // Sky Blue
+      case 'soon': return '#9e9e9e'; // Gray
+      default: return '#9e9e9e'; // Gray
+    }
+  }
+
+  getLoanStatusIcon(status: string): string {
+    switch (status) {
+      case 'approved': return 'check_circle';
+      case 'rejected': return 'cancel';
+      case 'hold': return 'pause';
+      case 'processing': return 'autorenew';
+      case 'soon': return 'schedule';
+      default: return 'help_outline';
+    }
+  }
+
+  getLoanStatus(client: Client): string {
+    return (client as any)?.loan_status || 'soon';
+  }
+
   isAdmin(): boolean {
     return this.authService.isAdmin();
   }
@@ -442,5 +488,40 @@ export class ClientsComponent implements OnInit {
 
   isClientUpdating(clientId: string): boolean {
     return this.updatingClientId === clientId;
+  }
+
+  refreshClientData(clientId: string): void {
+    // Refresh specific client data by fetching updated details
+    this.clientService.getClientDetails(clientId).subscribe({
+      next: (response) => {
+        if (response && response.client) {
+          // Find and update the client in the current arrays
+          const clientIndex = this.clients.findIndex(c => c._id === clientId);
+          if (clientIndex !== -1) {
+            this.clients[clientIndex] = response.client;
+          }
+          
+          const filteredIndex = this.filteredClients.findIndex(c => c._id === clientId);
+          if (filteredIndex !== -1) {
+            this.filteredClients[filteredIndex] = response.client;
+          }
+          
+          console.log('Client data refreshed for ID:', clientId);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to refresh client data:', error);
+        // Fallback: reload all clients
+        this.loadClients();
+      }
+    });
+  }
+
+  goBack(): void {
+    window.history.back();
+  }
+
+  toggleView(): void {
+    this.viewMode = this.viewMode === 'table' ? 'card' : 'table';
   }
 }

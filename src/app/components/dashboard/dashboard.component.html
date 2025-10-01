@@ -1,17 +1,4 @@
 <div class="container">
-  <!-- Modern Header Section -->
-  <div class="page-header">
-    <div class="header-content">
-      <div class="header-title">
-        <mat-icon class="header-icon">dashboard</mat-icon>
-        <div class="title-text">
-          <h1>Dashboard</h1>
-          <p>Welcome, {{ currentUser && currentUser.username }}! Manage your clients and track business opportunities</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Stats Cards -->
   <div class="stats-grid">
     <mat-card class="stat-card">
@@ -180,6 +167,16 @@
             </td>
           </ng-container>
 
+          <!-- Loan Status Column -->
+          <ng-container matColumnDef="loan_status">
+            <th mat-header-cell *matHeaderCellDef>Loan Status</th>
+            <td mat-cell *matCellDef="let client">
+              <span class="status-badge" [style.background-color]="getLoanStatusColor(getLoanStatus(client))">
+                {{ getLoanStatus(client) | titlecase }}
+              </span>
+            </td>
+          </ng-container>
+
           <!-- Created Column -->
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef>Created</th>
@@ -206,8 +203,8 @@
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="['serial', 'name', 'business', 'staff', 'status', 'date', 'actions']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['serial', 'name', 'business', 'staff', 'status', 'date', 'actions'];" 
+          <tr mat-header-row *matHeaderRowDef="['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'date', 'actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'date', 'actions'];" 
               [class.interested-row]="row.status === 'interested'"
               [class.not-interested-row]="row.status === 'not_interested'"
               [class.hold-row]="row.status === 'hold'"

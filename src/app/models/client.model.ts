@@ -47,6 +47,8 @@ export interface Client {
   
   // Payment gateway fields
   payment_gateways?: string[] | string;
+  payment_gateways_status?: { [gateway: string]: 'approved' | 'not_approved' };
+  loan_status?: 'approved' | 'hold' | 'processing' | 'rejected' | 'soon';
   
   // Financial information
   required_loan_amount?: number;

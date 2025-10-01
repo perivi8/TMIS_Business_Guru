@@ -1,23 +1,42 @@
-.container {
-  min-height: 100vh;
+.register-wrapper {
+  height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background-size: 400% 400%;
+  animation: gradientFlow 15s ease infinite;
+  padding: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .card {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-2xl);
-  padding: var(--spacing-2xl);
+  box-shadow: 
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
+    0 0 0 1px rgba(255, 255, 255, 0.18);
+  padding: 1.5rem 1.25rem;
   width: 100%;
-  max-width: 500px;
-  border: 1px solid var(--border-light);
-  backdrop-filter: blur(10px);
+  max-width: 440px;
+  min-width: 280px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   position: relative;
   overflow: hidden;
+  z-index: 2;
+  animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   
   &::before {
     content: '';
@@ -25,23 +44,77 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--success), var(--primary), var(--accent));
+    height: 5px;
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 300% 100%;
+    animation: gradientShift 6s ease-in-out infinite;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
   }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 h2 {
   font-family: 'Poppins', sans-serif;
   font-weight: 700;
-  margin-bottom: var(--spacing-xl);
-  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-align: center;
-  font-size: 2rem;
+  font-size: 1.75rem;
   letter-spacing: -0.025em;
+  position: relative;
+  z-index: 1;
+  animation: fadeInDown 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 2px;
+    animation: expandWidth 0.8s ease-out 0.6s both;
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expandWidth {
+  from { width: 0; }
+  to { width: 60px; }
 }
 
 .form-group {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 0.75rem;
 }
 
 .mat-mdc-form-field {
@@ -63,12 +136,41 @@ h2 {
   font-weight: 600;
   border-radius: var(--radius-2xl) !important;
   width: 100%;
-  margin-top: var(--spacing);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  box-shadow: 0 8px 24px -4px rgba(102, 126, 234, 0.4) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s;
+  }
   
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 32px -4px rgba(102, 126, 234, 0.6) !important;
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &:active {
+    transform: translateY(0) scale(0.98);
   }
 }
 
@@ -85,6 +187,74 @@ a {
 
 .text-center {
   text-align: center;
-  margin-top: var(--spacing-lg);
+  margin-top: 0.875rem;
   color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+// Error and Success message styling
+.error {
+  background-color: #fee;
+  color: #c33;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #fcc;
+}
+
+.success {
+  background-color: #efe;
+  color: #3c3;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #cfc;
+}
+
+// Spinner styling
+mat-spinner {
+  display: inline-block;
+  margin: 0 !important;
+}
+
+// Responsive adjustments for mobile
+@media (max-width: 768px) {
+  .register-wrapper {
+    padding: 0.75rem;
+  }
+  
+  .card {
+    padding: 1.25rem 1rem;
+    max-width: 95vw;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 0.625rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-wrapper {
+    padding: 0.5rem;
+  }
+  
+  .card {
+    padding: 1rem 0.875rem;
+  }
+  
+  h2 {
+    font-size: 1.375rem;
+    margin-bottom: 0.875rem;
+  }
+  
+  .form-group {
+    margin-bottom: 0.5rem;
+  }
 }

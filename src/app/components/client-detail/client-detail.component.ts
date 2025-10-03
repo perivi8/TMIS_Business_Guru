@@ -902,25 +902,30 @@ export class ClientDetailComponent implements OnInit {
     // Toggle status - if clicking the same status, set to pending, otherwise set to the clicked status
     const newStatus = originalStatus === status ? 'pending' : status;
     
-    // Update local state immediately for better UX
+    // Update in database first, then update UI on success
+    const formData = new FormData();
     const updatedGatewayStatus = { ...(this.client as any).payment_gateways_status };
     updatedGatewayStatus[gateway] = newStatus;
-    (this.client as any).payment_gateways_status = updatedGatewayStatus;
-    
-    // Update in database
-    const formData = new FormData();
     formData.append('payment_gateways_status', JSON.stringify(updatedGatewayStatus));
     
     this.clientService.updateClientDetails(this.client._id, formData)
       .then(() => {
+        // Update local state on successful API call
+        (this.client as any).payment_gateways_status = updatedGatewayStatus;
+        
         // Clear loading state immediately
         this.updatingGatewayStatus = null;
-        this.snackBar.open(`Gateway ${gateway} marked as ${newStatus}`, 'Close', { duration: 3000 });
-        // No need to reload - local state is already updated
+        
+        // Show success message
+        this.snackBar.open(`Gateway ${gateway} marked as ${newStatus}`, 'Close', { duration: 2000 });
+        
+        // Refresh page after 2 seconds to ensure UI is fully updated
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       })
       .catch((error) => {
-        // Revert local state on error
-        (this.client as any).payment_gateways_status[gateway] = originalStatus;
+        // Clear loading state on error
         this.updatingGatewayStatus = null;
         console.error('Error updating gateway status:', error);
         this.snackBar.open('Failed to update gateway status', 'Close', { duration: 3000 });
@@ -940,23 +945,28 @@ export class ClientDetailComponent implements OnInit {
     // Store the original status for potential rollback
     const originalStatus = (this.client as any).loan_status || 'soon';
     
-    // Update local state immediately for better UX
-    (this.client as any).loan_status = status;
-    
-    // Update in database
+    // Update in database first, then update UI on success
     const formData = new FormData();
     formData.append('loan_status', status);
     
     this.clientService.updateClientDetails(this.client._id, formData)
       .then(() => {
+        // Update local state on successful API call
+        (this.client as any).loan_status = status;
+        
         // Clear loading state immediately
         this.updatingLoanStatus = false;
-        this.snackBar.open(`Loan status updated to ${status}`, 'Close', { duration: 3000 });
-        // No need to reload - local state is already updated
+        
+        // Show success message
+        this.snackBar.open(`Loan status updated to ${status}`, 'Close', { duration: 2000 });
+        
+        // Refresh page after 2 seconds to ensure UI is fully updated
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       })
       .catch((error) => {
-        // Revert local state on error
-        (this.client as any).loan_status = originalStatus;
+        // Clear loading state on error
         this.updatingLoanStatus = false;
         console.error('Error updating loan status:', error);
         this.snackBar.open('Failed to update loan status', 'Close', { duration: 3000 });

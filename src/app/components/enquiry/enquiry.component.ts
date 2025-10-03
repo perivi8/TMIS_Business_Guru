@@ -93,6 +93,13 @@ export class EnquiryComponent implements OnInit {
   // Alias for template compatibility
   commentOptions = this.predefinedComments;
 
+  // Business type options
+  businessTypeOptions = [
+    'Private Limited',
+    'Proprietorship', 
+    'Partnership'
+  ];
+
   constructor(
     private fb: FormBuilder,
     private enquiryService: EnquiryService,
@@ -119,7 +126,7 @@ export class EnquiryComponent implements OnInit {
       gst_status: [''],
       business_type: [''],
       staff: ['', Validators.required],
-      comments: ['', Validators.required],
+      comments: [''], // Made optional - removed Validators.required
       additional_comments: ['']
     });
   }
@@ -198,6 +205,23 @@ export class EnquiryComponent implements OnInit {
       gstStatusControl?.disable();
     }
     gstStatusControl?.updateValueAndValidity();
+  }
+
+  // Check if mobile number already exists
+  checkMobileNumberExists(mobileNumber: string): boolean {
+    if (!mobileNumber || mobileNumber.trim() === '') {
+      return false;
+    }
+    
+    // If in edit mode, exclude the current enquiry from the check
+    if (this.isEditMode && this.editingEnquiryId) {
+      return this.enquiries.some(enquiry => 
+        enquiry.mobile_number === mobileNumber && enquiry._id !== this.editingEnquiryId
+      );
+    }
+    
+    // For new enquiries, check all existing mobile numbers
+    return this.enquiries.some(enquiry => enquiry.mobile_number === mobileNumber);
   }
 
   onSortChange(): void {
@@ -428,6 +452,15 @@ export class EnquiryComponent implements OnInit {
     if (this.registrationForm.valid) {
       const formData = this.registrationForm.value;
       
+      // Check for duplicate mobile number
+      if (this.checkMobileNumberExists(formData.mobile_number)) {
+        this.snackBar.open('Mobile number already exists! Please use a different mobile number.', 'Close', { 
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+        return;
+      }
+      
       // Clean up GST status if GST is No
       if (formData.gst === 'No') {
         formData.gst_status = '';
@@ -436,6 +469,11 @@ export class EnquiryComponent implements OnInit {
       // Clean up secondary mobile number - remove if empty
       if (!formData.secondary_mobile_number || formData.secondary_mobile_number.trim() === '') {
         formData.secondary_mobile_number = null;
+      }
+
+      // Set default comment if empty
+      if (!formData.comments || formData.comments.trim() === '') {
+        formData.comments = 'No comment provided';
       }
 
       // Log the form data being sent for debugging

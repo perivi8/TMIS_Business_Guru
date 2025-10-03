@@ -606,9 +606,9 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private loadClientsAsync(): Promise<void> {
+  private loadClientsAsync(retryCount: number = 0): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log('Admin Dashboard - Starting to load clients...');
+      console.log('Admin Dashboard - Starting to load clients... Attempt:', retryCount + 1);
       this.clientService.getClients().subscribe({
         next: (response) => {
           console.log('Admin Dashboard - Raw API response:', response);
@@ -623,6 +623,16 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
         },
         error: (error) => {
           console.error('Error loading clients:', error);
+          
+          // Retry logic for network errors and 404s (server might be deploying)
+          if ((error.status === 0 || error.status === 404 || error.status >= 500) && retryCount < 2) {
+            console.log(`Admin Dashboard - Retrying client load in ${(retryCount + 1) * 2} seconds... (Attempt ${retryCount + 2}/3)`);
+            
+            setTimeout(() => {
+              this.loadClientsAsync(retryCount + 1).then(resolve).catch(resolve);
+            }, (retryCount + 1) * 2000); // 2s, 4s delays
+            return;
+          }
           
           // Handle specific error types
           if (error.status === 404) {

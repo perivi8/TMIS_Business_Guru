@@ -426,12 +426,18 @@
   right: 0;
   width: 420px;
   max-height: 600px;
-  background: var(--surface);
+  background: white !important;
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-2xl);
-  z-index: 1100;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+  z-index: 9999 !important;
   overflow: hidden;
-  border: 1px solid var(--border-light);
+  border: 2px solid #2196f3 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  pointer-events: all !important;
   
   @media (max-width: 600px) {
     width: 90vw;
@@ -609,6 +615,21 @@
         color: #999;
         font-size: 11px;
         font-weight: 500;
+      }
+
+      .notification-meta {
+        margin: 4px 0;
+        
+        .loan-status-badge {
+          display: inline-block;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          color: white;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
       }
     }
   }

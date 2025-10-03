@@ -176,6 +176,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   getNotificationCount(): number {
+    // Ensure clients array is initialized
+    if (!this.clients) {
+      this.clients = [];
+    }
+    
     // Get client-based notification counts
     const newClientsCount = this.getNewClients().length;
     const updatedClientsCount = this.getUpdatedClients().length;
@@ -189,7 +194,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
       newClients: newClientsCount,
       updatedClients: updatedClientsCount,
       adminChanges: adminChangesCount,
-      total: totalCount
+      total: totalCount,
+      clientsLoaded: this.clients.length
     });
     
     return totalCount;
@@ -270,21 +276,36 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadClients(callback?: () => void): void {
+  loadClients(callback?: () => void, retryCount: number = 0): void {
     console.log('=== NAVBAR LOAD CLIENTS DEBUG ===');
     console.log('Token in localStorage:', localStorage.getItem('token'));
     console.log('User in localStorage:', localStorage.getItem('currentUser'));
     console.log('Is authenticated:', this.authService.isAuthenticated());
     console.log('Is admin:', this.authService.isAdmin());
     console.log('Current user value:', this.authService.currentUserValue);
+    console.log('Load attempt:', retryCount + 1);
     
     this.clientService.getClients().subscribe({
       next: (response) => {
-        this.clients = response.clients;
+        this.clients = response.clients || [];
+        console.log('Navbar - Clients loaded successfully:', this.clients.length);
         if (callback) callback();
       },
       error: (error) => {
-        console.error('Error loading clients:', error);
+        console.error('Error loading clients in navbar:', error);
+        
+        // Retry logic for network errors and 404s (server might be deploying)
+        if ((error.status === 0 || error.status === 404 || error.status >= 500) && retryCount < 2) {
+          console.log(`Navbar - Retrying client load in ${(retryCount + 1) * 2} seconds... (Attempt ${retryCount + 2}/3)`);
+          
+          setTimeout(() => {
+            this.loadClients(callback, retryCount + 1);
+          }, (retryCount + 1) * 2000); // 2s, 4s delays
+          return;
+        }
+        
+        // Set empty array on error to prevent undefined issues
+        this.clients = [];
         if (callback) callback();
       }
     });
@@ -449,11 +470,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   toggleNotifications(): void {
+    console.log('Toggle notifications clicked. Current state:', this.showNotifications);
     this.showNotifications = !this.showNotifications;
+    console.log('New notification state:', this.showNotifications);
     
     if (this.showNotifications) {
+      // Load fresh notifications when opening dropdown
+      this.loadNotifications();
       // Mark system notifications as read when opening dropdown
       this.notificationService.markAllAsRead();
+      console.log('Notifications loaded and marked as read');
     }
   }
 
@@ -517,5 +543,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
         }
       }, 100);
     });
+  }
+
+  // Navigate to notifications page on double-click
+  navigateToNotifications(): void {
+    console.log('Double-click detected - navigating to notifications page');
+    // Close the dropdown if it's open
+    this.showNotifications = false;
+    // Navigate to notifications page
+    this.router.navigate(['/notifications']);
   }
 }

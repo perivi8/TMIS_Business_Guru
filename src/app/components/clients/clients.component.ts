@@ -91,9 +91,9 @@ export class ClientsComponent implements OnInit {
     }
   }
 
-  loadClients(): void {
+  loadClients(retryCount: number = 0): void {
     console.log('=== FRONTEND CLIENT LOADING DEBUG ===');
-    console.log('Starting client load process...');
+    console.log('Starting client load process... Attempt:', retryCount + 1);
     
     this.loading = true;
     this.error = '';
@@ -144,12 +144,26 @@ export class ClientsComponent implements OnInit {
         console.error('Error message:', error.message);
         console.error('Error details:', error.error);
         
+        // Retry logic for network errors and 404s (server might be deploying)
+        if ((error.status === 0 || error.status === 404 || error.status >= 500) && retryCount < 3) {
+          console.log(`Retrying client load in ${(retryCount + 1) * 2} seconds... (Attempt ${retryCount + 2}/4)`);
+          this.error = `Loading clients... Retrying in ${(retryCount + 1) * 2} seconds`;
+          
+          setTimeout(() => {
+            this.loadClients(retryCount + 1);
+          }, (retryCount + 1) * 2000); // 2s, 4s, 6s delays
+          return;
+        }
+        
         if (error.status === 401) {
           this.error = 'Authentication failed. Please login again.';
           console.log('Authentication error - redirecting to login may be needed');
         } else if (error.status === 0) {
-          this.error = 'Cannot connect to server. Please check if the backend is running.';
+          this.error = 'Cannot connect to server. Please check your connection and try again.';
           console.log('Connection error - backend server may be down');
+        } else if (error.status === 404) {
+          this.error = 'Server is temporarily unavailable. Please try again in a few moments.';
+          console.log('404 error - server may be deploying');
         } else if (error.status >= 500) {
           this.error = 'Server error. Please try again later.';
           console.log('Server error - check backend logs');
@@ -161,6 +175,11 @@ export class ClientsComponent implements OnInit {
         this.filteredClients = [];
         this.loading = false;
         console.log('Client loading failed with error:', this.error);
+        
+        // Show retry button for failed requests
+        if (retryCount >= 3) {
+          this.error += ' Click refresh to try again.';
+        }
       }
     });
   }

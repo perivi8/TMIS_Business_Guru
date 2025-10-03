@@ -199,12 +199,39 @@ export class NotificationService {
     });
   }
 
-  notifyStatusChange(clientName: string, clientId: string, newStatus: string, adminName: string) {
+  notifyStatusChange(clientName: string, clientId: string, newStatus: string, adminName: string, loanStatus?: string) {
+    // Get loan status color for display
+    const loanStatusColor = this.getLoanStatusColor(loanStatus || 'soon');
+    const loanStatusText = loanStatus ? ` | Loan Status: ${loanStatus.toUpperCase()}` : '';
+    
     this.addNotification({
       type: 'status_changed',
       title: 'Status Updated',
-      message: `Client "${clientName}" status changed to ${newStatus} by ${adminName}`,
-      data: { clientId, status: newStatus, changedBy: adminName }
+      message: `Client "${clientName}" status changed to ${newStatus} by ${adminName}${loanStatusText}`,
+      data: { clientId, status: newStatus, changedBy: adminName, loanStatus, loanStatusColor }
+    });
+  }
+
+  // Helper method to get loan status colors
+  private getLoanStatusColor(status: string): string {
+    switch (status) {
+      case 'approved': return '#4caf50'; // Green
+      case 'rejected': return '#f44336'; // Red
+      case 'hold': return '#ff9800'; // Orange
+      case 'processing': return '#00bcd4'; // Sky Blue
+      case 'soon': return '#9e9e9e'; // Gray
+      default: return '#9e9e9e'; // Gray
+    }
+  }
+
+  notifyLoanStatusChange(clientName: string, clientId: string, newLoanStatus: string, adminName: string) {
+    const loanStatusColor = this.getLoanStatusColor(newLoanStatus);
+    
+    this.addNotification({
+      type: 'status_changed',
+      title: 'Loan Status Updated',
+      message: `Client "${clientName}" loan status changed to ${newLoanStatus.toUpperCase()} by ${adminName}`,
+      data: { clientId, loanStatus: newLoanStatus, changedBy: adminName, loanStatusColor }
     });
   }
 

@@ -140,7 +140,12 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Business Type (Optional)</mat-label>
-            <input matInput formControlName="business_type">
+            <mat-select formControlName="business_type">
+              <mat-option value="">Select Business Type</mat-option>
+              <mat-option *ngFor="let type of businessTypeOptions" [value]="type">
+                {{ type }}
+              </mat-option>
+            </mat-select>
           </mat-form-field>
 
           <!-- Row 3 - GST Section -->
@@ -174,8 +179,9 @@
 
           <!-- Row 5 - Comments -->
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Comments</mat-label>
-            <mat-select formControlName="comments" required>
+            <mat-label>Comments (Optional)</mat-label>
+            <mat-select formControlName="comments">
+              <mat-option value="">Select a comment (optional)</mat-option>
               <mat-option *ngFor="let option of commentOptions" [value]="option">
                 {{ option }}
               </mat-option>

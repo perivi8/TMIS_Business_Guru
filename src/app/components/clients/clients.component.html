@@ -182,7 +182,7 @@
                   <mat-icon>edit</mat-icon>
                 </button>
                 <button mat-icon-button (click)="openWhatsApp(client); $event.stopPropagation()" class="whatsapp-btn" matTooltip="WhatsApp">
-                  <mat-icon>whatsapp</mat-icon>
+                  <mat-icon svgIcon="whatsapp"></mat-icon>
                 </button>
                 <button mat-icon-button (click)="deleteClient(client); $event.stopPropagation()" class="delete-btn" matTooltip="Delete Client">
                   <mat-icon>delete</mat-icon>
@@ -359,7 +359,7 @@
                 <mat-icon>edit</mat-icon>
               </button>
               <button mat-mini-fab color="accent" (click)="openWhatsApp(client)" class="action-btn whatsapp-btn" matTooltip="WhatsApp">
-                <mat-icon>whatsapp</mat-icon>
+                <mat-icon svgIcon="whatsapp"></mat-icon>
               </button>
               <button mat-mini-fab color="warn" (click)="deleteClient(client)" class="action-btn delete-btn" matTooltip="Delete Client">
                 <mat-icon>delete</mat-icon>

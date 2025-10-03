@@ -36,13 +36,13 @@
           Status
         </a>
         <div class="notifications-wrapper">
-          <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications">
+          <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" (dblclick)="navigateToNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications (Double-click to view all)" type="button">
             <mat-icon [class.shake]="hasUnreadNotifications">notifications_active</mat-icon>
             <span class="notification-count" *ngIf="getNotificationCount() > 0">{{ getNotificationCount() }}</span>
           </button>
           
           <!-- Notification Dropdown Panel -->
-          <div class="notification-panel" *ngIf="showNotifications" #notificationPanel [@slideInOut]>
+          <div class="notification-panel" *ngIf="showNotifications" #notificationPanel>
             <div class="notification-header">
               <h3>Notifications</h3>
               <div class="notification-actions">
@@ -71,6 +71,11 @@
                   <div class="notification-text">
                     <div class="notification-title">{{ notification.title }}</div>
                     <div class="notification-message">{{ notification.message }}</div>
+                    <div class="notification-meta" *ngIf="notification.data?.loanStatus">
+                      <span class="loan-status-badge" [style.background-color]="notification.data.loanStatusColor">
+                        Loan: {{ notification.data.loanStatus.toUpperCase() }}
+                      </span>
+                    </div>
                     <div class="notification-time">{{ formatTimeAgo(notification.timestamp) }}</div>
                   </div>
                 </div>
@@ -153,13 +158,13 @@
           Contact Us
         </a>
         <div class="notifications-wrapper">
-          <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications">
+          <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" (dblclick)="navigateToNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications (Double-click to view all)" type="button">
             <mat-icon [class.shake]="hasUnreadNotifications">notifications_active</mat-icon>
             <span class="notification-count" *ngIf="getNotificationCount() > 0">{{ getNotificationCount() }}</span>
           </button>
           
           <!-- Notification Dropdown Panel -->
-          <div class="notification-panel" *ngIf="showNotifications" #notificationPanel [@slideInOut]>
+          <div class="notification-panel" *ngIf="showNotifications" #notificationPanel>
             <div class="notification-header">
               <h3>Notifications</h3>
               <div class="notification-actions">
@@ -188,6 +193,11 @@
                   <div class="notification-text">
                     <div class="notification-title">{{ notification.title }}</div>
                     <div class="notification-message">{{ notification.message }}</div>
+                    <div class="notification-meta" *ngIf="notification.data?.loanStatus">
+                      <span class="loan-status-badge" [style.background-color]="notification.data.loanStatusColor">
+                        Loan: {{ notification.data.loanStatus.toUpperCase() }}
+                      </span>
+                    </div>
                     <div class="notification-time">{{ formatTimeAgo(notification.timestamp) }}</div>
                   </div>
                 </div>

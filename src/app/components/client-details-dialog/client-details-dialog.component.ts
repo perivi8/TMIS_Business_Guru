@@ -43,6 +43,7 @@ interface ClientWithDynamicProperties extends Client {
 export class ClientDetailsDialogComponent implements OnInit {
   client: ClientWithDynamicProperties = {} as ClientWithDynamicProperties;
   loading = false;
+  selectedLoanStatus: string = 'soon';
 
   clientSections: { title: string; fields: { label: string; value: any; type?: string }[] }[] = [];
 
@@ -59,7 +60,10 @@ export class ClientDetailsDialogComponent implements OnInit {
     }
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // Initialize selected loan status with current client loan status or default to 'soon'
+    this.selectedLoanStatus = this.client.loan_status || 'soon';
+  }
 
   // Check if personal information exists
   hasPersonalInfo(): boolean {
@@ -759,6 +763,21 @@ export class ClientDetailsDialogComponent implements OnInit {
     }
   }
 
+  getLoanStatus(): string {
+    return this.client.loan_status || 'soon';
+  }
+
+  getLoanStatusColor(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'approved': return '#4caf50'; // Green
+      case 'processing': return '#2196f3'; // Blue
+      case 'hold': return '#ff9800'; // Orange
+      case 'rejected': return '#f44336'; // Red
+      case 'soon':
+      default: return '#9e9e9e'; // Gray
+    }
+  }
+
   hasDocument(type: string): boolean {
     return !!this.client.documents?.[type as keyof typeof this.client.documents];
   }
@@ -832,6 +851,45 @@ export class ClientDetailsDialogComponent implements OnInit {
     console.error('Error with document operation:', error);
     this.snackBar.open('An error occurred. Please try again.', 'Close', {
       duration: 5000
+    });
+  }
+
+  onLoanStatusChange(event: any): void {
+    const newLoanStatus = event.value;
+    
+    if (!this.client._id) {
+      this.snackBar.open('Client ID is missing', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // Update the client's loan status
+    this.loading = true;
+    this.clientService.updateClientDetailsJson(this.client._id, { 
+      loan_status: newLoanStatus 
+    }).subscribe({
+      next: (response) => {
+        this.loading = false;
+        if (response && response.client) {
+          // Update local client data
+          this.client.loan_status = newLoanStatus;
+          this.selectedLoanStatus = newLoanStatus;
+          
+          this.snackBar.open(
+            `Loan status updated to ${newLoanStatus.charAt(0).toUpperCase() + newLoanStatus.slice(1)}`, 
+            'Close', 
+            { duration: 3000 }
+          );
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('Error updating loan status:', error);
+        this.snackBar.open('Failed to update loan status. Please try again.', 'Close', { 
+          duration: 5000 
+        });
+        // Reset the selection to previous value
+        this.selectedLoanStatus = this.client.loan_status || 'soon';
+      }
     });
   }
 }

@@ -7,6 +7,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
   styleUrls: ['./confirm-delete-dialog.component.scss']
 })
 export class ConfirmDeleteDialogComponent {
+  isLoading = false;
 
   constructor(
     public dialogRef: MatDialogRef<ConfirmDeleteDialogComponent>,
@@ -14,10 +15,18 @@ export class ConfirmDeleteDialogComponent {
   ) { }
 
   onConfirm(): void {
-    this.dialogRef.close(true);
+    this.isLoading = true;
+    
+    // Simulate deletion process - in real implementation, this would be replaced
+    // with actual deletion service call
+    setTimeout(() => {
+      this.dialogRef.close(true);
+    }, 2000); // 2 second delay to show loading effect
   }
 
   onCancel(): void {
-    this.dialogRef.close(false);
+    if (!this.isLoading) {
+      this.dialogRef.close(false);
+    }
   }
 }

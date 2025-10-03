@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subscription, throwError } from 'rxjs';
-import { tap, catchError, map } from 'rxjs/operators';
+import { tap, catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService, User } from './auth.service';
 import { NotificationService } from './notification.service';
@@ -107,6 +107,7 @@ export interface Client {
   };
   extracted_data: any;
   status?: string;
+  loan_status?: string;
   feedback: string;
   created_at?: string;
   updated_at: string;
@@ -243,21 +244,32 @@ export class ClientService implements OnDestroy {
   }
 
   updateClientStatus(clientId: string, status: string, feedback: string): Observable<any> {
-    return this.http.put<any>(`${environment.apiUrl}/clients/${clientId}`, {
-      status,
-      feedback
-    }, {
-      headers: this.getHeaders(),
-      withCredentials: true
-    }).pipe(
+    // First get the current client data to include loan status in the update
+    return this.getClientDetails(clientId).pipe(
+      switchMap((clientResponse: any) => {
+        const currentClient = clientResponse.client;
+        const loanStatus = currentClient?.loan_status || 'soon';
+        
+        // Send the update with loan status information for email notifications
+        return this.http.put<any>(`${environment.apiUrl}/clients/${clientId}`, {
+          status,
+          feedback,
+          loan_status: loanStatus, // Include loan status for backend email template
+          include_loan_status_in_email: true // Flag for backend to include loan status in email
+        }, {
+          headers: this.getHeaders(),
+          withCredentials: true
+        });
+      }),
       tap(response => {
         if (response && response.client) {
           const clientName = response.client.legal_name || response.client.user_name || 'Unknown Client';
           const currentUserName = this.currentUser?.username || 'Admin';
+          const loanStatus = response.client.loan_status || 'soon';
           
-          // If admin is updating status, send specific notification
+          // If admin is updating status, send specific notification with loan status
           if (this.authService.isAdmin()) {
-            this.notificationService.notifyStatusChange(clientName, clientId, status, currentUserName);
+            this.notificationService.notifyStatusChange(clientName, clientId, status, currentUserName, loanStatus);
           }
         }
       })
@@ -380,10 +392,16 @@ export class ClientService implements OnDestroy {
         if (response && response.client) {
           const clientName = response.client.legal_name || response.client.user_name || 'Unknown Client';
           const currentUserName = this.currentUser?.username || 'Admin';
+          const loanStatus = response.client.loan_status || 'soon';
           
-          // If admin is updating status, send specific notification
+          // If admin is updating status, send specific notification with loan status
           if (this.authService.isAdmin() && data.status) {
-            this.notificationService.notifyStatusChange(clientName, clientId, data.status, currentUserName);
+            this.notificationService.notifyStatusChange(clientName, clientId, data.status, currentUserName, loanStatus);
+          }
+          
+          // If admin is updating loan status, send loan status notification
+          if (this.authService.isAdmin() && data.loan_status) {
+            this.notificationService.notifyLoanStatusChange(clientName, clientId, data.loan_status, currentUserName);
           }
         }
       })

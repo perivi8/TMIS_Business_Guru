@@ -29,6 +29,9 @@
             <span class="status-badge" [style.background-color]="getStatusColor(client.status)">
               {{ client.status ? (client.status | titlecase) : 'Status: N/A' }}
             </span>
+            <span class="loan-status-badge" [style.background-color]="getLoanStatusColor(getLoanStatus())">
+              Loan Status: {{ getLoanStatus() | titlecase }}
+            </span>
           </div>
         </div>
       </div>
@@ -156,6 +159,48 @@
             <div class="detail-item" *ngIf="client['new_current_account']">
               <div class="detail-label">New Current Account:</div>
               <div class="detail-value">{{ client['new_current_account'] }}</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Loan Status Section -->
+      <mat-card class="info-section">
+        <mat-card-header>
+          <mat-card-title><mat-icon>trending_up</mat-icon> Loan Status</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="details-grid">
+            <div class="detail-item">
+              <div class="detail-label">Current Loan Status:</div>
+              <div class="detail-value">
+                <span class="loan-status-badge" [style.background-color]="getLoanStatusColor(getLoanStatus())">
+                  {{ getLoanStatus() | titlecase }}
+                </span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Update Loan Status:</div>
+              <div class="detail-value">
+                <mat-form-field appearance="outline" style="width: 200px;">
+                  <mat-label>Select Loan Status</mat-label>
+                  <mat-select [(value)]="selectedLoanStatus" (selectionChange)="onLoanStatusChange($event)">
+                    <mat-option value="soon">Soon</mat-option>
+                    <mat-option value="processing">Processing</mat-option>
+                    <mat-option value="approved">Approved</mat-option>
+                    <mat-option value="hold">Hold</mat-option>
+                    <mat-option value="rejected">Rejected</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="detail-item" *ngIf="client.required_loan_amount">
+              <div class="detail-label">Required Loan Amount:</div>
+              <div class="detail-value">₹{{ client.required_loan_amount | number }}</div>
+            </div>
+            <div class="detail-item" *ngIf="client.loan_purpose">
+              <div class="detail-label">Loan Purpose:</div>
+              <div class="detail-value">{{ client.loan_purpose }}</div>
             </div>
           </div>
         </mat-card-content>

@@ -93,7 +93,11 @@
       }
       
       .client-status {
-        .status-badge {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        
+        .status-badge, .loan-status-badge {
           display: inline-block;
           padding: 4px 12px;
           border-radius: 16px;
@@ -149,6 +153,18 @@
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+          }
+          
+          .loan-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background-color: transparent; /* Color will be set via style binding */
           }
         }
       }

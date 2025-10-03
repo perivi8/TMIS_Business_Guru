@@ -280,10 +280,6 @@ export class ClientService implements OnDestroy {
     try {
       console.log('Starting client update for ID:', clientId);
       
-      // Get the current client data before update
-      const currentClient = await this.getClientDetails(clientId).toPromise();
-      console.log('Current client data:', currentClient);
-      
       // Log form data being sent
       console.log('Form data being sent:');
       for (let pair of (formData as any).entries()) {
@@ -302,42 +298,37 @@ export class ClientService implements OnDestroy {
         withCredentials: true
       }).toPromise();
       
-      console.log('Update response:', response);
+      console.log('✅ Update response received:', response);
 
-      // Get the updated client data
-      const updatedClient = await this.getClientDetails(clientId).toPromise();
-      console.log('Updated client data:', updatedClient);
-      
-      // Find changes
-      if (currentClient && updatedClient && currentClient.client && updatedClient.client) {
-        const changes = this.findChanges(currentClient.client, updatedClient.client);
-        console.log('Detected changes:', changes);
-        
-        // If there are changes, create a notification
-        if (changes.length > 0 && this.currentUser) {
-          console.log('Creating notification for changes');
-          this.notificationService.addNotification({
-            type: 'client_updated',
-            title: 'Client Updated',
-            message: `Client ${updatedClient.client.legal_name || updatedClient.client.user_name} was updated`,
-            clientId,
-            clientName: updatedClient.client.legal_name || updatedClient.client.user_name,
-            changedBy: this.currentUser.username,
-            changes
-          });
-        }
-      }
-      
       // Notify other components about client update
       this.clientUpdatedSubject.next(clientId);
       
       return response;
     } catch (error: any) {
-      console.error('Error updating client:', error);
+      console.error('❌ Error updating client:', error);
       if (error?.error) {
         console.error('Error details:', error.error);
       }
-      throw error;
+      
+      // Provide more specific error information
+      let errorMessage = 'Failed to update client';
+      if (error.status === 0) {
+        errorMessage = 'Network connection failed';
+      } else if (error.status === 401) {
+        errorMessage = 'Authentication failed';
+      } else if (error.status === 403) {
+        errorMessage = 'Access denied';
+      } else if (error.status === 404) {
+        errorMessage = 'Client not found';
+      } else if (error.status === 500) {
+        errorMessage = 'Server error occurred';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      const enhancedError = new Error(errorMessage);
+      (enhancedError as any).originalError = error;
+      throw enhancedError;
     }
   }
 

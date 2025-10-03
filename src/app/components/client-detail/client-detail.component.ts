@@ -850,32 +850,33 @@ export class ClientDetailComponent implements OnInit {
   getPaymentGateways(): string[] {
     if (!this.client) {
       console.log('🚫 No client data available for payment gateways');
-      return [];
+      return ['Cashfree', 'Easebuzz']; // Default gateways when no client data
     }
     
     // Try to get payment gateways from client data
     const gateways = (this.client as any).payment_gateways;
     console.log('🔍 Payment gateways from client data:', gateways, 'Type:', typeof gateways);
     
-    if (Array.isArray(gateways)) {
+    if (Array.isArray(gateways) && gateways.length > 0) {
       console.log('✅ Payment gateways is array:', gateways);
       return gateways;
     }
     
     // If it's a string (JSON), try to parse it
-    if (typeof gateways === 'string') {
+    if (typeof gateways === 'string' && gateways.trim()) {
       try {
         const parsed = JSON.parse(gateways);
         console.log('✅ Parsed payment gateways from string:', parsed);
-        return Array.isArray(parsed) ? parsed : [];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       } catch (e) {
         console.warn('❌ Failed to parse payment gateways:', gateways);
-        return [];
       }
     }
     
-    console.log('⚠️ Payment gateways not found or invalid format');
-    return [];
+    console.log('⚠️ Payment gateways not found or invalid format, using defaults');
+    return ['Cashfree', 'Easebuzz']; // Default gateways
   }
 
   getPaymentGatewayStatus(gateway: string): 'approved' | 'not_approved' | 'pending' {

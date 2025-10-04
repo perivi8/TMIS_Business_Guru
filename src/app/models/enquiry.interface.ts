@@ -6,14 +6,20 @@ export interface Enquiry {
   user_name?: string;
   mobile_number: string;
   secondary_mobile_number?: string;
-  gst: 'Yes' | 'No';
+  gst: 'Yes' | 'No' | 'Not Selected' | '';
   gst_status?: 'Active' | 'Cancel';
   business_type?: string;
+  business_nature?: string;
   staff: string;
   comments: string;
   additional_comments?: string;
   created_at?: Date;
   updated_at?: Date;
+  // WhatsApp integration fields
+  whatsapp_sent?: boolean;
+  whatsapp_message_id?: string;
+  whatsapp_message_type?: string;
+  whatsapp_error?: string;
 }
 
 export const COMMENT_OPTIONS = [

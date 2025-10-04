@@ -16,8 +16,8 @@ export class EnquiryComponent implements OnInit {
   filteredEnquiries: Enquiry[] = [];
   displayedColumns: string[] = [
     'sno', 'date', 'wati_name', 'user_name', 'mobile_number', 
-    'secondary_mobile_number', 'gst', 'business_type', 'staff', 
-    'comments', 'additional_comments', 'actions'
+    'secondary_mobile_number', 'gst', 'business_type', 'business_nature', 'staff', 
+    'comments', 'whatsapp_status', 'additional_comments', 'actions'
   ];
   
   staffMembers: User[] = [];
@@ -39,6 +39,20 @@ export class EnquiryComponent implements OnInit {
   isEditMode = false;
   editingEnquiryId: string | null = null;
 
+  // Country codes for mobile numbers
+  countryCodes = [
+    { code: '+91', country: 'India', flag: '🇮🇳' },
+    { code: '+1', country: 'USA/Canada', flag: '🇺🇸' },
+    { code: '+44', country: 'United Kingdom', flag: '🇬🇧' },
+    { code: '+971', country: 'UAE', flag: '🇦🇪' },
+    { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
+    { code: '+65', country: 'Singapore', flag: '🇸🇬' },
+    { code: '+60', country: 'Malaysia', flag: '🇲🇾' },
+    { code: '+61', country: 'Australia', flag: '🇦🇺' },
+    { code: '+49', country: 'Germany', flag: '🇩🇪' },
+    { code: '+33', country: 'France', flag: '🇫🇷' }
+  ];
+
   predefinedComments = [
     'Will share Doc',
     'Doc Shared(Yet to Verify)',
@@ -47,7 +61,7 @@ export class EnquiryComponent implements OnInit {
     'No MSME',
     'No GST',
     'Aadhar/PAN name mismatch',
-    'MSME/GST Adress Different',
+    'MSME/GST Address Different',
     'Will call back',
     'Personal Loan',
     'Start Up',
@@ -57,30 +71,39 @@ export class EnquiryComponent implements OnInit {
     '3rd call completed',
     'Switch off',
     'Not connected',
-    'By Mistake'
+    'By Mistake',
+    'GST Cancelled'
   ];
 
   // Interest level categorization
   interestComments = [
     'Will share Doc',
     'Doc Shared(Yet to Verify)',
-    'Verified(Shortlisted)',
-    'Will call back'
+    'Verified(Shortlisted)'
   ];
 
   notInterestedComments = [
     'Not Eligible',
     'No MSME',
-    'Personal Loan',
     'Start Up',
+    'Personal Loan',
     'Asking Less than 5 Laks',
     '3rd call completed',
     'By Mistake'
   ];
 
+  noGstComments = [
+    'No GST'
+  ];
+
+  gstCancelledComments = [
+    'GST Cancelled'
+  ];
+
   pendingComments = [
     'Aadhar/PAN name mismatch',
-    'MSME/GST Adress Different'
+    'MSME/GST Address Different',
+    'Will call back'
   ];
 
   unknownComments = [
@@ -116,19 +139,34 @@ export class EnquiryComponent implements OnInit {
   }
 
   createRegistrationForm(): FormGroup {
-    return this.fb.group({
+    const form = this.fb.group({
       date: [new Date(), Validators.required],
       wati_name: ['', Validators.required],
       user_name: [''],
+      country_code: ['+91', Validators.required], // Default to India
       mobile_number: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       secondary_mobile_number: [''],
-      gst: ['No', Validators.required],
+      gst: [''], // Optional - user can leave this unselected
       gst_status: [''],
       business_type: [''],
+      business_nature: [''],
       staff: ['', Validators.required],
       comments: [''], // Made optional - removed Validators.required
       additional_comments: ['']
     });
+    
+    // Add value change listener for comments to dynamically validate business_nature
+    form.get('comments')?.valueChanges.subscribe(value => {
+      const businessNatureControl = form.get('business_nature');
+      if (this.isEditMode && value === 'Not Eligible') {
+        businessNatureControl?.setValidators([Validators.required]);
+      } else {
+        businessNatureControl?.clearValidators();
+      }
+      businessNatureControl?.updateValueAndValidity();
+    });
+    
+    return form;
   }
 
   loadEnquiries(): void {
@@ -207,6 +245,8 @@ export class EnquiryComponent implements OnInit {
     gstStatusControl?.updateValueAndValidity();
   }
 
+  // Removed secondary country code change handler as we now use a single country code for both numbers
+
   // Check if mobile number already exists
   checkMobileNumberExists(mobileNumber: string): boolean {
     if (!mobileNumber || mobileNumber.trim() === '') {
@@ -258,10 +298,10 @@ export class EnquiryComponent implements OnInit {
         filtered = filtered.filter(enquiry => 
           enquiry.gst === 'Yes' && enquiry.gst_status === 'Active'
         );
-      } else if (this.gstFilter === 'no') {
-        // Show GST No OR GST Yes with Cancel status
+      } else if (this.gstFilter === 'not_selected') {
+        // Show only enquiries with "Not Selected" or empty GST
         filtered = filtered.filter(enquiry => 
-          enquiry.gst === 'No' || (enquiry.gst === 'Yes' && enquiry.gst_status === 'Cancel')
+          enquiry.gst === 'Not Selected' || enquiry.gst === '' || !enquiry.gst
         );
       }
     }
@@ -270,12 +310,19 @@ export class EnquiryComponent implements OnInit {
     if (this.interestFilter !== 'all') {
       if (this.interestFilter === 'interested') {
         filtered = filtered.filter(enquiry => 
-          this.interestComments.includes(enquiry.comments) && 
-          (enquiry.gst === 'Yes' && enquiry.gst_status === 'Active')
+          this.interestComments.includes(enquiry.comments)
         );
       } else if (this.interestFilter === 'not_interested') {
         filtered = filtered.filter(enquiry => 
           this.notInterestedComments.includes(enquiry.comments)
+        );
+      } else if (this.interestFilter === 'no_gst') {
+        filtered = filtered.filter(enquiry => 
+          this.noGstComments.includes(enquiry.comments)
+        );
+      } else if (this.interestFilter === 'gst_cancelled') {
+        filtered = filtered.filter(enquiry => 
+          this.gstCancelledComments.includes(enquiry.comments)
         );
       } else if (this.interestFilter === 'pending') {
         filtered = filtered.filter(enquiry => 
@@ -389,13 +436,33 @@ export class EnquiryComponent implements OnInit {
     switch (this.interestFilter) {
       case 'interested': return 'Interested';
       case 'not_interested': return 'Not Interested';
+      case 'no_gst': return 'No GST';
+      case 'gst_cancelled': return 'GST Cancelled';
       case 'pending': return 'Pending';
       case 'unknown': return 'Unknown';
       default: return '';
     }
   }
 
+  getGstFilterDisplay(): string {
+    switch (this.gstFilter) {
+      case 'yes': return 'GST Active';
+      case 'not_selected': return 'Not Selected';
+      default: return '';
+    }
+  }
+
   getRowColorClass(enquiry: Enquiry): string {
+    // Check for GST Cancelled first
+    if (enquiry.gst === 'Yes' && enquiry.gst_status === 'Cancel') {
+      return 'row-light-red';
+    }
+    
+    // Check for GST Cancelled comment
+    if (enquiry.comments === 'GST Cancelled') {
+      return 'row-light-red';
+    }
+    
     switch (enquiry.comments) {
       case 'Will share Doc':
         return 'row-light-blue';
@@ -417,7 +484,7 @@ export class EnquiryComponent implements OnInit {
         return 'row-light-red';
       
       case 'Aadhar/PAN name mismatch':
-      case 'MSME/GST Adress Different':
+      case 'MSME/GST Address Different':
         return 'row-light-orange';
       
       case 'Will call back':
@@ -435,7 +502,7 @@ export class EnquiryComponent implements OnInit {
     this.registrationForm.reset();
     this.registrationForm.patchValue({
       date: new Date(),
-      gst: 'No'
+      gst: '' // Set default to empty, making it clear that GST selection is optional
     });
     this.isEditMode = false;
     this.editingEnquiryId = null;
@@ -452,8 +519,24 @@ export class EnquiryComponent implements OnInit {
     if (this.registrationForm.valid) {
       const formData = this.registrationForm.value;
       
-      // Check for duplicate mobile number
-      if (this.checkMobileNumberExists(formData.mobile_number)) {
+      // Clean up GST status if GST is Yes
+      if (formData.gst === 'Yes') {
+        // GST status is already handled by the form validation
+      } else {
+        // For No or empty GST, clear the GST status
+        formData.gst_status = '';
+      }
+
+      // Combine country code with mobile numbers FIRST
+      const countryCodeDigits = formData.country_code.replace('+', ''); // Remove + sign
+      const fullMobileNumber = countryCodeDigits + formData.mobile_number;
+      
+      console.log('📱 Country code digits:', countryCodeDigits);
+      console.log('📱 Mobile number digits:', formData.mobile_number);
+      console.log('📱 Full mobile number:', fullMobileNumber);
+      
+      // Check for duplicate mobile number AFTER combining with country code
+      if (this.checkMobileNumberExists(fullMobileNumber)) {
         this.snackBar.open('Mobile number already exists! Please use a different mobile number.', 'Close', { 
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -461,30 +544,55 @@ export class EnquiryComponent implements OnInit {
         return;
       }
       
-      // Clean up GST status if GST is No
-      if (formData.gst === 'No') {
-        formData.gst_status = '';
-      }
+      // Set the combined mobile number
+      formData.mobile_number = fullMobileNumber;
 
-      // Clean up secondary mobile number - remove if empty
-      if (!formData.secondary_mobile_number || formData.secondary_mobile_number.trim() === '') {
+      // Handle secondary mobile number - use the same country code as primary
+      if (formData.secondary_mobile_number && formData.secondary_mobile_number.trim() !== '') {
+        formData.secondary_mobile_number = countryCodeDigits + formData.secondary_mobile_number;
+        console.log('📱 Secondary full mobile number:', formData.secondary_mobile_number);
+      } else {
         formData.secondary_mobile_number = null;
       }
+
+      // Remove country code fields from form data (don't send to backend)
+      delete formData.country_code;
 
       // Set default comment if empty
       if (!formData.comments || formData.comments.trim() === '') {
         formData.comments = 'No comment provided';
       }
 
+      // Handle GST field - preserve empty values for optional GST selection
+      // Backend will store empty values as "Not Selected" for display purposes
+      if (!formData.gst || formData.gst.trim() === '') {
+        formData.gst = ''; // Send empty string to backend to indicate "Not Selected"
+      }
+
       // Log the form data being sent for debugging
-      console.log('Form data being sent to backend:', formData);
-      console.log('Form validation status:', this.registrationForm.valid);
-      console.log('Form errors:', this.registrationForm.errors);
+      console.log('📤 Form data being sent to backend:', formData);
+      console.log('📤 Form validation status:', this.registrationForm.valid);
+      console.log('📤 Form errors:', this.registrationForm.errors);
 
       if (this.isEditMode && this.editingEnquiryId) {
         this.enquiryService.updateEnquiry(this.editingEnquiryId, formData).subscribe({
-          next: (updatedEnquiry) => {
-            this.snackBar.open('Enquiry updated successfully!', 'Close', { duration: 3000 });
+          next: (updatedEnquiry: any) => {
+            let message = 'Enquiry updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            // Add WhatsApp status to notification
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp status message sent!';
+            } else if (updatedEnquiry.whatsapp_sent === false) {
+              // Show specific error message if available
+              const whatsappError = updatedEnquiry.whatsapp_error || 'WhatsApp message failed to send';
+              message += ` ⚠️ ${whatsappError}`;
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
             this.hideAddForm();
             this.loadEnquiries();
           },
@@ -504,8 +612,24 @@ export class EnquiryComponent implements OnInit {
         });
       } else {
         this.enquiryService.createEnquiry(formData).subscribe({
-          next: (newEnquiry) => {
-            this.snackBar.open('Enquiry added successfully!', 'Close', { duration: 3000 });
+          next: (newEnquiry: any) => {
+            let message = 'Enquiry added successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            // Add WhatsApp status to notification
+            if (newEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp welcome message sent!';
+            } else if (newEnquiry.whatsapp_sent === false) {
+              // Show specific error message if available
+              const whatsappError = newEnquiry.whatsapp_error || 'WhatsApp message failed to send';
+              message += ` ⚠️ ${whatsappError}`;
+              panelClass = ['error-snackbar'];
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
             this.hideAddForm();
             this.loadEnquiries();
           },
@@ -538,7 +662,31 @@ export class EnquiryComponent implements OnInit {
   }
 
   editEnquiry(enquiry: Enquiry): void {
-    this.registrationForm.patchValue(enquiry);
+    // Create a copy of the enquiry to avoid modifying the original
+    const enquiryCopy: any = { ...enquiry };
+    
+    // Ensure GST field has a value (preserve empty values)
+    if (enquiryCopy.gst === undefined || enquiryCopy.gst === null) {
+      enquiryCopy.gst = '';
+    }
+    
+    // Handle "Not Selected" case - convert back to empty string for the form
+    if (enquiryCopy.gst === 'Not Selected') {
+      enquiryCopy.gst = '';
+    }
+    
+    // Split the mobile number into country code and number for editing
+    const mobileParts = this.splitMobileNumber(enquiry.mobile_number);
+    enquiryCopy.country_code = mobileParts.countryCode;
+    enquiryCopy.mobile_number = mobileParts.number;
+    
+    // Handle secondary mobile number if it exists
+    if (enquiry.secondary_mobile_number) {
+      const secondaryParts = this.splitMobileNumber(enquiry.secondary_mobile_number);
+      enquiryCopy.secondary_mobile_number = secondaryParts.number;
+    }
+    
+    this.registrationForm.patchValue(enquiryCopy);
     this.showRegistrationForm = true;
     this.isEditMode = true;
     this.editingEnquiryId = enquiry._id || null;
@@ -565,5 +713,173 @@ export class EnquiryComponent implements OnInit {
 
   goBack(): void {
     window.history.back();
+  }
+
+  // WhatsApp Status Methods
+  getWhatsAppStatusIcon(enquiry: Enquiry): string {
+    if (enquiry.whatsapp_sent === true) {
+      return 'check_circle';
+    } else if (enquiry.whatsapp_sent === false) {
+      return 'error';
+    }
+    return 'help_outline';
+  }
+
+  getWhatsAppStatusColor(enquiry: Enquiry): string {
+    if (enquiry.whatsapp_sent === true) {
+      return 'success';
+    } else if (enquiry.whatsapp_sent === false) {
+      return 'error';
+    }
+    return 'disabled';
+  }
+
+  getWhatsAppStatusTooltip(enquiry: Enquiry): string {
+    if (enquiry.whatsapp_sent === true) {
+      return `WhatsApp message sent successfully${enquiry.whatsapp_message_type ? ' (' + enquiry.whatsapp_message_type + ')' : ''}`;
+    } else if (enquiry.whatsapp_sent === false) {
+      return `WhatsApp message failed: ${enquiry.whatsapp_error || 'Unknown error'}`;
+    }
+    return 'WhatsApp status unknown';
+  }
+
+  // WhatsApp Test Method (Admin only)
+  testWhatsApp(enquiry: Enquiry): void {
+    if (confirm(`Send test WhatsApp message to ${enquiry.wati_name} (${enquiry.mobile_number})?`)) {
+      this.loading = true;
+      
+      console.log('🧪 Testing WhatsApp for enquiry:', enquiry);
+      
+      const testData = {
+        mobile_number: enquiry.mobile_number,
+        wati_name: enquiry.wati_name,
+        message_type: 'new_enquiry'
+      };
+      
+      console.log('📤 WhatsApp test data:', testData);
+
+      this.enquiryService.testWhatsApp(testData).subscribe({
+        next: (response: any) => {
+          this.loading = false;
+          console.log('📥 WhatsApp test response:', response);
+          if (response.success) {
+            this.snackBar.open(`✅ WhatsApp test message sent to ${enquiry.wati_name}!`, 'Close', { 
+              duration: 5000,
+              panelClass: ['success-snackbar']
+            });
+          } else {
+            // Provide more specific error messages
+            let errorMessage = response.error || 'Unknown error';
+            
+            // Check for specific error conditions
+            if (response.status_code === 466 || errorMessage.includes('quota exceeded')) {
+              errorMessage = 'Free plan limit reached - Upgrade GreenAPI plan to send messages to more numbers';
+            } else if (response.status_code === 401 || errorMessage.includes('unauthorized')) {
+              errorMessage = 'GreenAPI authentication failed - Check API credentials';
+            } else if (response.status_code === 403 || errorMessage.includes('forbidden')) {
+              errorMessage = 'GreenAPI access forbidden - Check API permissions';
+            } else if (response.status_code === 400 || errorMessage.includes('bad request')) {
+              errorMessage = 'Invalid phone number format or WhatsApp not available for this number';
+            } else if (response.status_code === 404 || errorMessage.includes('not found')) {
+              errorMessage = 'GreenAPI endpoint not found - Check API configuration';
+            }
+            
+            this.snackBar.open(`❌ WhatsApp test failed: ${errorMessage}`, 'Close', { 
+              duration: 10000, // Longer duration for important error messages
+              panelClass: ['error-snackbar']
+            });
+          }
+        },
+        error: (error: any) => {
+          this.loading = false;
+          console.error('❌ WhatsApp test error:', error);
+          console.error('❌ Error response body:', error.error);
+          console.error('❌ Error status:', error.status);
+          console.error('❌ Error message:', error.message);
+          
+          let errorMessage = error.error?.error || 'Unknown error';
+          
+          // Check for specific error conditions
+          if (error.status === 466 || errorMessage.includes('quota exceeded')) {
+            errorMessage = 'Free plan limit reached - Upgrade GreenAPI plan to send messages to more numbers';
+          } else if (error.status === 401 || errorMessage.includes('unauthorized')) {
+            errorMessage = 'GreenAPI authentication failed - Check API credentials';
+          } else if (error.status === 403 || errorMessage.includes('forbidden')) {
+            errorMessage = 'GreenAPI access forbidden - Check API permissions';
+          } else if (error.status === 400 || errorMessage.includes('bad request')) {
+            errorMessage = 'Invalid phone number format or WhatsApp not available for this number';
+          } else if (error.status === 404 || errorMessage.includes('not found')) {
+            errorMessage = 'GreenAPI endpoint not found - Check API configuration';
+          }
+          
+          this.snackBar.open(`❌ WhatsApp test failed: ${errorMessage}`, 'Close', { 
+            duration: 10000, // Longer duration for important error messages
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
+    }
+  }
+
+  // Check if current user is admin (for WhatsApp test button)
+  isAdmin(): boolean {
+    // Add your admin check logic here
+    // This could be based on user role, permissions, etc.
+    return true; // For now, allow all users to test
+  }
+
+
+  // Display mobile number in readable format for table
+  displayMobileNumber(mobileNumber: string): string {
+    if (!mobileNumber) return '-';
+    
+    // Handle different country codes
+    const countryCodeMap: { [key: string]: string } = {
+      '91': '+91',   // India
+      '1': '+1',     // USA/Canada
+      '44': '+44',   // UK
+      '971': '+971', // UAE
+      '966': '+966', // Saudi Arabia
+      '65': '+65',   // Singapore
+      '60': '+60',   // Malaysia
+      '61': '+61',   // Australia
+      '49': '+49',   // Germany
+      '33': '+33'    // France
+    };
+    
+    // Check for different country code patterns
+    for (const [code, display] of Object.entries(countryCodeMap)) {
+      if (mobileNumber.startsWith(code)) {
+        const number = mobileNumber.substring(code.length);
+        if (number.length >= 10) {
+          // Format as +CC XXXXX XXXXX for 10+ digit numbers
+          return `${display} ${number.substring(0, 5)} ${number.substring(5)}`;
+        }
+      }
+    }
+    
+    // If no country code pattern matches, return as is
+    return mobileNumber;
+  }
+
+  // Split combined mobile number into country code and number
+  splitMobileNumber(mobileNumber: string): { countryCode: string; number: string } {
+    if (!mobileNumber) {
+      return { countryCode: '+91', number: '' }; // Default to India
+    }
+    
+    // Check for different country codes in order of length (longest first)
+    const countryCodes = ['971', '966', '65', '61', '60', '49', '44', '33', '91', '1'];
+    
+    for (const code of countryCodes) {
+      if (mobileNumber.startsWith(code)) {
+        const number = mobileNumber.substring(code.length);
+        const countryCode = `+${code}`;
+        return { countryCode, number };
+      }
+    }
+    
+    // If no country code matches, default to India
+    return { countryCode: '+91', number: mobileNumber };
   }
 }

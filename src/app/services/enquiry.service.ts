@@ -121,4 +121,17 @@ export class EnquiryService {
       }
     });
   }
+
+  // WhatsApp Integration Methods
+  testWhatsApp(testData: { mobile_number: string; wati_name: string; message_type: string }): Observable<any> {
+    const whatsappUrl = `${environment.apiUrl}/whatsapp/test`;
+    console.log('Sending WhatsApp test data:', testData);
+    console.log('Sending to URL:', whatsappUrl);
+    return this.http.post<any>(whatsappUrl, testData, { headers: this.getHeaders() });
+  }
+
+  getWhatsAppTemplates(): Observable<any> {
+    const templatesUrl = `${environment.apiUrl}/whatsapp/templates`;
+    return this.http.get<any>(templatesUrl, { headers: this.getHeaders() });
+  }
 }

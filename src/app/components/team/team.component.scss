@@ -178,31 +178,21 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
 }
-
 .user-card {
   background: var(--surface);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-light);
-  padding: var(--spacing-lg);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
   
   &:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-2xl);
-  }
-  
-  .user-avatar {
-    text-align: center;
-    margin-bottom: var(--spacing-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     
-    mat-icon {
-      font-size: 3rem !important;
-      width: 3rem !important;
-      height: 3rem !important;
-      color: var(--primary);
+    .user-actions {
+      opacity: 1;
       background: rgb(37 99 235 / 0.1);
       padding: var(--spacing);
       border-radius: 50%;
@@ -246,6 +236,24 @@
       color: var(--text-muted);
       font-size: 0.6875rem;
       margin: 0;
+    }
+  }
+}
+
+.user-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: all 0.3s ease;
+  
+  .delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    
+    &:hover {
+      background: rgba(239, 68, 68, 0.2);
+      transform: scale(1.1);
     }
   }
 }

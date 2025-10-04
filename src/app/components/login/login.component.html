@@ -2,6 +2,11 @@
   <div class="card">
     <h2>Login</h2>
     
+    <div *ngIf="approvalMessage" class="approval-message">
+      <mat-icon>check_circle</mat-icon>
+      {{ approvalMessage }}
+    </div>
+    
     <div *ngIf="error" class="error">{{ error }}</div>
     
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
@@ -33,7 +38,42 @@
       </button>
     </form>
 
+    <!-- Registration Status Check Section -->
+    <div class="status-check-section">
+      <button mat-stroked-button type="button" (click)="toggleStatusCheck()" class="status-toggle-btn">
+        <mat-icon>{{ showStatusCheck ? 'expand_less' : 'expand_more' }}</mat-icon>
+        Check Registration Status
+      </button>
+
+      <div *ngIf="showStatusCheck" class="status-check-content">
+        <p class="status-help-text">
+          Can't login? Check if your registration is approved or rejected.
+        </p>
+        
+        <button mat-raised-button color="accent" type="button" 
+                (click)="checkRegistrationStatus()" 
+                [disabled]="checkingStatus">
+          <mat-spinner *ngIf="checkingStatus" diameter="20"></mat-spinner>
+          {{ checkingStatus ? 'Checking...' : 'Check Status' }}
+        </button>
+
+        <div *ngIf="statusMessage" class="status-message success">
+          <mat-icon>info</mat-icon>
+          {{ statusMessage }}
+        </div>
+
+        <div *ngIf="statusError" class="status-message error">
+          <mat-icon>error</mat-icon>
+          {{ statusError }}
+          <div class="register-again-link">
+            <a routerLink="/register">Click here to register again</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="text-center">
+      <p><a routerLink="/forgot-password">Forgot Password?</a></p>
       <p>Don't have an account? 
         <a routerLink="/register">Register here</a>
       </p>

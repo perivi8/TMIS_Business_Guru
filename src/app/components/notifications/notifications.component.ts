@@ -17,8 +17,11 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   clients: Client[] = [];
   lastVisit: Date | null = null;
   isLoadingNotifications = false;
+  pendingUsers: any[] = [];
+  isLoadingPendingUsers = false;
   private notificationSubscription: Subscription | null = null;
   private clientSubscription: Subscription | null = null;
+  private pendingUsersSubscription: Subscription | null = null;
 
   constructor(
     private router: Router,
@@ -35,6 +38,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
         this.initializeLastVisit();
         this.loadClients();
         this.loadNotifications();
+        if (this.isAdmin()) {
+          this.loadPendingUsers();
+        }
       }
     });
   }
@@ -45,6 +51,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     }
     if (this.clientSubscription) {
       this.clientSubscription.unsubscribe();
+    }
+    if (this.pendingUsersSubscription) {
+      this.pendingUsersSubscription.unsubscribe();
     }
   }
 
@@ -419,5 +428,84 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
   get adminStatusChangesList(): Client[] {
     return this.getAdminStatusChanges();
+  }
+
+  // Pending users methods
+  loadPendingUsers(): void {
+    if (!this.isAdmin()) {
+      return;
+    }
+
+    this.isLoadingPendingUsers = true;
+    this.pendingUsersSubscription = this.authService.getPendingUsers().subscribe({
+      next: (response) => {
+        this.pendingUsers = response.pending_users || [];
+        this.isLoadingPendingUsers = false;
+        console.log('Pending users loaded:', this.pendingUsers.length);
+      },
+      error: (error) => {
+        console.error('Error loading pending users:', error);
+        this.isLoadingPendingUsers = false;
+        this.pendingUsers = [];
+      }
+    });
+  }
+
+  approveUser(user: any): void {
+    if (!this.isAdmin()) {
+      return;
+    }
+
+    this.authService.approveUser(user._id).subscribe({
+      next: (response) => {
+        this.snackBar.open(`User ${user.username} approved successfully`, 'Close', {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top'
+        });
+        // Remove from pending list
+        this.pendingUsers = this.pendingUsers.filter(u => u._id !== user._id);
+      },
+      error: (error) => {
+        console.error('Error approving user:', error);
+        this.snackBar.open('Failed to approve user', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top'
+        });
+      }
+    });
+  }
+
+  rejectUser(user: any): void {
+    if (!this.isAdmin()) {
+      return;
+    }
+
+    const reason = prompt('Please provide a reason for rejection (optional):') || 'No reason provided';
+    
+    this.authService.rejectUser(user._id, reason).subscribe({
+      next: (response) => {
+        this.snackBar.open(`User ${user.username} rejected`, 'Close', {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top'
+        });
+        // Remove from pending list
+        this.pendingUsers = this.pendingUsers.filter(u => u._id !== user._id);
+      },
+      error: (error) => {
+        console.error('Error rejecting user:', error);
+        this.snackBar.open('Failed to reject user', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top'
+        });
+      }
+    });
+  }
+
+  get pendingUsersCount(): number {
+    return this.pendingUsers.length;
   }
 }

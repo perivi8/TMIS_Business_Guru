@@ -45,8 +45,60 @@
     </div>
 
     <!-- Notifications Content -->
-    <div *ngIf="!isLoadingNotifications && getTotalNotificationCount() > 0" class="notifications-content">
+    <div *ngIf="!isLoadingNotifications && (getTotalNotificationCount() > 0 || (isAdmin() && pendingUsersCount > 0))" class="notifications-content">
       
+      <!-- Pending User Approvals Section (Admin Only) -->
+      <div *ngIf="isAdmin() && pendingUsersCount > 0" class="notification-section">
+        <div class="section-header">
+          <mat-icon>person_add_alt</mat-icon>
+          <h3>Pending User Approvals</h3>
+          <span class="count-badge urgent">{{ pendingUsersCount }}</span>
+        </div>
+        
+        <mat-card *ngFor="let user of pendingUsers" 
+                  class="notification-card pending-user-card">
+          <mat-card-content>
+            <div class="notification-item">
+              <div class="notification-indicator pending-user-indicator">
+                <mat-icon>person_add_alt</mat-icon>
+              </div>
+              <div class="notification-content">
+                <div class="notification-header">
+                  <div class="notification-type-badge pending-user">
+                    <mat-icon>person_add_alt</mat-icon>
+                    <span>New Registration</span>
+                  </div>
+                  <span class="notification-time">
+                    <mat-icon>schedule</mat-icon>
+                    {{ getTimeAgo(user.created_at) }}
+                  </span>
+                </div>
+                <div class="notification-details">
+                  <div class="user-name">{{ user.username }}</div>
+                  <div class="user-email">{{ user.email }}</div>
+                  <div class="user-info">
+                    <span class="status-badge status-pending">PENDING APPROVAL</span>
+                  </div>
+                </div>
+              </div>
+              <div class="notification-actions">
+                <button mat-raised-button color="primary" 
+                        (click)="approveUser(user)" 
+                        class="approve-btn">
+                  <mat-icon>check</mat-icon>
+                  Approve
+                </button>
+                <button mat-stroked-button color="warn" 
+                        (click)="rejectUser(user)" 
+                        class="reject-btn">
+                  <mat-icon>close</mat-icon>
+                  Reject
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
 
       <!-- New Clients Section -->
       <div *ngIf="newClientsCount > 0" class="notification-section">

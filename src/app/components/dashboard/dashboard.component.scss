@@ -1074,31 +1074,25 @@
   }
 }
 
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-xs);
-  }
+// Admin utilities section
+.admin-utilities {
+  margin: 2rem 0;
   
-  .stat-card {
-    height: 60px;
+  .utility-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
     
-    .stat-content {
-      padding: var(--spacing-xs) var(--spacing-sm);
-    }
-    
-    .stat-icon {
-      font-size: 1rem !important;
-      width: 1.75rem !important;
-      height: 1.75rem !important;
-    }
-    
-    .stat-info h3 {
-      font-size: 1.25rem !important;
-    }
-    
-    .stat-info p {
-      font-size: 0.625rem;
+    button {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
     }
   }
 }

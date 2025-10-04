@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -12,14 +12,33 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   loading = false;
   error = '';
+  approvalMessage = '';
+  
+  // Registration status check
+  checkingStatus = false;
+  statusMessage = '';
+  statusError = '';
+  showStatusCheck = false;
 
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
+    private route: ActivatedRoute,
     private authService: AuthService
   ) { }
 
   ngOnInit(): void {
+    // Check for approval message from registration
+    this.route.queryParams.subscribe(params => {
+      if (params['message']) {
+        this.approvalMessage = params['message'];
+        // Clear the message after 5 seconds
+        setTimeout(() => {
+          this.approvalMessage = '';
+        }, 5000);
+      }
+    });
+
     // Check if already authenticated and redirect immediately
     if (this.authService.isAuthenticated()) {
       this.redirectAuthenticatedUser();
@@ -67,5 +86,52 @@ export class LoginComponent implements OnInit {
           this.loading = false;
         }
       });
+  }
+
+  // Toggle registration status check section
+  toggleStatusCheck(): void {
+    this.showStatusCheck = !this.showStatusCheck;
+    this.statusMessage = '';
+    this.statusError = '';
+  }
+
+  // Check registration status
+  checkRegistrationStatus(): void {
+    const email = this.loginForm.get('email')?.value;
+    
+    if (!email) {
+      this.statusError = 'Please enter your email address first';
+      return;
+    }
+
+    this.checkingStatus = true;
+    this.statusMessage = '';
+    this.statusError = '';
+
+    this.authService.checkRegistrationStatus(email).subscribe({
+      next: (response) => {
+        this.checkingStatus = false;
+        
+        if (response.status === 'active') {
+          this.statusMessage = '✅ Your registration is approved! You can login now.';
+          this.statusError = '';
+        } else if (response.status === 'pending') {
+          this.statusMessage = '⏳ Your registration is still pending admin approval. Please wait.';
+          this.statusError = '';
+        }
+      },
+      error: (error) => {
+        this.checkingStatus = false;
+        
+        if (error.status === 404) {
+          // Registration not found - could be rejected or never registered
+          this.statusError = '❌ Your registration was rejected by admin or not found. You can register again with the same email.';
+          this.statusMessage = '';
+        } else {
+          this.statusError = 'Error checking registration status. Please try again.';
+          this.statusMessage = '';
+        }
+      }
+    });
   }
 }

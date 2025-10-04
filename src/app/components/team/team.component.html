@@ -32,6 +32,14 @@
               </p>
               <p class="joined">Joined: {{ user.created_at | date:'mediumDate' }}</p>
             </div>
+            
+            <!-- Delete button for admins -->
+            <div *ngIf="isAdmin && user.role !== 'admin' && user._id !== currentUser?.id" class="user-actions">
+              <button mat-icon-button color="warn" (click)="deleteUser(user)" 
+                      matTooltip="Delete User" class="delete-btn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
           </mat-card-content>
         </mat-card>
       </div>

@@ -527,3 +527,98 @@
 .notification-card {
   animation: slideInFromRight 0.3s ease-out;
 }
+
+// Pending User Approval Styles
+.pending-user-card {
+  border-left: 4px solid #ff9800;
+  
+  .notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .pending-user-indicator {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+  }
+
+  .notification-type-badge.pending-user {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+  }
+
+  .user-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .user-email {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .notification-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 120px;
+
+    .approve-btn, .reject-btn {
+      font-size: 12px;
+      padding: 8px 16px;
+      min-width: auto;
+      
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        margin-right: 4px;
+      }
+    }
+
+    .approve-btn {
+      background: linear-gradient(135deg, #4caf50, #45a049);
+      color: white;
+      
+      &:hover {
+        background: linear-gradient(135deg, #45a049, #3d8b40);
+      }
+    }
+
+    .reject-btn {
+      border-color: #f44336;
+      color: #f44336;
+      
+      &:hover {
+        background-color: rgba(244, 67, 54, 0.04);
+      }
+    }
+  }
+}
+
+.count-badge.urgent {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+  }
+}
+
+.status-pending {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+}

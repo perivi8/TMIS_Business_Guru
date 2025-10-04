@@ -109,10 +109,19 @@ export class DashboardComponent implements OnInit {
   loadUserStats(): void {
     this.userService.getUsers().subscribe({
       next: (response) => {
-        // Filter users with TMIS email domain
-        const tmisUsers = response.users.filter(user => 
-          user.email && user.email.toLowerCase().includes('tmis')
-        );
+        console.log('All users from API:', response.users); // Debug log
+        
+        // Filter users with TMIS email domain AND only approved/active users
+        const tmisUsers = response.users.filter(user => {
+          const hasValidEmail = user.email && user.email.toLowerCase().includes('tmis');
+          const isApproved = !user.status || user.status === 'active'; // No status (legacy) or active status
+          
+          console.log(`User ${user.username}: email=${user.email}, status=${user.status}, approved=${isApproved}`);
+          
+          return hasValidEmail && isApproved;
+        });
+        
+        console.log('Filtered approved TMIS users:', tmisUsers);
         this.stats.totalTeam = tmisUsers.length;
       },
       error: (error) => {
@@ -120,6 +129,50 @@ export class DashboardComponent implements OnInit {
         this.stats.totalTeam = 1; // Fallback to 1
       }
     });
+  }
+
+  // Admin utility methods
+  debugAllUsers(): void {
+    if (this.currentUser?.role !== 'admin') {
+      this.snackBar.open('Admin access required', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.authService.debugAllUsers().subscribe({
+      next: (response) => {
+        console.log('Debug - All users in database:', response);
+        this.snackBar.open(`Found ${response.total_count} total users in database. Check console for details.`, 'Close', { duration: 5000 });
+      },
+      error: (error) => {
+        console.error('Error debugging users:', error);
+        this.snackBar.open('Error debugging users', 'Close', { duration: 3000 });
+      }
+    });
+  }
+
+  cleanupRejectedUsers(): void {
+    if (this.currentUser?.role !== 'admin') {
+      this.snackBar.open('Admin access required', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const confirmCleanup = confirm('Are you sure you want to remove all rejected users from the database? This action cannot be undone.');
+    
+    if (confirmCleanup) {
+      this.authService.cleanupRejectedUsers().subscribe({
+        next: (response) => {
+          console.log('Cleanup result:', response);
+          this.snackBar.open(`Successfully removed ${response.deleted_count} rejected users`, 'Close', { duration: 5000 });
+          
+          // Reload stats to reflect changes
+          this.loadUserStats();
+        },
+        error: (error) => {
+          console.error('Error cleaning up rejected users:', error);
+          this.snackBar.open('Error cleaning up rejected users', 'Close', { duration: 3000 });
+        }
+      });
+    }
   }
 
   getStatusColor(status: string): string {

@@ -98,11 +98,33 @@
     </mat-card>
   </div>
 
-  <!-- Recent Clients -->
-  <mat-card class="recent-clients-card">
+  <!-- Admin Utilities (only for admins) -->
+  <div *ngIf="currentUser?.role === 'admin'" class="admin-utilities">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Admin Utilities</mat-card-title>
+        <mat-card-subtitle>Database management tools</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="utility-buttons">
+          <button mat-stroked-button color="primary" (click)="debugAllUsers()">
+            <mat-icon>bug_report</mat-icon>
+            Debug All Users
+          </button>
+          <button mat-stroked-button color="warn" (click)="cleanupRejectedUsers()">
+            <mat-icon>cleaning_services</mat-icon>
+            Cleanup Rejected Users
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Recent Clients Table -->
+  <mat-card>
     <mat-card-header>
       <mat-card-title>Recent Clients</mat-card-title>
-      <mat-card-subtitle>Your latest client submissions</mat-card-subtitle>
+      <mat-card-subtitle>Latest client registrations</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       <div *ngIf="loading" class="loading">

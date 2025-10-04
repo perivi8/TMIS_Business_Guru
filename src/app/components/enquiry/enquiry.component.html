@@ -31,7 +31,7 @@
           <mat-select [(value)]="gstFilter" (selectionChange)="applyFilters()">
             <mat-option value="all">All</mat-option>
             <mat-option value="yes">GST Active</mat-option>
-            <mat-option value="no">No GST / GST Cancelled</mat-option>
+            <mat-option value="not_selected">Not Selected</mat-option>
           </mat-select>
         </mat-form-field>
 
@@ -42,6 +42,8 @@
             <mat-option value="all">All</mat-option>
             <mat-option value="interested">Interested</mat-option>
             <mat-option value="not_interested">Not Interested</mat-option>
+            <mat-option value="no_gst">No GST</mat-option>
+            <mat-option value="gst_cancelled">GST Cancelled</mat-option>
             <mat-option value="pending">Pending</mat-option>
             <mat-option value="unknown">Unknown</mat-option>
           </mat-select>
@@ -78,7 +80,7 @@
             <mat-icon (click)="clearStaffFilter()">close</mat-icon>
           </span>
           <span class="filter-tag" *ngIf="gstFilter !== 'all'">
-            GST: {{ gstFilter === 'yes' ? 'Active' : 'No GST / GST Cancelled' }}
+            GST: {{ getGstFilterDisplay() }}
             <mat-icon (click)="clearGstFilter()">close</mat-icon>
           </span>
           <span class="filter-tag" *ngIf="interestFilter !== 'all'">
@@ -124,19 +126,51 @@
             <input matInput formControlName="user_name">
           </mat-form-field>
 
-          <!-- Row 2 -->
-          <mat-form-field appearance="outline">
-            <mat-label>Mobile Number (Wati)</mat-label>
-            <input matInput formControlName="mobile_number" pattern="[0-9]{10}" maxlength="10" required>
-            <mat-error *ngIf="registrationForm.get('mobile_number')?.hasError('pattern')">
-              Please enter a valid 10-digit mobile number
-            </mat-error>
-          </mat-form-field>
+          <!-- Row 2 - Mobile Number with Country Code -->
+          <div class="mobile-number-container">
+            <mat-form-field appearance="outline" class="country-code-field">
+              <mat-label>Country</mat-label>
+              <mat-select formControlName="country_code" required>
+                <mat-option *ngFor="let country of countryCodes" [value]="country.code">
+                  <span class="country-option">
+                    <span class="flag">{{ country.flag }}</span>
+                    <span class="code">{{ country.code }}</span>
+                    <span class="name">{{ country.country }}</span>
+                  </span>
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="mobile-number-field">
+              <mat-label>Mobile Number (Wati)</mat-label>
+              <input matInput 
+                     formControlName="mobile_number" 
+                     pattern="[0-9]{10}" 
+                     maxlength="10" 
+                     placeholder="Enter 10-digit mobile number"
+                     required>
+              <mat-hint>Enter 10-digit mobile number (without country code)</mat-hint>
+              <mat-error *ngIf="registrationForm.get('mobile_number')?.hasError('pattern')">
+                Please enter a valid 10-digit mobile number
+              </mat-error>
+            </mat-form-field>
+          </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Secondary Mobile Number (Optional)</mat-label>
-            <input matInput formControlName="secondary_mobile_number" maxlength="10">
-          </mat-form-field>
+          <!-- Secondary Mobile Number -->
+          <div class="mobile-number-container">
+            <mat-form-field appearance="outline" class="mobile-number-field">
+              <mat-label>Secondary Mobile Number</mat-label>
+              <input matInput 
+                     formControlName="secondary_mobile_number" 
+                     pattern="[0-9]{10}" 
+                     maxlength="10"
+                     placeholder="Enter 10-digit mobile number">
+              <mat-hint>Enter 10-digit mobile number (without country code)</mat-hint>
+              <mat-error *ngIf="registrationForm.get('secondary_mobile_number')?.hasError('pattern')">
+                Please enter a valid 10-digit mobile number
+              </mat-error>
+            </mat-form-field>
+          </div>
 
           <mat-form-field appearance="outline">
             <mat-label>Business Type (Optional)</mat-label>
@@ -148,11 +182,21 @@
             </mat-select>
           </mat-form-field>
 
+          <!-- Business Nature Field -->
+          <mat-form-field appearance="outline">
+            <mat-label>Business Nature <span *ngIf="isEditMode && registrationForm.get('comments')?.value === 'Not Eligible'" class="required-asterisk">*</span></mat-label>
+            <input matInput formControlName="business_nature" placeholder="Enter business nature">
+            <mat-error *ngIf="registrationForm.get('business_nature')?.hasError('required')">
+              Business Nature is required when "Not Eligible" comment is selected
+            </mat-error>
+          </mat-form-field>
+
           <!-- Row 3 - GST Section -->
           <div class="gst-section">
             <mat-form-field appearance="outline">
-              <mat-label>GST</mat-label>
-              <mat-select formControlName="gst" (selectionChange)="onGstChange()" required>
+              <mat-label>GST (Optional)</mat-label>
+              <mat-select formControlName="gst" (selectionChange)="onGstChange()">
+                <mat-option value="">Select GST (Optional)</mat-option>
                 <mat-option value="Yes">Yes</mat-option>
                 <mat-option value="No">No</mat-option>
               </mat-select>
@@ -177,8 +221,8 @@
             </mat-select>
           </mat-form-field>
 
-          <!-- Row 5 - Comments -->
-          <mat-form-field appearance="outline" class="full-width">
+          <!-- Row 5 - Comments (Only show in Edit Mode) -->
+          <mat-form-field appearance="outline" class="full-width" *ngIf="isEditMode">
             <mat-label>Comments (Optional)</mat-label>
             <mat-select formControlName="comments">
               <mat-option value="">Select a comment (optional)</mat-option>
@@ -188,8 +232,8 @@
             </mat-select>
           </mat-form-field>
 
-          <!-- Row 6 - Additional Comments -->
-          <mat-form-field appearance="outline" class="full-width">
+          <!-- Row 6 - Additional Comments (Only show in Edit Mode) -->
+          <mat-form-field appearance="outline" class="full-width" *ngIf="isEditMode">
             <mat-label>Additional Comments (Optional)</mat-label>
             <textarea matInput formControlName="additional_comments" rows="3" placeholder="Enter additional comments manually..."></textarea>
           </mat-form-field>
@@ -259,21 +303,25 @@
         <!-- Mobile Number Column -->
         <ng-container matColumnDef="mobile_number">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Mobile Number</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.mobile_number }}</td>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">
+            <span class="mobile-number">{{ displayMobileNumber(enquiry.mobile_number) }}</span>
+          </td>
         </ng-container>
 
         <!-- Secondary Mobile Column -->
         <ng-container matColumnDef="secondary_mobile_number">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Secondary Mobile</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.secondary_mobile_number || '-' }}</td>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">
+            <span class="mobile-number">{{ displayMobileNumber(enquiry.secondary_mobile_number) }}</span>
+          </td>
         </ng-container>
 
         <!-- GST Column -->
         <ng-container matColumnDef="gst">
           <th mat-header-cell *matHeaderCellDef class="header-cell">GST</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <span class="gst-badge" [class.gst-yes]="enquiry.gst === 'Yes'" [class.gst-no]="enquiry.gst === 'No'">
-              {{ enquiry.gst }}
+            <span class="gst-badge" [class.gst-yes]="enquiry.gst === 'Yes'" [class.gst-no]="enquiry.gst === 'No'" [class.gst-not-selected]="enquiry.gst === 'Not Selected' || !enquiry.gst">
+              {{ enquiry.gst || 'Not Selected' }}
               <span *ngIf="enquiry.gst === 'Yes' && enquiry.gst_status" class="gst-status">
                 ({{ enquiry.gst_status }})
               </span>
@@ -287,6 +335,12 @@
           <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.business_type || '-' }}</td>
         </ng-container>
 
+        <!-- Business Nature Column -->
+        <ng-container matColumnDef="business_nature">
+          <th mat-header-cell *matHeaderCellDef class="header-cell">Business Nature</th>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.business_nature || '-' }}</td>
+        </ng-container>
+
         <!-- Staff Column -->
         <ng-container matColumnDef="staff">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Staff</th>
@@ -298,6 +352,28 @@
           <th mat-header-cell *matHeaderCellDef class="header-cell">Comments</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
             <span class="comment-badge">{{ enquiry.comments }}</span>
+          </td>
+        </ng-container>
+
+        <!-- WhatsApp Status Column -->
+        <ng-container matColumnDef="whatsapp_status">
+          <th mat-header-cell *matHeaderCellDef class="header-cell">WhatsApp</th>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell whatsapp-status-cell">
+            <div class="whatsapp-status-container">
+              <mat-icon 
+                [class]="'whatsapp-status-icon ' + getWhatsAppStatusColor(enquiry)"
+                [matTooltip]="getWhatsAppStatusTooltip(enquiry)">
+                {{ getWhatsAppStatusIcon(enquiry) }}
+              </mat-icon>
+              <button 
+                mat-icon-button 
+                *ngIf="isAdmin()" 
+                (click)="testWhatsApp(enquiry)" 
+                matTooltip="Send test WhatsApp message"
+                class="whatsapp-test-btn">
+                <mat-icon>send</mat-icon>
+              </button>
+            </div>
           </td>
         </ng-container>
 

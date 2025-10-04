@@ -48,9 +48,14 @@ import { ClientDetailComponent } from './components/client-detail/client-detail.
 import { EditClientComponent } from './components/edit-client/edit-client.component';
 import { NotificationsComponent } from './components/notifications/notifications.component';
 import { EnquiryComponent } from './components/enquiry/enquiry.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
+import { AdminApprovalPopupComponent } from './components/admin-approval-popup/admin-approval-popup.component';
 
 // Interceptors
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+
+// Services
+import { SocketService } from './services/socket.service';
 
 @NgModule({
   declarations: [
@@ -69,7 +74,9 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
     ClientDetailComponent,
     EditClientComponent,
     NotificationsComponent,
-    EnquiryComponent
+    EnquiryComponent,
+    ForgotPasswordComponent,
+    AdminApprovalPopupComponent
   ],
   imports: [
     BrowserModule,
@@ -107,7 +114,8 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
       multi: true
-    }
+    },
+    SocketService
   ],
   bootstrap: [AppComponent]
 })

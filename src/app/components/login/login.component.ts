@@ -82,7 +82,17 @@ export class LoginComponent implements OnInit {
           this.redirectAuthenticatedUser();
         },
         error: (error) => {
-          this.error = error.error?.error || 'Login failed. Please check your credentials.';
+          console.error('Login error:', error);
+          // Handle different types of errors
+          if (error.status === 0) {
+            this.error = 'Network error. Please check your connection and try again.';
+          } else if (error.status === 401) {
+            this.error = error.error?.error || 'Invalid credentials. Please check your email and password.';
+          } else if (error.status === 403) {
+            this.error = error.error?.error || 'Your account is not approved yet. Please wait for admin approval.';
+          } else {
+            this.error = error.error?.error || 'Login failed. Please try again.';
+          }
           this.loading = false;
         }
       });

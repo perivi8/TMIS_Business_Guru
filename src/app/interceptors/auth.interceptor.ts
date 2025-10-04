@@ -17,7 +17,10 @@ export class AuthInterceptor implements HttpInterceptor {
     const authToken = this.authService.getToken();
     
     // Clone the request and add the authorization header if token exists
-    if (authToken) {
+    // But don't add token to login/register requests
+    const isAuthRequest = request.url.includes('/login') || request.url.includes('/register');
+    
+    if (authToken && !isAuthRequest) {
       request = request.clone({
         setHeaders: {
           Authorization: `Bearer ${authToken}`
@@ -27,6 +30,8 @@ export class AuthInterceptor implements HttpInterceptor {
       console.log('Auth Interceptor - Adding token to request:', request.url);
       console.log('Auth Interceptor - Token:', authToken.substring(0, 20) + '...');
       console.log('Auth Interceptor - Request body:', request.body);
+    } else if (isAuthRequest) {
+      console.log('Auth Interceptor - Skipping token for auth request:', request.url);
     } else {
       console.log('Auth Interceptor - No token available for request:', request.url);
     }

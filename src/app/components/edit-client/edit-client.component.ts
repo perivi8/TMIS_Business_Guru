@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
   styleUrls: ['./edit-client.component.scss']
 })
 export class EditClientComponent implements OnInit {
-  clientForm: FormGroup;
+  clientForm!: FormGroup;
   clientId: string;
   client: Client | null = null;
   loading = false;
@@ -106,10 +106,27 @@ export class EditClientComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {
     this.clientId = this.route.snapshot.paramMap.get('id') || '';
-    this.clientForm = this.initForm();
+    
+    // Initialize the form with safety check
+    try {
+      this.clientForm = this.initForm();
+      console.log('✅ ClientForm initialized successfully:', !!this.clientForm);
+    } catch (error) {
+      console.error('❌ Error initializing clientForm:', error);
+      // Fallback initialization
+      this.clientForm = this.fb.group({});
+    }
   }
 
   ngOnInit(): void {
+    // Ensure form is initialized before proceeding
+    if (!this.clientForm) {
+      console.error('❌ ClientForm not initialized in ngOnInit, attempting to reinitialize...');
+      this.clientForm = this.initForm();
+    }
+    
+    console.log('🔍 NgOnInit - ClientForm status:', !!this.clientForm);
+    
     this.loadClientDetails();
     
     // Initialize partner arrays

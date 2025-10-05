@@ -30,7 +30,7 @@
     <p>Loading client details...</p>
   </div>
 
-  <div *ngIf="!loading && client" class="form-container">
+  <div *ngIf="!loading && client && clientForm" class="form-container">
     <form [formGroup]="clientForm" class="client-form">
       <!-- Personal Information Section -->
       <mat-card class="section-card personal-info-card">

@@ -304,6 +304,7 @@
     .comments-dropdown {
       width: 160px;
       font-size: 0.875rem;
+      position: relative;
       
       ::ng-deep .mat-form-field-wrapper {
         padding-bottom: 0 !important;
@@ -331,6 +332,13 @@
         border-right: 5px solid transparent;
         border-top: 5px solid;
         margin: 0 4px;
+      }
+      
+      .comments-loading-spinner {
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
       }
     }
     

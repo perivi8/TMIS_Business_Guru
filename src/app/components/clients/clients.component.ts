@@ -553,22 +553,26 @@ export class ClientsComponent implements OnInit {
     // Set loading state for this specific client
     this.updatingClientId = client._id;
     
+    // Immediately update the UI to provide instant feedback
+    const previousComment = client.comments;
+    client.comments = comment;
+    
+    // Update the client in the local array immediately for UI responsiveness
+    const clientIndex = this.clients.findIndex(c => c._id === client._id);
+    if (clientIndex !== -1) {
+      this.clients[clientIndex].comments = comment;
+    }
+    
+    const filteredIndex = this.filteredClients.findIndex(c => c._id === client._id);
+    if (filteredIndex !== -1) {
+      this.filteredClients[filteredIndex].comments = comment;
+    }
+    
     // Update the client's comment in the database
     this.clientService.updateClient(client._id, { comments: comment }).subscribe({
       next: (response) => {
         // Clear loading state
         this.updatingClientId = null;
-        
-        // Update the client in the local array
-        const clientIndex = this.clients.findIndex(c => c._id === client._id);
-        if (clientIndex !== -1) {
-          this.clients[clientIndex].comments = comment;
-        }
-        
-        const filteredIndex = this.filteredClients.findIndex(c => c._id === client._id);
-        if (filteredIndex !== -1) {
-          this.filteredClients[filteredIndex].comments = comment;
-        }
         
         // Show appropriate notification based on response
         let message = 'Comment updated successfully';
@@ -595,12 +599,23 @@ export class ClientsComponent implements OnInit {
         // Clear loading state on error
         this.updatingClientId = null;
         
+        // Revert the comment in the UI if the update failed
+        client.comments = previousComment;
+        
+        const clientIndex = this.clients.findIndex(c => c._id === client._id);
+        if (clientIndex !== -1) {
+          this.clients[clientIndex].comments = previousComment;
+        }
+        
+        const filteredIndex = this.filteredClients.findIndex(c => c._id === client._id);
+        if (filteredIndex !== -1) {
+          this.filteredClients[filteredIndex].comments = previousComment;
+        }
+        
         this.snackBar.open('Failed to update comment', 'Close', {
           duration: 3000,
           panelClass: ['error-snackbar']
         });
-        // Revert the comment in the UI if the update failed
-        client.comments = client.comments;
       }
     });
   }

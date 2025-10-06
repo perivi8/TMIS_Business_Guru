@@ -30,7 +30,7 @@ export class ClientsComponent implements OnInit {
   viewMode: 'table' | 'card' = 'table';
   
   displayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
-  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions']; // Removed 'comments' for regular users
+  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions']; // Include 'comments' for regular users (read-only)
   adminDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
 
   constructor(
@@ -334,13 +334,8 @@ export class ClientsComponent implements OnInit {
   }
 
   getDisplayedColumns(): string[] {
-    // Remove 'comments' column for non-admin users
-    if (this.isAdmin()) {
-      return this.adminDisplayedColumns;
-    } else {
-      // Filter out 'comments' column for regular users
-      return this.userDisplayedColumns.filter(col => col !== 'comments');
-    }
+    // Include 'comments' column for both admin and regular users
+    return this.isAdmin() ? this.adminDisplayedColumns : this.userDisplayedColumns;
   }
 
   getSerialNumber(index: number): number {
@@ -585,15 +580,20 @@ export class ClientsComponent implements OnInit {
         let duration = 3000;
         let panelClass = ['success-snackbar'];
         
-        // Check if WhatsApp was sent
+        // Check if WhatsApp was sent or attempted
         if (response && response.whatsapp_sent === true) {
-          message += ', WhatsApp message sent';
+          message += ', ✅WhatsApp message sent';
         } else if (response && response.whatsapp_quota_exceeded === true) {
-          message += ', WhatsApp message not sent due to limit reached';
+          message += ', ⚠️WhatsApp message not sent due to limit reached';
           panelClass = ['warning-snackbar'];
         } else if (response && response.whatsapp_error) {
-          message += `, WhatsApp error: ${response.whatsapp_error}`;
+          message += `, ❌WhatsApp error: ${response.whatsapp_error}`;
           panelClass = ['error-snackbar'];
+        } else if (response && response.whatsapp_notification === 'attempted') {
+          // For admin users, indicate that WhatsApp notification will be sent
+          if (this.isAdmin()) {
+            message += ', WhatsApp notification attempted';
+          }
         }
         
         this.snackBar.open(message, 'Close', {

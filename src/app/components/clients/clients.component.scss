@@ -342,6 +342,28 @@
       }
     }
     
+    .comments-display {
+      padding: 8px 12px;
+      border-radius: 4px;
+      background-color: var(--surface);
+      border: 1px solid var(--border-light);
+      min-height: 20px;
+      display: flex;
+      align-items: center;
+      
+      .comment-text {
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        word-break: break-word;
+      }
+      
+      .no-comment {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+    }
+    
     .loan-status {
       display: flex;
       align-items: center;

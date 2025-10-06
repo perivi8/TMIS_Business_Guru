@@ -164,10 +164,11 @@
           </ng-container>
 
           <!-- Comments Column -->
-          <ng-container matColumnDef="comments" *ngIf="isAdmin()">
+          <ng-container matColumnDef="comments">
             <th mat-header-cell *matHeaderCellDef>Comments</th>
             <td mat-cell *matCellDef="let client">
-              <mat-form-field appearance="outline" class="comments-dropdown">
+              <!-- Admin view - editable dropdown -->
+              <mat-form-field appearance="outline" class="comments-dropdown" *ngIf="isAdmin()">
                 <mat-select [(value)]="client.comments" (selectionChange)="onCommentChange(client, $event.value)" [disabled]="isClientUpdating(client._id)">
                   <mat-option value="">Select Comment</mat-option>
                   <mat-option value="Not Interested">Not Interested</mat-option>
@@ -184,6 +185,12 @@
                 </mat-select>
                 <mat-progress-spinner *ngIf="isClientUpdating(client._id)" mode="indeterminate" diameter="20" class="comments-loading-spinner"></mat-progress-spinner>
               </mat-form-field>
+              
+              <!-- Non-admin view - read-only display -->
+              <div class="comments-display" *ngIf="!isAdmin()">
+                <span *ngIf="client.comments" class="comment-text">{{ client.comments }}</span>
+                <span *ngIf="!client.comments" class="no-comment">No comment</span>
+              </div>
             </td>
           </ng-container>
 

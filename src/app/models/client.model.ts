@@ -21,6 +21,7 @@ export interface Client {
   business_pincode?: string;
   status?: 'active' | 'pending' | 'rejected' | 'inactive' | string;
   feedback?: string;
+  comments?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;

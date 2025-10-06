@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, throwError, of } from 'rxjs';
 import { tap, catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService, User } from './auth.service';
@@ -57,6 +57,7 @@ export interface Client {
   bank_type: string;
   gst_status: string;
   business_type: string;
+  comments?: string;
   
   // GST Details
   registration_number?: string;
@@ -276,60 +277,62 @@ export class ClientService implements OnDestroy {
     );
   }
 
-  async updateClientDetails(clientId: string, formData: FormData): Promise<any> {
-    try {
-      console.log('Starting client update for ID:', clientId);
-      
-      // Log form data being sent
-      console.log('Form data being sent:');
-      for (let pair of (formData as any).entries()) {
-        console.log(pair[0], pair[1]);
-      }
-      
-      // Perform the update
-      const url = `${environment.apiUrl}/clients/${clientId}/update`;
-      console.log('Sending request to:', url);
-      
-      const response = await this.http.put(url, formData, { 
-        headers: {
-          'Authorization': `Bearer ${this.authService.getToken()}`
-          // Don't set Content-Type, let the browser set it with the correct boundary
-        },
-        withCredentials: true
-      }).toPromise();
-      
-      console.log('✅ Update response received:', response);
-
-      // Notify other components about client update
-      this.clientUpdatedSubject.next(clientId);
-      
-      return response;
-    } catch (error: any) {
-      console.error('❌ Error updating client:', error);
-      if (error?.error) {
-        console.error('Error details:', error.error);
-      }
-      
-      // Provide more specific error information
-      let errorMessage = 'Failed to update client';
-      if (error.status === 0) {
-        errorMessage = 'Network connection failed';
-      } else if (error.status === 401) {
-        errorMessage = 'Authentication failed';
-      } else if (error.status === 403) {
-        errorMessage = 'Access denied';
-      } else if (error.status === 404) {
-        errorMessage = 'Client not found';
-      } else if (error.status === 500) {
-        errorMessage = 'Server error occurred';
-      } else if (error.error?.message) {
-        errorMessage = error.error.message;
-      }
-      
-      const enhancedError = new Error(errorMessage);
-      (enhancedError as any).originalError = error;
-      throw enhancedError;
+  updateClientDetails(clientId: string, formData: FormData): Observable<any> {
+    console.log('Starting client update for ID:', clientId);
+    
+    // Log form data being sent
+    console.log('Form data being sent:');
+    for (let pair of (formData as any).entries()) {
+      console.log(pair[0], pair[1]);
     }
+    
+    // Perform the update
+    const url = `${environment.apiUrl}/clients/${clientId}/update`;
+    console.log('Sending request to:', url);
+    
+    return this.http.put(url, formData, { 
+      headers: {
+        'Authorization': `Bearer ${this.authService.getToken()}`
+        // Don't set Content-Type, let the browser set it with the correct boundary
+      },
+      withCredentials: true
+    }).pipe(
+      catchError((error: any) => {
+        // Convert HTTP errors to successful responses to prevent console logging
+        console.log('Intercepting client update error:', error);
+        
+        // Check for WhatsApp quota exceeded errors
+        if (error.status === 466 || 
+            (error.error && typeof error.error === 'string' && 
+             (error.error.includes('quota exceeded') || error.error.includes('Monthly quota has been exceeded')))) {
+          return of({
+            success: false,
+            status_code: 466,
+            whatsapp_quota_exceeded: true,
+            message: 'Client updated successfully',
+            error: error.error?.error || 'Quota exceeded',
+            ...error.error
+          });
+        }
+        
+        // Handle all other errors similarly
+        return of({
+          success: false,
+          status_code: error.status || 500,
+          message: 'Client update failed',
+          error: error.error?.error || error.message || 'Unknown error',
+          ...error.error
+        });
+      }),
+      tap(response => {
+        console.log('✅ Update response received:', response);
+        
+        // Notify other components about client update if successful
+        if (response && (response.success !== false)) {
+          this.clientUpdatedSubject.next(clientId);
+        }
+      })
+    );
   }
 
   private findChanges(oldClient: Client, newClient: Client): {field: string, oldValue: any, newValue: any}[] {

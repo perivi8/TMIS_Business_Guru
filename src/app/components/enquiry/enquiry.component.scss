@@ -1462,6 +1462,11 @@
   color: white !important;
 }
 
+::ng-deep .warning-snackbar {
+  background-color: #ff9800 !important;
+  color: white !important;
+}
+
 // Mobile Number Formatting
 .mobile-number {
   font-family: 'Courier New', monospace;

@@ -29,9 +29,9 @@ export class ClientsComponent implements OnInit {
   updatingClientId: string | null = null;
   viewMode: 'table' | 'card' = 'table';
   
-  displayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions'];
-  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions'];
-  adminDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions'];
+  displayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
+  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
+  adminDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
 
   constructor(
     private clientService: ClientService,
@@ -277,7 +277,12 @@ export class ClientsComponent implements OnInit {
   }
 
   getStatusColor(status: string): string {
-    switch (status) {
+    // Handle undefined or null status
+    if (!status) {
+      return '#666'; // Default gray color
+    }
+    
+    switch (status.toLowerCase()) {
       case 'interested': return '#4caf50';
       case 'not_interested': return '#f44336';
       case 'hold': return '#ff9800';
@@ -542,5 +547,34 @@ export class ClientsComponent implements OnInit {
 
   toggleView(): void {
     this.viewMode = this.viewMode === 'table' ? 'card' : 'table';
+  }
+
+  onCommentChange(client: Client, comment: string): void {
+    // Update the client's comment in the database
+    this.clientService.updateClient(client._id, { comments: comment }).subscribe({
+      next: (response) => {
+        // Update the client in the local array
+        const clientIndex = this.clients.findIndex(c => c._id === client._id);
+        if (clientIndex !== -1) {
+          this.clients[clientIndex].comments = comment;
+        }
+        
+        const filteredIndex = this.filteredClients.findIndex(c => c._id === client._id);
+        if (filteredIndex !== -1) {
+          this.filteredClients[filteredIndex].comments = comment;
+        }
+        
+        this.snackBar.open('Comment updated successfully', 'Close', {
+          duration: 3000
+        });
+      },
+      error: (error) => {
+        this.snackBar.open('Failed to update comment', 'Close', {
+          duration: 3000
+        });
+        // Revert the comment in the UI if the update failed
+        client.comments = client.comments;
+      }
+    });
   }
 }

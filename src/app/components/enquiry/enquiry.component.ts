@@ -1,17 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EnquiryService } from '../../services/enquiry.service';
 import { UserService, User } from '../../services/user.service';
 import { Enquiry, COMMENT_OPTIONS } from '../../models/enquiry.interface';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-enquiry',
   templateUrl: './enquiry.component.html',
   styleUrls: ['./enquiry.component.scss']
 })
-export class EnquiryComponent implements OnInit {
+export class EnquiryComponent implements OnInit, OnDestroy {
   enquiries: Enquiry[] = [];
   filteredEnquiries: Enquiry[] = [];
   displayedColumns: string[] = [
@@ -38,6 +40,9 @@ export class EnquiryComponent implements OnInit {
   // Edit mode tracking
   isEditMode = false;
   editingEnquiryId: string | null = null;
+
+  // Cleanup subject for subscriptions
+  private destroy$ = new Subject<void>();
 
   // Country codes for mobile numbers
   countryCodes = [
@@ -138,6 +143,11 @@ export class EnquiryComponent implements OnInit {
     this.loadStaffMembers();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   createRegistrationForm(): FormGroup {
     const form = this.fb.group({
       date: [new Date(), Validators.required],
@@ -171,42 +181,46 @@ export class EnquiryComponent implements OnInit {
 
   loadEnquiries(): void {
     this.loading = true;
-    this.enquiryService.getAllEnquiries().subscribe({
-      next: (enquiries) => {
-        this.enquiries = enquiries.map((enquiry, index) => ({
-          ...enquiry,
-          sno: index + 1
-        }));
-        this.extractUniqueStaffMembers();
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading enquiries:', error);
-        this.snackBar.open('Error loading enquiries', 'Close', { duration: 3000 });
-        this.loading = false;
-      }
-    });
+    this.enquiryService.getAllEnquiries()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (enquiries) => {
+          this.enquiries = enquiries.map((enquiry, index) => ({
+            ...enquiry,
+            sno: index + 1
+          }));
+          this.extractUniqueStaffMembers();
+          this.applyFilters();
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading enquiries:', error);
+          this.snackBar.open('Error loading enquiries', 'Close', { duration: 3000 });
+          this.loading = false;
+        }
+      });
   }
 
   loadStaffMembers(): void {
-    this.userService.getUsers().subscribe({
-      next: (response) => {
-        // Handle the response structure properly
-        if (response && response.users && Array.isArray(response.users)) {
-          this.staffMembers = response.users.filter((user: User) => user.role === 'user' || user.role === 'admin');
-        } else {
-          console.warn('Unexpected response structure from getUsers:', response);
+    this.userService.getUsers()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          // Handle the response structure properly
+          if (response && response.users && Array.isArray(response.users)) {
+            this.staffMembers = response.users.filter((user: User) => user.role === 'user' || user.role === 'admin');
+          } else {
+            console.warn('Unexpected response structure from getUsers:', response);
+            this.staffMembers = [];
+          }
+          this.extractUniqueStaffMembers();
+        },
+        error: (error) => {
+          console.error('Error loading staff members:', error);
           this.staffMembers = [];
+          this.extractUniqueStaffMembers();
         }
-        this.extractUniqueStaffMembers();
-      },
-      error: (error) => {
-        console.error('Error loading staff members:', error);
-        this.staffMembers = [];
-        this.extractUniqueStaffMembers();
-      }
-    });
+      });
   }
 
   extractUniqueStaffMembers(): void {
@@ -575,7 +589,9 @@ export class EnquiryComponent implements OnInit {
       console.log('📤 Form errors:', this.registrationForm.errors);
 
       if (this.isEditMode && this.editingEnquiryId) {
-        this.enquiryService.updateEnquiry(this.editingEnquiryId, formData).subscribe({
+        this.enquiryService.updateEnquiry(this.editingEnquiryId, formData)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
           next: (updatedEnquiry: any) => {
             let message = 'Enquiry updated successfully!';
             let panelClass = ['success-snackbar'];
@@ -583,10 +599,26 @@ export class EnquiryComponent implements OnInit {
             // Add WhatsApp status to notification
             if (updatedEnquiry.whatsapp_sent === true) {
               message += ' 📱 WhatsApp status message sent!';
+              // Show additional notification if available
+              if (updatedEnquiry.whatsapp_notification) {
+                this.snackBar.open(updatedEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 10000,
+                  panelClass: ['success-snackbar']
+                });
+              }
             } else if (updatedEnquiry.whatsapp_sent === false) {
               // Show specific error message if available
               const whatsappError = updatedEnquiry.whatsapp_error || 'WhatsApp message failed to send';
               message += ` ⚠️ ${whatsappError}`;
+              panelClass = ['error-snackbar'];
+              
+              // Show quota exceeded notification if applicable
+              if (updatedEnquiry.whatsapp_notification) {
+                this.snackBar.open(updatedEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 15000,
+                  panelClass: ['warning-snackbar']
+                });
+              }
             }
             
             this.snackBar.open(message, 'Close', { 
@@ -611,7 +643,9 @@ export class EnquiryComponent implements OnInit {
           }
         });
       } else {
-        this.enquiryService.createEnquiry(formData).subscribe({
+        this.enquiryService.createEnquiry(formData)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
           next: (newEnquiry: any) => {
             let message = 'Enquiry added successfully!';
             let panelClass = ['success-snackbar'];
@@ -619,11 +653,26 @@ export class EnquiryComponent implements OnInit {
             // Add WhatsApp status to notification
             if (newEnquiry.whatsapp_sent === true) {
               message += ' 📱 WhatsApp welcome message sent!';
+              // Show additional notification if available
+              if (newEnquiry.whatsapp_notification) {
+                this.snackBar.open(newEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 10000,
+                  panelClass: ['success-snackbar']
+                });
+              }
             } else if (newEnquiry.whatsapp_sent === false) {
               // Show specific error message if available
               const whatsappError = newEnquiry.whatsapp_error || 'WhatsApp message failed to send';
               message += ` ⚠️ ${whatsappError}`;
               panelClass = ['error-snackbar'];
+              
+              // Show quota exceeded notification if applicable
+              if (newEnquiry.whatsapp_notification) {
+                this.snackBar.open(newEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 15000,
+                  panelClass: ['warning-snackbar']
+                });
+              }
             }
             
             this.snackBar.open(message, 'Close', { 
@@ -694,7 +743,9 @@ export class EnquiryComponent implements OnInit {
 
   deleteEnquiry(enquiry: Enquiry): void {
     if (confirm('Are you sure you want to delete this enquiry?')) {
-      this.enquiryService.deleteEnquiry(enquiry._id!).subscribe({
+      this.enquiryService.deleteEnquiry(enquiry._id!)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
         next: () => {
           this.snackBar.open('Enquiry deleted successfully!', 'Close', { duration: 3000 });
           this.loadEnquiries();
@@ -745,77 +796,79 @@ export class EnquiryComponent implements OnInit {
 
   // WhatsApp Test Method (Admin only)
   testWhatsApp(enquiry: Enquiry): void {
-    if (confirm(`Send test WhatsApp message to ${enquiry.wati_name} (${enquiry.mobile_number})?`)) {
+    if (confirm(`Send test WhatsApp message to ${enquiry.wati_name} (${this.displayMobileNumber(enquiry.mobile_number)})?`)) {
       this.loading = true;
       
-      console.log('🧪 Testing WhatsApp for enquiry:', enquiry);
+      // Validate phone number format before sending
+      const phoneNumber = enquiry.mobile_number;
+      if (!phoneNumber) {
+        this.loading = false;
+        this.snackBar.open(`❌ WhatsApp test failed: Mobile number is required`, 'Close', { 
+          duration: 10000,
+          panelClass: ['error-snackbar']
+        });
+        return;
+      }
       
       const testData = {
-        mobile_number: enquiry.mobile_number,
+        mobile_number: phoneNumber,
         wati_name: enquiry.wati_name,
         message_type: 'new_enquiry'
       };
-      
-      console.log('📤 WhatsApp test data:', testData);
 
-      this.enquiryService.testWhatsApp(testData).subscribe({
+      this.enquiryService.testWhatsApp(testData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
         next: (response: any) => {
           this.loading = false;
-          console.log('📥 WhatsApp test response:', response);
+          
           if (response.success) {
-            this.snackBar.open(`✅ WhatsApp test message sent to ${enquiry.wati_name}!`, 'Close', { 
-              duration: 5000,
-              panelClass: ['success-snackbar']
-            });
-          } else {
-            // Provide more specific error messages
-            let errorMessage = response.error || 'Unknown error';
-            
-            // Check for specific error conditions
-            if (response.status_code === 466 || errorMessage.includes('quota exceeded')) {
-              errorMessage = 'Free plan limit reached - Upgrade GreenAPI plan to send messages to more numbers';
-            } else if (response.status_code === 401 || errorMessage.includes('unauthorized')) {
-              errorMessage = 'GreenAPI authentication failed - Check API credentials';
-            } else if (response.status_code === 403 || errorMessage.includes('forbidden')) {
-              errorMessage = 'GreenAPI access forbidden - Check API permissions';
-            } else if (response.status_code === 400 || errorMessage.includes('bad request')) {
-              errorMessage = 'Invalid phone number format or WhatsApp not available for this number';
-            } else if (response.status_code === 404 || errorMessage.includes('not found')) {
-              errorMessage = 'GreenAPI endpoint not found - Check API configuration';
+            // Check if this is a test mode response
+            if (response.test_mode) {
+              this.snackBar.open(`🧪 WhatsApp test simulated successfully for ${enquiry.wati_name} (${this.displayMobileNumber(phoneNumber)}) - Test mode bypasses quota restrictions`, 'Close', { 
+                duration: 8000,
+                panelClass: ['success-snackbar']
+              });
+            } else if (response.mock_response && response.quota_exceeded) {
+              this.snackBar.open(`🧪 WhatsApp test simulated for ${enquiry.wati_name} (${this.displayMobileNumber(phoneNumber)}) - Quota exceeded, showing mock success`, 'Close', { 
+                duration: 8000,
+                panelClass: ['warning-snackbar']
+              });
+            } else {
+              // Real success message
+              this.snackBar.open(`✅ WhatsApp message sent successfully to ${enquiry.wati_name} (${this.displayMobileNumber(phoneNumber)})`, 'Close', { 
+                duration: 6000,
+                panelClass: ['success-snackbar']
+              });
             }
-            
-            this.snackBar.open(`❌ WhatsApp test failed: ${errorMessage}`, 'Close', { 
-              duration: 10000, // Longer duration for important error messages
-              panelClass: ['error-snackbar']
-            });
+          } else {
+            // Handle different error types
+            if (response.status_code === 466 || response.quota_exceeded) {
+              // Show quota reached message
+              this.snackBar.open(`📊 Quota reached in GreenAPI - Upgrade plan to send more messages`, 'Close', { 
+                duration: 8000,
+                panelClass: ['warning-snackbar']
+              });
+            } else {
+              // Handle other errors with appropriate messages
+              let errorMessage = response.error || 'Unknown error';
+              
+              if (response.status_code === 401) {
+                errorMessage = 'GreenAPI authentication failed - Check API credentials';
+              } else if (response.status_code === 403) {
+                errorMessage = 'GreenAPI access forbidden - Check API permissions';
+              } else if (response.status_code === 400) {
+                errorMessage = 'Invalid phone number format or WhatsApp not available for this number';
+              } else if (response.status_code === 404) {
+                errorMessage = 'GreenAPI endpoint not found - Check API configuration';
+              }
+              
+              this.snackBar.open(`❌ WhatsApp test failed: ${errorMessage}`, 'Close', { 
+                duration: 10000,
+                panelClass: ['error-snackbar']
+              });
+            }
           }
-        },
-        error: (error: any) => {
-          this.loading = false;
-          console.error('❌ WhatsApp test error:', error);
-          console.error('❌ Error response body:', error.error);
-          console.error('❌ Error status:', error.status);
-          console.error('❌ Error message:', error.message);
-          
-          let errorMessage = error.error?.error || 'Unknown error';
-          
-          // Check for specific error conditions
-          if (error.status === 466 || errorMessage.includes('quota exceeded')) {
-            errorMessage = 'Free plan limit reached - Upgrade GreenAPI plan to send messages to more numbers';
-          } else if (error.status === 401 || errorMessage.includes('unauthorized')) {
-            errorMessage = 'GreenAPI authentication failed - Check API credentials';
-          } else if (error.status === 403 || errorMessage.includes('forbidden')) {
-            errorMessage = 'GreenAPI access forbidden - Check API permissions';
-          } else if (error.status === 400 || errorMessage.includes('bad request')) {
-            errorMessage = 'Invalid phone number format or WhatsApp not available for this number';
-          } else if (error.status === 404 || errorMessage.includes('not found')) {
-            errorMessage = 'GreenAPI endpoint not found - Check API configuration';
-          }
-          
-          this.snackBar.open(`❌ WhatsApp test failed: ${errorMessage}`, 'Close', { 
-            duration: 10000, // Longer duration for important error messages
-            panelClass: ['error-snackbar']
-          });
         }
       });
     }
@@ -881,5 +934,29 @@ export class EnquiryComponent implements OnInit {
     
     // If no country code matches, default to India
     return { countryCode: '+91', number: mobileNumber };
+  }
+
+  // Add method to show notification when GreenAPI limit is reached
+  showGreenApiLimitNotification(): void {
+    this.snackBar.open(
+      '⚠️ GreenAPI monthly quota exceeded. Please upgrade your GreenAPI plan to send messages to more numbers.', 
+      'Close', 
+      { 
+        duration: 15000,
+        panelClass: ['warning-snackbar']
+      }
+    );
+  }
+
+  // Add method to show message sent notification
+  showMessageSentNotification(enquiry: Enquiry): void {
+    this.snackBar.open(
+      `✅ WhatsApp message sent to ${enquiry.wati_name} (${this.displayMobileNumber(enquiry.mobile_number)})`, 
+      'Close', 
+      { 
+        duration: 5000,
+        panelClass: ['success-snackbar']
+      }
+    );
   }
 }

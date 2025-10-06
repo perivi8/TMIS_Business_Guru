@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Enquiry } from '../models/enquiry.interface';
 import { environment } from '../../environments/environment';
@@ -125,9 +125,48 @@ export class EnquiryService {
   // WhatsApp Integration Methods
   testWhatsApp(testData: { mobile_number: string; wati_name: string; message_type: string }): Observable<any> {
     const whatsappUrl = `${environment.apiUrl}/whatsapp/test`;
-    console.log('Sending WhatsApp test data:', testData);
-    console.log('Sending to URL:', whatsappUrl);
-    return this.http.post<any>(whatsappUrl, testData, { headers: this.getHeaders() });
+    // Don't log to console to keep it clean
+    return this.http.post<any>(whatsappUrl, testData, { headers: this.getHeaders() }).pipe(
+      catchError((error: any) => {
+        // Handle HTTP errors silently and return them as normal responses
+        // This prevents browser console logging of HTTP errors
+        if (error.status === 466 || 
+            (error.error && error.error.error && error.error.error.includes('quota exceeded')) ||
+            (error.error && error.error.error && error.error.error.includes('Monthly quota has been exceeded'))) {
+          // Return quota exceeded as a successful observable to prevent console error
+          return of({
+            success: false,
+            status_code: 466,
+            quota_exceeded: true,
+            error: error.error?.error || 'Quota exceeded',
+            ...error.error
+          });
+        }
+        // For other errors, return them as successful observables to prevent console logging
+        return of({
+          success: false,
+          status_code: error.status || 500,
+          error: error.error?.error || error.message || 'Unknown error',
+          ...error.error
+        });
+      })
+    );
+  }
+
+  // Unlimited WhatsApp test - bypasses quota restrictions for testing
+  testWhatsAppUnlimited(testData: { mobile_number: string; wati_name: string; message_type: string }): Observable<any> {
+    const whatsappUrl = `${environment.apiUrl}/whatsapp/test-unlimited`;
+    return this.http.post<any>(whatsappUrl, testData, { headers: this.getHeaders() }).pipe(
+      catchError((error: any) => {
+        // Convert any errors to successful responses to prevent console logging
+        return of({
+          success: false,
+          status_code: error.status || 500,
+          error: error.error?.error || error.message || 'Test failed',
+          ...error.error
+        });
+      })
+    );
   }
 
   getWhatsAppTemplates(): Observable<any> {

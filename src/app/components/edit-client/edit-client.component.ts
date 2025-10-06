@@ -823,17 +823,43 @@ export class EditClientComponent implements OnInit {
     console.log('Calling updateClientDetails with clientId:', this.clientId);
     console.log('=== END SAVE CLIENT DEBUGGING ===');
 
-    this.clientService.updateClientDetails(this.clientId, formData)
-      .then(() => {
-        this.snackBar.open('Client updated successfully', 'Close', { duration: 3000 });
+    this.clientService.updateClientDetails(this.clientId, formData).subscribe({
+      next: (response: any) => {
         this.saving = false;
+        
+        // Check if this was a comment update and handle WhatsApp status
+        const isCommentUpdate = formValue.comments !== undefined;
+        
+        if (isCommentUpdate) {
+          // Handle comment update with WhatsApp status
+          if (response.whatsapp_sent) {
+            this.snackBar.open('Comment updated successfully, WhatsApp message sent', 'Close', { duration: 4000 });
+          } else if (response.whatsapp_quota_exceeded) {
+            this.snackBar.open('Comment updated successfully, WhatsApp message not sent due to limit reached', 'Close', { duration: 5000 });
+          } else if (response.whatsapp_error) {
+            this.snackBar.open('Comment updated successfully, WhatsApp message failed', 'Close', { duration: 4000 });
+          } else {
+            this.snackBar.open('Comment updated successfully', 'Close', { duration: 3000 });
+          }
+        } else {
+          // Handle regular update
+          if (response.whatsapp_sent) {
+            this.snackBar.open('Client updated successfully, WhatsApp message sent', 'Close', { duration: 4000 });
+          } else if (response.whatsapp_quota_exceeded) {
+            this.snackBar.open('Client updated successfully, WhatsApp message not sent due to limit reached', 'Close', { duration: 5000 });
+          } else {
+            this.snackBar.open('Client updated successfully', 'Close', { duration: 3000 });
+          }
+        }
+        
         this.router.navigate(['/client-detail', this.clientId]);
-      })
-      .catch((error) => {
+      },
+      error: (error) => {
         console.error('Error updating client:', error);
         this.snackBar.open('Error updating client', 'Close', { duration: 3000 });
         this.saving = false;
-      });
+      }
+    });
   }
 
   cancel(): void {

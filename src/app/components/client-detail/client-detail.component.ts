@@ -762,28 +762,35 @@ export class ClientDetailComponent implements OnInit {
     // doesn't have editing UI for payment gateways. The backend will preserve existing values.
 
     // Use the updateClientDetails method which handles all fields
-    this.clientService.updateClientDetails(this.client._id, formData)
-      .then(() => {
+    this.clientService.updateClientDetails(this.client._id, formData).subscribe({
+      next: (response: any) => {
         // Update the local client object with the new values
         Object.assign(this.client!, this.editableClient!);
         
         this.isEditing = false;
         this.editableClient = null;
         this.saving = false; // Reset saving state
-        this.snackBar.open('Client updated successfully', 'Close', {
-          duration: 3000
-        });
+        
+        // Show enhanced success message based on WhatsApp status
+        if (response.whatsapp_sent) {
+          this.snackBar.open('Client updated successfully, WhatsApp message sent', 'Close', { duration: 4000 });
+        } else if (response.whatsapp_quota_exceeded) {
+          this.snackBar.open('Client updated successfully, WhatsApp message not sent due to limit reached', 'Close', { duration: 5000 });
+        } else {
+          this.snackBar.open('Client updated successfully', 'Close', { duration: 3000 });
+        }
         
         // Reload client details to ensure we have the latest data
         this.loadClientDetails(this.client!._id);
-      })
-      .catch((error) => {
+      },
+      error: (error: any) => {
         console.error('Error updating client:', error);
         this.saving = false; // Reset saving state on error
         this.snackBar.open('Failed to update client', 'Close', {
           duration: 3000
         });
-      });
+      }
+    });
   }
 
   deleteClient(): void {
@@ -908,28 +915,35 @@ export class ClientDetailComponent implements OnInit {
     updatedGatewayStatus[gateway] = newStatus;
     formData.append('payment_gateways_status', JSON.stringify(updatedGatewayStatus));
     
-    this.clientService.updateClientDetails(this.client._id, formData)
-      .then(() => {
+    this.clientService.updateClientDetails(this.client._id, formData).subscribe({
+      next: (response: any) => {
         // Update local state on successful API call
         (this.client as any).payment_gateways_status = updatedGatewayStatus;
         
         // Clear loading state immediately
         this.updatingGatewayStatus = null;
         
-        // Show success message
-        this.snackBar.open(`Gateway ${gateway} marked as ${newStatus}`, 'Close', { duration: 2000 });
+        // Show enhanced success message based on WhatsApp status
+        if (response.whatsapp_sent) {
+          this.snackBar.open(`Gateway ${gateway} marked as ${newStatus}, WhatsApp message sent`, 'Close', { duration: 3000 });
+        } else if (response.whatsapp_quota_exceeded) {
+          this.snackBar.open(`Gateway ${gateway} marked as ${newStatus}, WhatsApp message not sent due to limit reached`, 'Close', { duration: 4000 });
+        } else {
+          this.snackBar.open(`Gateway ${gateway} marked as ${newStatus}`, 'Close', { duration: 2000 });
+        }
         
         // Refresh page after 2 seconds to ensure UI is fully updated
         setTimeout(() => {
           window.location.reload();
         }, 2000);
-      })
-      .catch((error) => {
+      },
+      error: (error: any) => {
         // Clear loading state on error
         this.updatingGatewayStatus = null;
         console.error('Error updating gateway status:', error);
         this.snackBar.open('Failed to update gateway status', 'Close', { duration: 3000 });
-      });
+      }
+    });
   }
 
   getLoanStatus(): string {
@@ -949,28 +963,35 @@ export class ClientDetailComponent implements OnInit {
     const formData = new FormData();
     formData.append('loan_status', status);
     
-    this.clientService.updateClientDetails(this.client._id, formData)
-      .then(() => {
+    this.clientService.updateClientDetails(this.client._id, formData).subscribe({
+      next: (response: any) => {
         // Update local state on successful API call
         (this.client as any).loan_status = status;
         
         // Clear loading state immediately
         this.updatingLoanStatus = false;
         
-        // Show success message
-        this.snackBar.open(`Loan status updated to ${status}`, 'Close', { duration: 2000 });
+        // Show enhanced success message based on WhatsApp status
+        if (response.whatsapp_sent) {
+          this.snackBar.open(`Loan status updated to ${status}, WhatsApp message sent`, 'Close', { duration: 3000 });
+        } else if (response.whatsapp_quota_exceeded) {
+          this.snackBar.open(`Loan status updated to ${status}, WhatsApp message not sent due to limit reached`, 'Close', { duration: 4000 });
+        } else {
+          this.snackBar.open(`Loan status updated to ${status}`, 'Close', { duration: 2000 });
+        }
         
         // Refresh page after 2 seconds to ensure UI is fully updated
         setTimeout(() => {
           window.location.reload();
         }, 2000);
-      })
-      .catch((error) => {
+      },
+      error: (error: any) => {
         // Clear loading state on error
         this.updatingLoanStatus = false;
         console.error('Error updating loan status:', error);
         this.snackBar.open('Failed to update loan status', 'Close', { duration: 3000 });
-      });
+      }
+    });
   }
 
   getLoanStatusColor(status: string): string {

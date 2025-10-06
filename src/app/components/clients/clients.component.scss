@@ -234,231 +234,201 @@
 
 .table-container {
   overflow-x: auto;
-  background: var(--surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-light);
-}
-
-.clients-table {
-  width: 100%;
+  -webkit-overflow-scrolling: touch;
   
-  .mat-mdc-header-cell {
-    font-weight: 600;
-    font-family: 'Poppins', sans-serif;
-    color: var(--text-primary);
-    background-color: var(--surface-alt);
-    border-bottom: 2px solid var(--border);
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-  }
-  
-  .mat-mdc-cell {
-    padding: var(--spacing) var(--spacing-sm);
-    border-bottom: 1px solid var(--border-light);
-    font-size: 0.875rem;
-  }
-  
-  .clickable-cell {
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
+  .clients-table {
+    width: 100%;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
     
-    &:hover {
-      background-color: var(--background-alt);
-    }
-  }
-  
-  .mat-mdc-row {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    &:hover {
-      background-color: var(--background-alt);
-      transform: scale(1.005);
-    }
-  }
-  
-  .client-info,
-  .business-info,
-  .staff-info {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-    
-    strong {
+    th.mat-header-cell {
+      background: var(--primary);
+      color: white;
       font-weight: 600;
-      color: var(--text-primary);
-      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: var(--spacing-md) var(--spacing);
     }
     
-    small {
-      color: var(--text-secondary);
+    td.mat-cell {
+      padding: var(--spacing) var(--spacing);
+      border-bottom-color: var(--border-light);
+    }
+    
+    tr.mat-row:hover {
+      background-color: var(--surface-hover);
+    }
+    
+    .clickable-cell {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: var(--surface-hover);
+      }
+    }
+    
+    .client-info, .business-info, .staff-info {
+      display: flex;
+      flex-direction: column;
+      
+      strong {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      
+      small {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+      }
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
       font-size: 0.75rem;
-    }
-  }
-  
-  .status-badge {
-    padding: 6px 12px;
-    border-radius: 16px;
-    color: white;
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .action-button {
-    color: #666;
-    transition: color 0.2s ease-in-out;
-    
-    &:hover {
-      color: #3f51b5;
-      background-color: rgba(63, 81, 181, 0.04);
-    }
-  }
-  
-  .user-actions {
-    display: flex;
-    gap: var(--spacing-xs);
-    align-items: center;
-    
-    button {
-      mat-icon {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 1 !important;
-      }
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: white;
+      background-color: var(--gray-500);
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: center;
     }
     
-    .edit-btn {
-      color: #1976d2;
-      transition: all 0.2s ease-in-out;
+    .comments-dropdown {
+      width: 160px;
+      font-size: 0.875rem;
       
-      &:hover {
-        background-color: rgba(25, 118, 210, 0.1);
-        color: #1565c0;
+      ::ng-deep .mat-form-field-wrapper {
+        padding-bottom: 0 !important;
       }
-    }
-    
-    .whatsapp-btn {
-      color: #25d366;
-      transition: all 0.2s ease-in-out;
       
-      &:hover {
-        background-color: rgba(37, 211, 102, 0.1);
-        color: #1da851;
+      ::ng-deep .mat-form-field-underline {
+        display: none;
       }
-    }
-    
-    .delete-btn {
-      color: #f44336;
-      transition: all 0.2s ease-in-out;
       
-      &:hover {
-        background-color: rgba(244, 67, 54, 0.1);
-        color: #d32f2f;
+      ::ng-deep .mat-form-field-flex {
+        padding: 0 8px !important;
+        border-radius: 4px;
+        background-color: var(--surface);
+        border: 1px solid var(--border-light);
+      }
+      
+      ::ng-deep .mat-select-value {
+        font-size: 0.875rem;
+      }
+      
+      ::ng-deep .mat-select-arrow {
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid;
+        margin: 0 4px;
+      }
+    }
+    
+    .loan-status {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    
+    .user-actions {
+      display: flex;
+      gap: 4px;
+      
+      .edit-btn, .whatsapp-btn, .delete-btn {
+        width: 36px;
+        height: 36px;
+        line-height: 36px;
+        
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+      
+      .edit-btn {
+        background-color: var(--primary);
+        color: white;
+      }
+      
+      .whatsapp-btn {
+        background-color: #25D366;
+        color: white;
+      }
+      
+      .delete-btn {
+        background-color: #EF4444;
+        color: white;
+      }
+    }
+    
+    .admin-actions {
+      display: flex;
+      justify-content: center;
+      
+      .action-button {
+        width: 36px;
+        height: 36px;
+        line-height: 36px;
+        min-width: 36px;
+        padding: 0;
       }
     }
   }
-  
-  // Row colors based on status
-  .interested-row {
-    background-color: rgba(76, 175, 80, 0.05);
-    border-left: 4px solid #4caf50;
-  }
-  
-  .not-interested-row {
-    background-color: rgba(244, 67, 54, 0.05);
-    border-left: 4px solid #f44336;
-  }
-  
-  .hold-row {
-    background-color: rgba(255, 152, 0, 0.05);
-    border-left: 4px solid #ff9800;
-  }
-  
-  .pending-row {
-    background-color: rgba(156, 39, 176, 0.05);
-    border-left: 4px solid #9c27b0;
-  }
-  
-  .processing-row {
-    background-color: rgba(33, 150, 243, 0.05);
-    border-left: 4px solid #2196f3;
-  }
 }
 
-.menu-section-title {
-  padding: 8px 16px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background-color: #f5f5f5;
-  margin: 4px 0;
-}
-
-.delete-action {
-  color: #f44336 !important;
-  transition: background-color 0.2s ease-in-out;
-  
-  &:hover {
-    background-color: rgba(244, 67, 54, 0.04) !important;
+// Responsive adjustments for smaller screens
+@media (max-width: 1400px) {
+  .container {
+    padding: var(--spacing-md);
   }
   
-  mat-icon {
-    color: #f44336 !important;
-  }
-}
-
-mat-menu {
-  .mat-mdc-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 40px;
-    line-height: 24px;
-    padding: 8px 16px;
-    
-    mat-icon {
-      margin-right: 0;
-      width: 20px;
-      height: 20px;
-      font-size: 20px;
+  .table-container {
+    .clients-table {
+      min-width: 1000px;
     }
   }
 }
 
-/* Filter Info Styling */
-.filter-info {
-  font-size: 0.9em;
-  color: #666;
-  font-weight: normal;
-  margin-left: 8px;
+@media (max-width: 1200px) {
+  .table-container {
+    .clients-table {
+      min-width: 900px;
+      
+      .comments-dropdown {
+        width: 140px;
+        font-size: 0.8rem;
+      }
+    }
+  }
 }
 
-.filter-tag {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
-  margin: 0 4px;
-  display: inline-block;
-}
-
-.clear-filters-container {
-  margin-left: auto;
-}
-
-.clear-filters-btn {
-  font-size: 0.9em;
-  
-  .mat-icon {
-    font-size: 18px;
-    margin-right: 4px;
+@media (max-width: 992px) {
+  .table-container {
+    .clients-table {
+      min-width: 800px;
+      
+      th.mat-header-cell, td.mat-cell {
+        padding: var(--spacing-sm) var(--spacing);
+      }
+      
+      .comments-dropdown {
+        width: 130px;
+        font-size: 0.75rem;
+      }
+    }
   }
 }
 

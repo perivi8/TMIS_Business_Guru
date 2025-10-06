@@ -30,7 +30,7 @@ export class ClientsComponent implements OnInit {
   viewMode: 'table' | 'card' = 'table';
   
   displayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
-  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
+  userDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'actions']; // Removed 'comments' for regular users
   adminDisplayedColumns: string[] = ['serial', 'name', 'business', 'staff', 'status', 'loan_status', 'created', 'comments', 'actions'];
 
   constructor(
@@ -334,7 +334,13 @@ export class ClientsComponent implements OnInit {
   }
 
   getDisplayedColumns(): string[] {
-    return this.isAdmin() ? this.adminDisplayedColumns : this.userDisplayedColumns;
+    // Remove 'comments' column for non-admin users
+    if (this.isAdmin()) {
+      return this.adminDisplayedColumns;
+    } else {
+      // Filter out 'comments' column for regular users
+      return this.userDisplayedColumns.filter(col => col !== 'comments');
+    }
   }
 
   getSerialNumber(index: number): number {

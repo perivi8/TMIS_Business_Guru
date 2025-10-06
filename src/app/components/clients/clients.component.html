@@ -164,7 +164,7 @@
           </ng-container>
 
           <!-- Comments Column -->
-          <ng-container matColumnDef="comments">
+          <ng-container matColumnDef="comments" *ngIf="isAdmin()">
             <th mat-header-cell *matHeaderCellDef>Comments</th>
             <td mat-cell *matCellDef="let client">
               <mat-form-field appearance="outline" class="comments-dropdown">

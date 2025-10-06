@@ -357,12 +357,16 @@ export class ClientService implements OnDestroy {
 
   updateClient(clientId: string, clientData: any): Observable<any> {
     return this.http.put<any>(`${environment.apiUrl}/clients/${clientId}`, clientData, {
-      headers: this.getFormHeaders(),
+      headers: this.getHeaders(),
       withCredentials: true
     }).pipe(
       tap(response => {
-        if (response && response.client) {
-          const clientName = response.client.legal_name || response.client.user_name || 'Unknown Client';
+        // Notify other components about client update
+        this.clientUpdatedSubject.next(clientId);
+        
+        // Handle notification based on response
+        if (response) {
+          const clientName = response.client?.legal_name || response.client?.user_name || 'Unknown Client';
           const currentUserName = this.currentUser?.username || 'Admin';
           
           // Notify about client update

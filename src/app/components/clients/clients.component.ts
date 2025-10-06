@@ -550,9 +550,15 @@ export class ClientsComponent implements OnInit {
   }
 
   onCommentChange(client: Client, comment: string): void {
+    // Set loading state for this specific client
+    this.updatingClientId = client._id;
+    
     // Update the client's comment in the database
     this.clientService.updateClient(client._id, { comments: comment }).subscribe({
       next: (response) => {
+        // Clear loading state
+        this.updatingClientId = null;
+        
         // Update the client in the local array
         const clientIndex = this.clients.findIndex(c => c._id === client._id);
         if (clientIndex !== -1) {
@@ -564,13 +570,34 @@ export class ClientsComponent implements OnInit {
           this.filteredClients[filteredIndex].comments = comment;
         }
         
-        this.snackBar.open('Comment updated successfully', 'Close', {
-          duration: 3000
+        // Show appropriate notification based on response
+        let message = 'Comment updated successfully';
+        let duration = 3000;
+        let panelClass = ['success-snackbar'];
+        
+        // Check if WhatsApp was sent
+        if (response && response.whatsapp_sent === true) {
+          message += ', WhatsApp message sent';
+        } else if (response && response.whatsapp_quota_exceeded === true) {
+          message += ', WhatsApp message not sent due to limit reached';
+          panelClass = ['warning-snackbar'];
+        } else if (response && response.whatsapp_error) {
+          message += `, WhatsApp error: ${response.whatsapp_error}`;
+          panelClass = ['error-snackbar'];
+        }
+        
+        this.snackBar.open(message, 'Close', {
+          duration: duration,
+          panelClass: panelClass
         });
       },
       error: (error) => {
+        // Clear loading state on error
+        this.updatingClientId = null;
+        
         this.snackBar.open('Failed to update comment', 'Close', {
-          duration: 3000
+          duration: 3000,
+          panelClass: ['error-snackbar']
         });
         // Revert the comment in the UI if the update failed
         client.comments = client.comments;

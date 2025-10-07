@@ -52,22 +52,14 @@
                 </div>
               </div>
 
-              <!-- Registration Number -->
               <div class="form-group">
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Registration Number *</mat-label>
                   <input matInput formControlName="registration_number" placeholder="Enter registration number">
-                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
-                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
-                  </button>
                   <mat-error *ngIf="step1Form.get('registration_number')?.invalid && step1Form.get('registration_number')?.touched">
                     Registration number is required
                   </mat-error>
                 </mat-form-field>
-                <div *ngIf="isExtractingData" class="extracting-indicator">
-                  <mat-spinner diameter="20"></mat-spinner>
-                  <span>Extracting data from GST document...</span>
-                </div>
               </div>
 
               <!-- Legal Name -->
@@ -75,9 +67,6 @@
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Legal Name *</mat-label>
                   <input matInput formControlName="legal_name" placeholder="Enter legal business name">
-                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
-                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
-                  </button>
                   <mat-error *ngIf="step1Form.get('legal_name')?.invalid && step1Form.get('legal_name')?.touched">
                     Legal name is required
                   </mat-error>
@@ -89,9 +78,6 @@
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Trade Name / Business Name *</mat-label>
                   <input matInput formControlName="trade_name" placeholder="Enter trade or business name">
-                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
-                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
-                  </button>
                   <mat-error *ngIf="step1Form.get('trade_name')?.invalid && step1Form.get('trade_name')?.touched">
                     Trade name is required
                   </mat-error>
@@ -108,9 +94,6 @@
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Address *</mat-label>
                   <textarea matInput formControlName="address" rows="2" placeholder="Enter complete address"></textarea>
-                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
-                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
-                  </button>
                   <mat-error *ngIf="step1Form.get('address')?.invalid && step1Form.get('address')?.touched">
                     Address is required
                   </mat-error>

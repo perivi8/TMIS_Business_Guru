@@ -53,6 +53,14 @@
             <mat-error *ngIf="enquiryForm.get('mobile_number')?.hasError('required')">
               Mobile number is required
             </mat-error>
+            <!-- Mobile number validation message -->
+            <div *ngIf="isMobileChecking" class="mobile-checking">
+              <mat-spinner diameter="16"></mat-spinner>
+              <span>Checking mobile number...</span>
+            </div>
+            <mat-error *ngIf="mobileExists && mobileValidationMessage" class="mobile-exists-error">
+              {{ mobileValidationMessage }}
+            </mat-error>
           </mat-form-field>
         </div>
 
@@ -120,10 +128,11 @@
         <button type="button" mat-button (click)="resetForm()" [disabled]="isSubmitting">
           Reset Form
         </button>
-        <button type="submit" mat-raised-button color="primary" [disabled]="!enquiryForm.valid || isSubmitting">
+        <button type="submit" mat-raised-button color="primary" [disabled]="!enquiryForm.valid || isSubmitting || mobileExists || isMobileChecking">
           <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
-          <span *ngIf="!isSubmitting">Submit Enquiry</span>
+          <span *ngIf="!isSubmitting && !mobileExists">Submit Enquiry</span>
           <span *ngIf="isSubmitting">Submitting...</span>
+          <span *ngIf="mobileExists && !isSubmitting">Mobile Number Already Exists</span>
         </button>
       </div>
     </form>

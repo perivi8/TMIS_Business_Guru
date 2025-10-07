@@ -178,6 +178,27 @@ export class EnquiryService {
     return this.http.get<any>(templatesUrl, { headers: this.getHeaders() });
   }
 
+  // Check if mobile number already exists - public endpoint
+  checkMobileExists(mobileNumber: string): Observable<any> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    
+    const checkUrl = `${environment.apiUrl}/public/check-mobile`;
+    
+    return this.httpWithoutInterceptor.post<any>(checkUrl, { mobile_number: mobileNumber }, { headers }).pipe(
+      catchError((error: any) => {
+        console.error('Mobile check failed:', error);
+        // Return a safe default response on error
+        return of({
+          exists: false,
+          message: 'Unable to check mobile number',
+          error: true
+        });
+      })
+    );
+  }
+
   // Public enquiry method - uses dedicated public endpoint
   createPublicEnquiry(enquiry: any): Observable<any> {
     const headers = new HttpHeaders({

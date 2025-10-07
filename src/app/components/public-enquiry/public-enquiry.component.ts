@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EnquiryService } from '../../services/enquiry.service';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-public-enquiry',
@@ -12,6 +14,11 @@ export class PublicEnquiryComponent implements OnInit {
   enquiryForm: FormGroup;
   isSubmitting = false;
   isSubmitted = false;
+  
+  // Mobile number validation
+  mobileValidationMessage = '';
+  isMobileChecking = false;
+  mobileExists = false;
 
   // Country codes for mobile numbers
   countryCodes = [
@@ -50,6 +57,47 @@ export class PublicEnquiryComponent implements OnInit {
 
   ngOnInit(): void {
     // Component initialization
+    this.setupMobileValidation();
+  }
+
+  setupMobileValidation(): void {
+    // Watch for changes in mobile number field
+    this.enquiryForm.get('mobile_number')?.valueChanges.pipe(
+      debounceTime(500), // Wait 500ms after user stops typing
+      distinctUntilChanged(), // Only emit when value actually changes
+      switchMap(mobileNumber => {
+        if (!mobileNumber || mobileNumber.length < 10) {
+          this.mobileValidationMessage = '';
+          this.mobileExists = false;
+          return of(null);
+        }
+
+        // Get country code and create full number
+        const countryCode = this.enquiryForm.get('country_code')?.value || '+91';
+        const countryCodeDigits = countryCode.replace('+', '');
+        const fullMobileNumber = countryCodeDigits + mobileNumber;
+
+        this.isMobileChecking = true;
+        return this.enquiryService.checkMobileExists(fullMobileNumber);
+      })
+    ).subscribe({
+      next: (response) => {
+        this.isMobileChecking = false;
+        if (response && response.exists) {
+          this.mobileExists = true;
+          this.mobileValidationMessage = response.message || 'This mobile number already exists';
+        } else {
+          this.mobileExists = false;
+          this.mobileValidationMessage = '';
+        }
+      },
+      error: (error) => {
+        this.isMobileChecking = false;
+        this.mobileExists = false;
+        this.mobileValidationMessage = '';
+        console.error('Mobile validation error:', error);
+      }
+    });
   }
 
   createEnquiryForm(): FormGroup {
@@ -82,7 +130,7 @@ export class PublicEnquiryComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.enquiryForm.valid && !this.isSubmitting) {
+    if (this.enquiryForm.valid && !this.isSubmitting && !this.mobileExists) {
       this.isSubmitting = true;
       const formData = this.enquiryForm.value;
       
@@ -101,10 +149,10 @@ export class PublicEnquiryComponent implements OnInit {
         business_type: formData.business_type || '',
         business_nature: formData.business_nature || '',
         gst: formData.gst || '',
-        gst_status: formData.gst_status || '',
+        gst_status: (formData.gst === 'Yes') ? formData.gst_status || '' : '',
         staff: '', // Will be assigned manually later
         comments: 'Public enquiry submission',
-        additional_comments: `Status: ${formData.status || 'Active'}`
+        additional_comments: '' // Remove automatic status addition
       };
 
       console.log('Submitting public enquiry:', enquiryData);
@@ -122,16 +170,31 @@ export class PublicEnquiryComponent implements OnInit {
           let errorMessage = 'Sorry, there was an error submitting your enquiry. Please try again.';
           if (error.error && error.error.error) {
             errorMessage = error.error.error;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          // Show specific error messages for mobile number issues
+          if (errorMessage.toLowerCase().includes('mobile number already exists')) {
+            errorMessage = 'This mobile number is already registered. Please use a different number or contact support if this is your number.';
+          } else if (errorMessage.toLowerCase().includes('secondary mobile number already exists')) {
+            errorMessage = 'The secondary mobile number is already registered. Please use a different number.';
+          } else if (errorMessage.toLowerCase().includes('secondary mobile number cannot be same')) {
+            errorMessage = 'Secondary mobile number cannot be the same as primary mobile number.';
           }
           
           this.snackBar.open(errorMessage, 'Close', {
-            duration: 5000,
+            duration: 6000,
             panelClass: ['error-snackbar']
           });
         }
       });
     } else {
-      this.snackBar.open('Please fill all required fields correctly', 'Close', { duration: 3000 });
+      if (this.mobileExists) {
+        this.snackBar.open('This mobile number is already registered. Please use a different number.', 'Close', { duration: 5000 });
+      } else {
+        this.snackBar.open('Please fill all required fields correctly', 'Close', { duration: 3000 });
+      }
     }
   }
 
@@ -142,6 +205,11 @@ export class PublicEnquiryComponent implements OnInit {
       status: 'Active'
     });
     this.isSubmitted = false;
+    
+    // Reset mobile validation
+    this.mobileValidationMessage = '';
+    this.mobileExists = false;
+    this.isMobileChecking = false;
   }
 
   closeWindow(): void {

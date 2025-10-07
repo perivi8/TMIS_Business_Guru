@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpBackend } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Enquiry } from '../models/enquiry.interface';
@@ -12,8 +12,12 @@ export class EnquiryService {
   private apiUrl = `${environment.apiUrl}/enquiries`;
   private enquiriesSubject = new BehaviorSubject<Enquiry[]>([]);
   public enquiries$ = this.enquiriesSubject.asObservable();
+  private httpWithoutInterceptor: HttpClient;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private httpBackend: HttpBackend) {
+    // Create HTTP client that bypasses interceptors
+    this.httpWithoutInterceptor = new HttpClient(httpBackend);
+  }
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
@@ -172,5 +176,39 @@ export class EnquiryService {
   getWhatsAppTemplates(): Observable<any> {
     const templatesUrl = `${environment.apiUrl}/whatsapp/templates`;
     return this.http.get<any>(templatesUrl, { headers: this.getHeaders() });
+  }
+
+  // Public enquiry method - uses dedicated public endpoint
+  createPublicEnquiry(enquiry: any): Observable<any> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    
+    // Use the public endpoint that doesn't require authentication
+    const publicUrl = `${environment.apiUrl}/public/enquiries`;
+    
+    console.log('Submitting to public endpoint:', publicUrl);
+    console.log('Enquiry data:', enquiry);
+    
+    return this.httpWithoutInterceptor.post<any>(publicUrl, enquiry, { headers }).pipe(
+      tap(response => {
+        console.log('Public enquiry submitted successfully:', response);
+      }),
+      catchError((error: any) => {
+        console.error('Public enquiry submission failed:', error);
+        
+        let errorMessage = 'Failed to submit enquiry. Please try again.';
+        
+        if (error.status === 0) {
+          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        } else if (error.status === 400) {
+          errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        }
+        
+        return throwError(() => new Error(errorMessage));
+      })
+    );
   }
 }

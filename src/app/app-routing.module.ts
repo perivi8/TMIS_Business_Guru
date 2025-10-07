@@ -13,6 +13,7 @@ import { ContactUsComponent } from './components/contact-us/contact-us.component
 import { NotificationsComponent } from './components/notifications/notifications.component';
 import { EnquiryComponent } from './components/enquiry/enquiry.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
+import { PublicEnquiryComponent } from './components/public-enquiry/public-enquiry.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 
@@ -21,6 +22,7 @@ const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'add-new-enquiry', component: PublicEnquiryComponent },
   { 
     path: 'dashboard', 
     component: DashboardComponent, 

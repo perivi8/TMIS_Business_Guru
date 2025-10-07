@@ -1543,3 +1543,44 @@
   color: #f44336;
   font-weight: bold;
 }
+
+// Staff assignment styles
+.staff-select-field {
+  width: 100%;
+  min-width: 150px;
+  
+  ::ng-deep .mat-form-field-wrapper {
+    padding-bottom: 0;
+  }
+  
+  ::ng-deep .mat-form-field-infix {
+    padding: 0.5em 0;
+  }
+}
+
+.assigned-staff {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .staff-name {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  .reassign-btn {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+    
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}

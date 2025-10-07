@@ -22,8 +22,8 @@ export class AppComponent implements OnInit {
     
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
-        // Hide navbar on login and register pages
-        this.showNavbar = !['/login', '/register'].includes(event.url) && this.authService.isAuthenticated();
+        // Hide navbar on login, register, and public enquiry pages
+        this.showNavbar = !['/login', '/register', '/add-new-enquiry'].includes(event.url) && this.authService.isAuthenticated();
         
         // Scroll to top on route navigation
         window.scrollTo(0, 0);

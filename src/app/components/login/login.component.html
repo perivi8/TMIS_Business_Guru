@@ -1,82 +1,207 @@
-<div class="login-wrapper">
-  <div class="card">
-    <h2>Login</h2>
-    
-    <div *ngIf="approvalMessage" class="approval-message">
-      <mat-icon>check_circle</mat-icon>
-      {{ approvalMessage }}
+<div class="login-container">
+  <!-- Animated Background -->
+  <div class="animated-bg">
+    <div class="floating-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
     </div>
-    
-    <div *ngIf="error" class="error">{{ error }}</div>
-    
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <mat-form-field appearance="outline">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" placeholder="Enter your email">
-          <mat-error *ngIf="f['email'].invalid && f['email'].touched">
-            <span *ngIf="f['email'].errors && f['email'].errors['required']">Email is required</span>
-            <span *ngIf="f['email'].errors && f['email'].errors['email']">Please enter a valid email</span>
-          </mat-error>
-        </mat-form-field>
-      </div>
+  </div>
 
-      <div class="form-group">
-        <mat-form-field appearance="outline">
-          <mat-label>Password</mat-label>
-          <input matInput type="password" formControlName="password" placeholder="Enter your password">
-          <mat-error *ngIf="f['password'].invalid && f['password'].touched">
-            Password is required
-          </mat-error>
-        </mat-form-field>
-      </div>
-
-      <button mat-raised-button color="primary" type="submit" 
-              [disabled]="loading || loginForm.invalid">
-        <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
-        {{ loading ? 'Logging in...' : 'Login' }}
-      </button>
-    </form>
-
-    <!-- Registration Status Check Section -->
-    <div class="status-check-section">
-      <button mat-stroked-button type="button" (click)="toggleStatusCheck()" class="status-toggle-btn">
-        <mat-icon>{{ showStatusCheck ? 'expand_less' : 'expand_more' }}</mat-icon>
-        Check Registration Status
-      </button>
-
-      <div *ngIf="showStatusCheck" class="status-check-content">
-        <p class="status-help-text">
-          Can't login? Check if your registration is approved or rejected.
-        </p>
-        
-        <button mat-raised-button color="accent" type="button" 
-                (click)="checkRegistrationStatus()" 
-                [disabled]="checkingStatus">
-          <mat-spinner *ngIf="checkingStatus" diameter="20"></mat-spinner>
-          {{ checkingStatus ? 'Checking...' : 'Check Status' }}
-        </button>
-
-        <div *ngIf="statusMessage" class="status-message success">
-          <mat-icon>info</mat-icon>
-          {{ statusMessage }}
+  <!-- Main Content -->
+  <div class="login-content">
+    <!-- Left Side - Branding -->
+    <div class="branding-section">
+      <div class="brand-content">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <mat-icon>business</mat-icon>
+          </div>
+          <h1 class="brand-title">Business Guru</h1>
         </div>
-
-        <div *ngIf="statusError" class="status-message error">
-          <mat-icon>error</mat-icon>
-          {{ statusError }}
-          <div class="register-again-link">
-            <a routerLink="/register">Click here to register again</a>
+        <p class="brand-subtitle">Transform your business with intelligent solutions</p>
+        <div class="feature-list">
+          <div class="feature-item">
+            <mat-icon>check_circle</mat-icon>
+            <span>Advanced Analytics</span>
+          </div>
+          <div class="feature-item">
+            <mat-icon>check_circle</mat-icon>
+            <span>Team Management</span>
+          </div>
+          <div class="feature-item">
+            <mat-icon>check_circle</mat-icon>
+            <span>Real-time Insights</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="text-center">
-      <p><a routerLink="/forgot-password">Forgot Password?</a></p>
-      <p>Don't have an account? 
-        <a routerLink="/register">Register here</a>
-      </p>
+    <!-- Right Side - Multi-Step Form -->
+    <div class="form-section">
+      <div class="form-container">
+        
+        <!-- Step 1: Login Form -->
+        <div *ngIf="currentStep === 1" class="step-content login-step">
+          <!-- Header -->
+          <div class="form-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to your account to continue</p>
+          </div>
+
+          <!-- Messages -->
+          <div *ngIf="approvalMessage" class="message success-message">
+            <mat-icon>check_circle</mat-icon>
+            <span>{{ approvalMessage }}</span>
+          </div>
+          
+          <div *ngIf="error" class="message error-message">
+            <mat-icon>error</mat-icon>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Login Form -->
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+            <div class="input-group">
+              <div class="input-container">
+                <mat-icon class="input-icon">email</mat-icon>
+                <input 
+                  type="email" 
+                  formControlName="email" 
+                  placeholder="Enter your email"
+                  class="form-input"
+                  [class.error]="f['email'].invalid && f['email'].touched">
+                <label class="floating-label">Email Address</label>
+              </div>
+              <div *ngIf="f['email'].invalid && f['email'].touched" class="field-error">
+                <span *ngIf="f['email'].errors && f['email'].errors['required']">Email is required</span>
+                <span *ngIf="f['email'].errors && f['email'].errors['email']">Please enter a valid email</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <div class="input-container">
+                <mat-icon class="input-icon">lock</mat-icon>
+                <input 
+                  [type]="showPassword ? 'text' : 'password'" 
+                  formControlName="password" 
+                  placeholder="Enter your password"
+                  class="form-input"
+                  [class.error]="f['password'].invalid && f['password'].touched">
+                <label class="floating-label">Password</label>
+                <button type="button" class="toggle-password" (click)="togglePassword()">
+                  <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              </div>
+              <div *ngIf="f['password'].invalid && f['password'].touched" class="field-error">
+                Password is required
+              </div>
+            </div>
+
+            <div class="form-options">
+              <label class="remember-me">
+                <input type="checkbox" [(ngModel)]="rememberMe" [ngModelOptions]="{standalone: true}">
+                <span class="checkmark"></span>
+                Remember me
+              </label>
+              <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="login-btn" [disabled]="loading || loginForm.invalid">
+              <mat-spinner *ngIf="loading" diameter="20" class="btn-spinner"></mat-spinner>
+              <mat-icon *ngIf="!loading">login</mat-icon>
+              <span>{{ loading ? 'Signing in...' : 'Sign In' }}</span>
+            </button>
+          </form>
+
+          <!-- Status Check Button -->
+          <div class="status-section">
+            <button type="button" class="status-toggle" (click)="goToStatusCheck()">
+              <mat-icon>help_outline</mat-icon>
+              <span>Check Registration Status</span>
+            </button>
+          </div>
+
+          <!-- Footer -->
+          <div class="form-footer">
+            <p>Don't have an account? 
+              <a routerLink="/register" class="register-link">Create Account</a>
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 2: Status Check -->
+        <div *ngIf="currentStep === 2" class="step-content status-step">
+          <!-- Header -->
+          <div class="form-header">
+            <h2>Check Registration Status</h2>
+            <p>Enter your email to check your registration status</p>
+          </div>
+
+          <!-- Status Check Form -->
+          <div class="status-form">
+            <div class="input-group">
+              <div class="input-container">
+                <mat-icon class="input-icon">email</mat-icon>
+                <input 
+                  type="email" 
+                  [(ngModel)]="statusCheckEmail"
+                  placeholder="Enter your email"
+                  class="form-input"
+                  [class.error]="!statusCheckEmail && statusCheckEmail !== ''">
+                <label class="floating-label">Email Address</label>
+              </div>
+            </div>
+
+            <button type="button" class="status-check-btn" (click)="checkRegistrationStatus()" [disabled]="checkingStatus || !statusCheckEmail">
+              <mat-spinner *ngIf="checkingStatus" diameter="20" class="btn-spinner"></mat-spinner>
+              <mat-icon *ngIf="!checkingStatus">search</mat-icon>
+              <span>{{ checkingStatus ? 'Checking Status...' : 'Check Status' }}</span>
+            </button>
+            
+            <!-- Back to Login Link -->
+            <div class="back-to-login">
+              <button type="button" class="back-link" (click)="goBackToLogin()">
+                <mat-icon>arrow_back</mat-icon>
+                <span>Back to Login</span>
+              </button>
+            </div>
+
+            <!-- Status Results -->
+            <div *ngIf="statusMessage" class="status-result success">
+              <mat-icon>check_circle</mat-icon>
+              <div class="result-content">
+                <h3>Registration Approved!</h3>
+                <p>{{ statusMessage }}</p>
+                <button type="button" class="action-btn" (click)="goBackToLogin()">
+                  <mat-icon>login</mat-icon>
+                  <span>Go to Login</span>
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="statusError" class="status-result error">
+              <mat-icon>error</mat-icon>
+              <div class="result-content">
+                <h3>Registration Issue</h3>
+                <p>{{ statusError }}</p>
+                <div class="action-buttons">
+                  <a routerLink="/register" class="action-btn register-btn">
+                    <mat-icon>person_add</mat-icon>
+                    <span>Register Again</span>
+                  </a>
+                  <button type="button" class="action-btn secondary" (click)="goBackToLogin()">
+                    <mat-icon>arrow_back</mat-icon>
+                    <span>Back to Login</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   </div>
 </div>

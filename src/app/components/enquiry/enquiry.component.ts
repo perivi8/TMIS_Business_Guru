@@ -17,7 +17,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   enquiries: Enquiry[] = [];
   filteredEnquiries: Enquiry[] = [];
   displayedColumns: string[] = [
-    'sno', 'date', 'wati_name', 'user_name', 'mobile_number', 
+    'sno', 'date', 'wati_name', 'mobile_number', 
     'secondary_mobile_number', 'gst', 'business_type', 'business_nature', 'staff', 
     'comments', 'whatsapp_status', 'additional_comments', 'actions'
   ];
@@ -290,7 +290,6 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       const searchLower = this.searchTerm.toLowerCase();
       filtered = filtered.filter(enquiry =>
         enquiry.wati_name.toLowerCase().includes(searchLower) ||
-        enquiry.user_name?.toLowerCase().includes(searchLower) ||
         enquiry.mobile_number.includes(searchLower) ||
         enquiry.business_type?.toLowerCase().includes(searchLower) ||
         enquiry.staff.toLowerCase().includes(searchLower) ||
@@ -958,5 +957,47 @@ export class EnquiryComponent implements OnInit, OnDestroy {
         panelClass: ['success-snackbar']
       }
     );
+  }
+
+  // Update enquiry staff assignment
+  updateEnquiryStaff(enquiry: Enquiry, staffValue: string): void {
+    if (!enquiry._id || !staffValue) return;
+    
+    const updateData = { staff: staffValue };
+    
+    this.enquiryService.updateEnquiry(enquiry._id, updateData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedEnquiry) => {
+          this.snackBar.open(`Staff assigned successfully to ${enquiry.wati_name}`, 'Close', {
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          this.loadEnquiries(); // Refresh the list
+        },
+        error: (error) => {
+          console.error('Error updating enquiry staff:', error);
+          this.snackBar.open('Error assigning staff', 'Close', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+          // Reset the select value on error
+          enquiry.staff = '';
+        }
+      });
+  }
+
+  // Reassign staff (allow changing existing assignment)
+  reassignStaff(enquiry: Enquiry): void {
+    // Temporarily clear the staff to show the dropdown
+    const originalStaff = enquiry.staff;
+    enquiry.staff = '';
+    
+    // If user doesn't select anything, restore original staff after a delay
+    setTimeout(() => {
+      if (!enquiry.staff || enquiry.staff === '') {
+        enquiry.staff = originalStaff;
+      }
+    }, 10000); // 10 seconds timeout
   }
 }

@@ -3,6 +3,7 @@ export interface Enquiry {
   sno?: number;
   date: Date;
   wati_name: string;
+  legal_name?: string;
   user_name?: string;
   mobile_number: string;
   secondary_mobile_number?: string;

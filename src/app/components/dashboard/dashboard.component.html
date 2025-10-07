@@ -136,9 +136,6 @@
         <mat-icon>person_add</mat-icon>
         <h3>No clients yet</h3>
         <p>Start by adding your first client</p>
-        <button mat-raised-button color="primary" routerLink="/new-client">
-          Add New Client
-        </button>
       </div>
 
       <div *ngIf="!loading && clients.length > 0" class="clients-table">

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ClientService } from '../../services/client.service';
 import { UserService, User } from '../../services/user.service';
+import { EnquiryService } from '../../services/enquiry.service';
 
 @Component({
   selector: 'app-new-client',
@@ -126,13 +127,43 @@ export class NewClientComponent implements OnInit {
     private formBuilder: FormBuilder,
     private router: Router,
     private clientService: ClientService,
-    private userService: UserService
+    private userService: UserService,
+    private enquiryService: EnquiryService
   ) { }
 
   ngOnInit(): void {
+    // Check if there's enquiry data passed from the enquiry page
+    if (history.state && history.state.enquiryData) {
+      const enquiryData = history.state.enquiryData;
+      // Pre-fill the form with enquiry data
+      this.prefillEnquiryData(enquiryData);
+    }
+    
     this.initializeForms();
     this.loadStaffMembers();
     this.filteredBankNames = [];
+  }
+
+  // New method to pre-fill form with enquiry data
+  prefillEnquiryData(enquiryData: any): void {
+    if (enquiryData) {
+      // Pre-fill step 1 form
+      if (this.step1Form) {
+        this.step1Form.patchValue({
+          legal_name: enquiryData.legal_name || '',
+          trade_name: enquiryData.legal_name || '',
+          mobile_number: enquiryData.mobile_number || '',
+          business_type: enquiryData.business_type || ''
+        });
+      }
+      
+      // Pre-fill step 2 form
+      if (this.step2Form) {
+        this.step2Form.patchValue({
+          gst_status: enquiryData.gst_status || ''
+        });
+      }
+    }
   }
 
   initializeForms(): void {
@@ -466,6 +497,20 @@ export class NewClientComponent implements OnInit {
     this.clientService.createClient(formData).subscribe({
       next: (response) => {
         this.success = 'Client created successfully!';
+        
+        // If there was enquiry data, sync back to enquiry records
+        if (history.state && history.state.enquiryData) {
+          const enquiryData = history.state.enquiryData;
+          if (enquiryData.mobile_number) {
+            // Update enquiry record with legal name and other data
+            this.syncClientDataToEnquiry(enquiryData.mobile_number, {
+              legal_name: this.step1Form.get('legal_name')?.value,
+              business_type: this.step1Form.get('business_type')?.value,
+              gst_status: this.step1Form.get('gst_status')?.value
+            });
+          }
+        }
+        
         setTimeout(() => {
           this.router.navigate(['/clients']);
         }, 2000);
@@ -823,5 +868,31 @@ export class NewClientComponent implements OnInit {
     
     // Force validation update
     this.step1Form.updateValueAndValidity();
+  }
+
+  // New method to sync client data back to enquiry records
+  syncClientDataToEnquiry(mobileNumber: string, clientData: any): void {
+    this.enquiryService.getAllEnquiries().subscribe((enquiries: any[]) => {
+      // Find the enquiry with matching mobile number
+      const matchingEnquiry = enquiries.find(enquiry => enquiry.mobile_number === mobileNumber);
+      
+      if (matchingEnquiry && matchingEnquiry._id) {
+        // Update the enquiry with legal name and other data
+        const updateData = {
+          legal_name: clientData.legal_name,
+          business_type: clientData.business_type,
+          gst_status: clientData.gst_status
+        };
+        
+        this.enquiryService.updateEnquiry(matchingEnquiry._id, updateData).subscribe({
+          next: (updatedEnquiry: any) => {
+            console.log('Enquiry updated with client data:', updatedEnquiry);
+          },
+          error: (error: any) => {
+            console.error('Error updating enquiry:', error);
+          }
+        });
+      }
+    });
   }
 }

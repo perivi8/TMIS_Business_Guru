@@ -7,6 +7,7 @@ import { UserService, User } from '../../services/user.service';
 import { Enquiry, COMMENT_OPTIONS } from '../../models/enquiry.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-enquiry',
@@ -17,9 +18,9 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   enquiries: Enquiry[] = [];
   filteredEnquiries: Enquiry[] = [];
   displayedColumns: string[] = [
-    'sno', 'date', 'wati_name', 'mobile_number', 
+    'sno', 'date', 'wati_name', 'legal_name', 'mobile_number', 
     'secondary_mobile_number', 'gst', 'business_type', 'business_nature', 'staff', 
-    'comments', 'whatsapp_status', 'additional_comments', 'actions'
+    'comments', 'whatsapp_status', 'additional_comments', 'shortlist', 'actions'
   ];
   
   staffMembers: User[] = [];
@@ -83,7 +84,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   // Interest level categorization
   interestComments = [
     'Will share Doc',
-    'Doc Shared(Yet to Verify)',
+    'Doc Shared(Yet to Verify',
     'Verified(Shortlisted)'
   ];
 
@@ -133,7 +134,8 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     private enquiryService: EnquiryService,
     private userService: UserService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) {
     this.registrationForm = this.createRegistrationForm();
   }
@@ -152,7 +154,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     const form = this.fb.group({
       date: [new Date(), Validators.required],
       wati_name: ['', Validators.required],
-      user_name: [''],
+      legal_name: [''],
       country_code: ['+91', Validators.required], // Default to India
       mobile_number: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       secondary_mobile_number: [''],
@@ -1000,4 +1002,21 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       }
     }, 10000); // 10 seconds timeout
   }
+
+  // New method to handle shortlisting an enquiry
+  shortlistEnquiry(enquiry: Enquiry): void {
+    // Navigate to new client page with enquiry data
+    this.router.navigate(['/new-client'], { 
+      state: { 
+        enquiryData: {
+          legal_name: enquiry.legal_name || enquiry.wati_name,
+          user_name: enquiry.wati_name,
+          mobile_number: enquiry.mobile_number,
+          business_type: enquiry.business_type,
+          gst_status: enquiry.gst_status
+        }
+      }
+    });
+  }
+
 }

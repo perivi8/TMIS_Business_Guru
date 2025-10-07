@@ -121,6 +121,7 @@ export class NewClientComponent implements OnInit {
   transactionMonths = 6;
   
   extractedData: any = {};
+  isExtractingData = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -767,5 +768,91 @@ export class NewClientComponent implements OnInit {
 
   goBack(): void {
     window.history.back();
+  }
+
+  /**
+   * Extract data from GST document and fill form fields
+   */
+  extractGstData(): void {
+    if (this.isExtractingData) {
+      return; // Prevent multiple simultaneous requests
+    }
+    
+    if (!this.uploadedFiles['gst_document']) {
+      this.error = 'Please upload a GST document first';
+      return;
+    }
+    
+    this.isExtractingData = true;
+    this.error = '';
+    this.success = '';
+    
+    // Create FormData with the GST document
+    const formData = new FormData();
+    formData.append('gst_document', this.uploadedFiles['gst_document']);
+    
+    // Extract data directly from the document
+    this.clientService.extractGstDataDirect(formData).subscribe({
+      next: (response) => {
+        this.isExtractingData = false;
+        if (response.success && response.extracted_data) {
+          this.extractedData = response.extracted_data;
+          this.fillFormWithExtractedData(response.extracted_data);
+          this.success = 'GST data extracted successfully!';
+        } else {
+          this.error = response.error || 'Failed to extract GST data';
+        }
+      },
+      error: (error) => {
+        this.isExtractingData = false;
+        this.error = error.message || 'Failed to extract GST data. Please make sure the backend service is running and try again.';
+        console.error('Error extracting GST data:', error);
+      }
+    });
+  }
+  
+  /**
+   * Fill form fields with extracted data
+   */
+  fillFormWithExtractedData(data: any): void {
+    console.log('Filling form with extracted data:', data);
+    
+    // Fill GST details
+    if (data.registration_number) {
+      this.step1Form.get('registration_number')?.setValue(data.registration_number);
+    }
+    
+    if (data.legal_name) {
+      this.step1Form.get('legal_name')?.setValue(data.legal_name);
+    }
+    
+    if (data.trade_name) {
+      this.step1Form.get('trade_name')?.setValue(data.trade_name);
+    }
+    
+    if (data.address) {
+      this.step1Form.get('address')?.setValue(data.address);
+    }
+    
+    if (data.state) {
+      this.step1Form.get('state')?.setValue(data.state);
+      this.onStateChange(data.state); // Trigger district filtering
+    }
+    
+    if (data.district) {
+      this.step1Form.get('district')?.setValue(data.district);
+    }
+    
+    if (data.pincode) {
+      this.step1Form.get('pincode')?.setValue(data.pincode);
+    }
+    
+    if (data.gst_status) {
+      this.step1Form.get('gst_status')?.setValue(data.gst_status);
+    }
+    
+    if (data.business_type) {
+      this.step1Form.get('constitution_type')?.setValue(data.business_type);
+    }
   }
 }

@@ -50,6 +50,7 @@ import { NotificationsComponent } from './components/notifications/notifications
 import { EnquiryComponent } from './components/enquiry/enquiry.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { AdminApprovalPopupComponent } from './components/admin-approval-popup/admin-approval-popup.component';
+import { ChatbotComponent } from './components/chatbot/chatbot.component';
 
 // Interceptors
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -76,7 +77,8 @@ import { SocketService } from './services/socket.service';
     NotificationsComponent,
     EnquiryComponent,
     ForgotPasswordComponent,
-    AdminApprovalPopupComponent
+    AdminApprovalPopupComponent,
+    ChatbotComponent
   ],
   imports: [
     BrowserModule,

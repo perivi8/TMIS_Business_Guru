@@ -542,6 +542,38 @@ export class ClientService implements OnDestroy {
     );
   }
 
+  extractGstData(clientId: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/clients/${clientId}/extract-gst-data`, {}, {
+      headers: this.getHeaders(),
+      withCredentials: true
+    }).pipe(
+      catchError(error => {
+        console.error('Error extracting GST data:', error);
+        return throwError(() => new Error(error.error?.error || 'Failed to extract GST data'));
+      })
+    );
+  }
+
+  extractGstDataDirect(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/clients/extract-gst-data`, formData, {
+      headers: this.getFormHeaders(),
+      withCredentials: true
+    }).pipe(
+      catchError(error => {
+        console.error('Error extracting GST data directly:', error);
+        
+        // Handle network errors specifically
+        if (error.status === 0) {
+          return throwError(() => new Error('Unable to connect to the server. Please make sure the backend service is running.'));
+        }
+        
+        // Handle other HTTP errors
+        const errorMessage = error.error?.error || error.message || 'Failed to extract GST data. Please try again.';
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
+
   deleteClient(clientId: string): Observable<any> {
     return this.http.delete<any>(`${environment.apiUrl}/clients/${clientId}`, {
       headers: this.getHeaders(),

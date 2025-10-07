@@ -822,37 +822,48 @@ export class NewClientComponent implements OnInit {
       this.step1Form.get('registration_number')?.setValue(data.registration_number);
     }
     
+    // Only set legal name if it exists in the extracted data
     if (data.legal_name) {
       this.step1Form.get('legal_name')?.setValue(data.legal_name);
     }
     
+    // Only set trade name if it exists in the extracted data
     if (data.trade_name) {
       this.step1Form.get('trade_name')?.setValue(data.trade_name);
     }
     
+    // Only set address if it exists in the extracted data
     if (data.address) {
       this.step1Form.get('address')?.setValue(data.address);
     }
     
+    // Only set state if it exists in the extracted data
     if (data.state) {
       this.step1Form.get('state')?.setValue(data.state);
       this.onStateChange(data.state); // Trigger district filtering
     }
     
+    // Only set district if it exists in the extracted data
     if (data.district) {
       this.step1Form.get('district')?.setValue(data.district);
     }
     
+    // Only set pincode if it exists in the extracted data
     if (data.pincode) {
       this.step1Form.get('pincode')?.setValue(data.pincode);
     }
     
+    // Only set GST status if it exists in the extracted data
     if (data.gst_status) {
       this.step1Form.get('gst_status')?.setValue(data.gst_status);
     }
     
+    // Only set business/constitution type if it exists in the extracted data
     if (data.business_type) {
       this.step1Form.get('constitution_type')?.setValue(data.business_type);
     }
+    
+    // Force validation update
+    this.step1Form.updateValueAndValidity();
   }
 }

@@ -114,8 +114,8 @@
                   <mat-error *ngIf="step1Form.get('address')?.invalid && step1Form.get('address')?.touched">
                     Address is required
                   </mat-error>
-              </mat-form-field>
-            </div>
+                </mat-form-field>
+              </div>
 
               <!-- State, District, Pincode Row -->
               <div class="form-row three-columns">
@@ -125,9 +125,6 @@
                     <mat-select formControlName="state" (selectionChange)="onStateChange($event.value)">
                       <mat-option *ngFor="let state of states" [value]="state">{{ state }}</mat-option>
                     </mat-select>
-                    <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
-                      <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
-                    </button>
                     <mat-icon matSuffix>location_on</mat-icon>
                     <mat-error *ngIf="step1Form.get('state')?.invalid && step1Form.get('state')?.touched">
                       Please select your state
@@ -140,9 +137,6 @@
                     <mat-select formControlName="district" [disabled]="!selectedState">
                       <mat-option *ngFor="let district of filteredDistricts" [value]="district">{{ district }}</mat-option>
                     </mat-select>
-                    <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
-                      <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
-                    </button>
                     <mat-icon matSuffix>place</mat-icon>
                     <mat-error *ngIf="step1Form.get('district')?.invalid && step1Form.get('district')?.touched">
                       Please select your district
@@ -153,9 +147,6 @@
                   <mat-form-field appearance="outline">
                     <mat-label>Pincode *</mat-label>
                     <input matInput formControlName="pincode" placeholder="Enter 6-digit pincode" maxlength="6">
-                    <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
-                      <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
-                    </button>
                     <mat-icon matSuffix>pin_drop</mat-icon>
                     <mat-error *ngIf="step1Form.get('pincode')?.invalid && step1Form.get('pincode')?.touched">
                       Please enter a valid 6-digit pincode

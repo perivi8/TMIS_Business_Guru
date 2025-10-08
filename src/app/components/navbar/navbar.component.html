@@ -132,6 +132,24 @@
             </div>
           </div>
         </div>
+        
+        <!-- Profile Dropdown for User -->
+        <div class="profile-dropdown">
+          <button mat-icon-button [matMenuTriggerFor]="userProfileMenu" class="nav-link profile-btn" matTooltip="Profile">
+            <mat-icon>account_circle</mat-icon>
+          </button>
+          <mat-menu #userProfileMenu="matMenu" class="profile-menu">
+            <div class="profile-header">
+              <mat-icon>person</mat-icon>
+              <span class="username">{{ currentUser?.username || 'User' }}</span>
+            </div>
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="logout()" class="logout-item">
+              <mat-icon>logout</mat-icon>
+              <span>Logout</span>
+            </button>
+          </mat-menu>
+        </div>
       </ng-container>
 
       <!-- User Navigation -->
@@ -253,7 +271,26 @@
             </div>
           </div>
         </div>
+        
+        <!-- Profile Dropdown for Admin -->
+        <div class="profile-dropdown">
+          <button mat-icon-button [matMenuTriggerFor]="adminProfileMenu" class="nav-link profile-btn" matTooltip="Profile">
+            <mat-icon>account_circle</mat-icon>
+          </button>
+          <mat-menu #adminProfileMenu="matMenu" class="profile-menu">
+            <div class="profile-header">
+              <mat-icon>person</mat-icon>
+              <span class="username">{{ currentUser?.username || 'Admin' }}</span>
+            </div>
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="logout()" class="logout-item">
+              <mat-icon>logout</mat-icon>
+              <span>Logout</span>
+            </button>
+          </mat-menu>
+        </div>
       </ng-container>
+
     </div>
   </div>
 </mat-toolbar>

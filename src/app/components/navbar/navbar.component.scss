@@ -1161,3 +1161,85 @@
     }
   }
 }
+
+// Profile Dropdown Styles
+.profile-dropdown {
+  position: relative;
+  
+  .profile-btn {
+    color: white;
+    transition: all 0.3s ease;
+    
+    mat-icon {
+      font-size: 1.8rem;
+      width: 1.8rem;
+      height: 1.8rem;
+    }
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: scale(1.05);
+    }
+  }
+}
+
+// Global Profile Menu Styles for Navbar
+::ng-deep .profile-menu {
+  .mat-mdc-menu-content {
+    padding: 0;
+    min-width: 200px;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+
+    mat-icon {
+      color: white;
+      font-size: 1.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .username {
+      font-weight: 600;
+      color: white;
+      font-size: 1rem;
+    }
+  }
+
+  .logout-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+
+    mat-icon {
+      color: #f44336;
+      font-size: 1.2rem;
+      width: 1.2rem;
+      height: 1.2rem;
+    }
+
+    span {
+      color: #f44336;
+      font-weight: 500;
+    }
+
+    &:hover {
+      background-color: #ffebee;
+    }
+  }
+
+  .mat-mdc-menu-item {
+    height: auto;
+    line-height: normal;
+  }
+}

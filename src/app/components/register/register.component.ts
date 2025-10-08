@@ -163,7 +163,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
     this.authService.checkRegistrationStatus(this.statusCheckEmail).subscribe({
       next: (response) => {
-        this.statusMessage = response.message;
+        this.statusMessage = response.message || '';
         this.statusLoading = false;
         
         // If approved, suggest login

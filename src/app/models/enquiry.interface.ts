@@ -1,25 +1,26 @@
+// Simplified interface with common properties and flexible typing
 export interface Enquiry {
   _id?: string;
   sno?: number;
-  date: Date;
-  wati_name: string;
+  date?: Date | string;
+  wati_name?: string;
   user_name?: string;
-  mobile_number: string;
+  mobile_number?: string;
   secondary_mobile_number?: string;
-  gst: 'Yes' | 'No' | 'Not Selected' | '';
-  gst_status?: 'Active' | 'Cancel';
+  gst?: string;
+  gst_status?: string;
   business_type?: string;
   business_nature?: string;
-  staff: string;
-  comments: string;
+  staff?: string;
+  comments?: string;
   additional_comments?: string;
-  created_at?: Date;
-  updated_at?: Date;
-  // WhatsApp integration fields
+  created_at?: Date | string;
+  updated_at?: Date | string;
   whatsapp_sent?: boolean;
   whatsapp_message_id?: string;
   whatsapp_message_type?: string;
   whatsapp_error?: string;
+  [key: string]: any; // For any additional properties
 }
 
 export const COMMENT_OPTIONS = [

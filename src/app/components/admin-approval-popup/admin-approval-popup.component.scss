@@ -1,3 +1,5 @@
+/* Modern admin approval popup using the new design system */
+
 .approval-popup-overlay {
   position: fixed;
   top: 0;
@@ -5,6 +7,7 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -13,9 +16,10 @@
 }
 
 .approval-popup {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) + 0.5rem);
+  box-shadow: var(--shadow-xl);
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
@@ -24,104 +28,148 @@
 }
 
 .popup-header {
-  background: linear-gradient(135deg, #2196f3, #1976d2);
-  color: white;
-  padding: 20px;
+  background: var(--gradient-primary);
+  color: hsl(var(--primary-foreground));
+  padding: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   
   h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 600;
   }
   
   .close-btn {
-    color: white;
+    color: hsl(var(--primary-foreground));
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
     
     &:hover {
       background: rgba(255, 255, 255, 0.1);
+    }
+    
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
   }
 }
 
 .popup-content {
-  padding: 24px;
+  padding: 1.5rem;
+  max-height: calc(80vh - 140px);
+  overflow-y: auto;
 }
 
 .user-info {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
   
   .info-item {
-    margin-bottom: 12px;
-    padding: 12px;
-    background: #f5f5f5;
-    border-radius: 8px;
-    font-size: 14px;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background: hsl(var(--muted) / 0.3);
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    font-size: 0.875rem;
     
     strong {
-      color: #333;
-      margin-right: 8px;
+      color: hsl(var(--foreground));
+      margin-right: 0.5rem;
+      font-weight: 600;
+    }
+    
+    span {
+      color: hsl(var(--muted-foreground));
     }
   }
 }
 
 .message {
-  background: #e3f2fd;
-  border-left: 4px solid #2196f3;
-  padding: 16px;
-  border-radius: 0 8px 8px 0;
-  margin-bottom: 24px;
+  background: hsl(var(--info) / 0.1);
+  border: 1px solid hsl(var(--info) / 0.3);
+  border-left: 4px solid hsl(var(--info));
+  padding: 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
   
   p {
     margin: 0;
-    color: #1565c0;
+    color: hsl(var(--info));
     font-weight: 500;
     line-height: 1.5;
+    font-size: 0.875rem;
   }
 }
 
 .popup-actions {
   display: flex;
-  gap: 16px;
+  gap: 1rem;
   justify-content: center;
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
   
   button {
     min-width: 140px;
     height: 48px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 0.875rem;
+    border-radius: var(--radius);
+    transition: all 0.2s ease-in-out;
     
     mat-icon {
-      margin-right: 8px;
+      margin-right: 0.5rem;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
   }
   
   .approve-btn {
-    background: linear-gradient(135deg, #4caf50, #45a049);
-    color: white;
+    background: hsl(var(--success)) !important;
+    color: hsl(var(--success-foreground)) !important;
+    border: none;
     
     &:hover:not(:disabled) {
-      background: linear-gradient(135deg, #45a049, #3d8b40);
+      background: hsl(var(--success) / 0.9) !important;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
     
     &:disabled {
-      background: #ccc;
+      background: hsl(var(--muted)) !important;
+      color: hsl(var(--muted-foreground)) !important;
+      cursor: not-allowed;
+      transform: none;
     }
   }
   
   .reject-btn {
-    border-color: #f44336;
-    color: #f44336;
+    background: transparent !important;
+    border: 1px solid hsl(var(--destructive)) !important;
+    color: hsl(var(--destructive)) !important;
     
     &:hover:not(:disabled) {
-      background: rgba(244, 67, 54, 0.04);
+      background: hsl(var(--destructive) / 0.1) !important;
+      transform: translateY(-1px);
+    }
+    
+    &:disabled {
+      border-color: hsl(var(--muted)) !important;
+      color: hsl(var(--muted-foreground)) !important;
+      cursor: not-allowed;
+      transform: none;
     }
   }
 }
 
-// Animations
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -142,22 +190,53 @@
   }
 }
 
-// Responsive design
+/* Responsive design */
 @media (max-width: 768px) {
   .approval-popup {
     width: 95%;
-    margin: 20px;
+    margin: 1rem;
+    max-height: 90vh;
+  }
+  
+  .popup-header {
+    padding: 1rem;
+    
+    h3 {
+      font-size: 1rem;
+    }
   }
   
   .popup-content {
-    padding: 16px;
+    padding: 1rem;
+    max-height: calc(90vh - 120px);
   }
   
   .popup-actions {
     flex-direction: column;
+    gap: 0.75rem;
     
     button {
       width: 100%;
+      min-width: auto;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .popup-content {
+    padding: 0.75rem;
+  }
+  
+  .user-info .info-item {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+  }
+  
+  .message {
+    padding: 0.75rem;
+    
+    p {
+      font-size: 0.8125rem;
     }
   }
 }

@@ -121,7 +121,6 @@ export class NewClientComponent implements OnInit {
   transactionMonths = 6;
   
   extractedData: any = {};
-  isExtractingData = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -770,47 +769,6 @@ export class NewClientComponent implements OnInit {
     window.history.back();
   }
 
-  /**
-   * Extract data from GST document and fill form fields
-   */
-  extractGstData(): void {
-    if (this.isExtractingData) {
-      return; // Prevent multiple simultaneous requests
-    }
-    
-    if (!this.uploadedFiles['gst_document']) {
-      this.error = 'Please upload a GST document first';
-      return;
-    }
-    
-    this.isExtractingData = true;
-    this.error = '';
-    this.success = '';
-    
-    // Create FormData with the GST document
-    const formData = new FormData();
-    formData.append('gst_document', this.uploadedFiles['gst_document']);
-    
-    // Extract data directly from the document
-    this.clientService.extractGstDataDirect(formData).subscribe({
-      next: (response) => {
-        this.isExtractingData = false;
-        if (response.success && response.extracted_data) {
-          this.extractedData = response.extracted_data;
-          this.fillFormWithExtractedData(response.extracted_data);
-          this.success = 'GST data extracted successfully!';
-        } else {
-          this.error = response.error || 'Failed to extract GST data';
-        }
-      },
-      error: (error) => {
-        this.isExtractingData = false;
-        this.error = error.message || 'Failed to extract GST data. Please make sure the backend service is running and try again.';
-        console.error('Error extracting GST data:', error);
-      }
-    });
-  }
-  
   /**
    * Fill form fields with extracted data
    */

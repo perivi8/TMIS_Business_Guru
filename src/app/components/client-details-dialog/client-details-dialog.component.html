@@ -70,7 +70,7 @@
               <div class="detail-label">Gender:</div>
               <div class="detail-value">{{ client.gender }}</div>
             </div>
-            <div class="detail-item" *ngIf="hasValue(client.address) || hasValue(client.district) || hasValue(client.state) || hasValue(client.pincode)">
+            <div class="detail-item" *ngIf="hasValue(client.address) || hasValue(client.district) || hasValue(client['state']) || hasValue(client.pincode)">
               <div class="detail-label">Address:</div>
               <div class="detail-value">
                 {{ formatAddress() }}

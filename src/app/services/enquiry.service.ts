@@ -108,9 +108,21 @@ export class EnquiryService {
   }
 
   updateEnquiry(id: string, enquiry: Partial<Enquiry>): Observable<Enquiry> {
+    console.log(`Updating enquiry ${id} with data:`, enquiry);
+    
     return this.http.put<Enquiry>(`${this.apiUrl}/${id}`, enquiry, { headers: this.getHeaders() }).pipe(
+      tap(response => {
+        console.log('Enquiry update successful:', response);
+      }),
       catchError((error: any) => {
         console.error('Error updating enquiry:', error);
+        console.error('Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url,
+          body: error.error
+        });
         
         let errorMessage = 'Failed to update enquiry. Please try again later.';
         
@@ -122,8 +134,12 @@ export class EnquiryService {
           errorMessage = 'Authentication failed. Please login again.';
         } else if (error.status === 403) {
           errorMessage = 'Access denied. You do not have permission to update this enquiry.';
+        } else if (error.status === 404) {
+          errorMessage = 'Enquiry not found. It may have been deleted.';
         } else if (error.status === 500) {
-          errorMessage = 'Server error. Please try again later or contact support.';
+          // Provide more specific error message for 500 errors
+          const serverError = error.error?.error || error.error?.message || 'Internal server error';
+          errorMessage = `Server error: ${serverError}. Please try again later or contact support.`;
         }
         
         return throwError(() => new Error(errorMessage));

@@ -169,7 +169,8 @@ export class NewClientComponent implements OnInit {
         this.step1Form.patchValue({
           legal_name: enquiryData.legal_name || '',
           trade_name: enquiryData.legal_name || '',
-          mobile_number: mobileNumber
+          mobile_number: mobileNumber,
+          optional_mobile_number: enquiryData.secondary_mobile_number || ''
         });
         
         // Log the form values after patching
@@ -539,15 +540,17 @@ export class NewClientComponent implements OnInit {
       next: (response) => {
         this.success = 'Client created successfully!';
         
-        // If there was enquiry data, sync back to enquiry records
+        // If there was enquiry data, sync back to enquiry records and mark as shortlisted
         if (this.extractedData.enquiryData) {
           const enquiryData = this.extractedData.enquiryData;
           if (enquiryData.enquiry_id) {
-            // Update enquiry record with legal name and other data using enquiry ID
+            // Update enquiry record with legal name, mark as shortlisted, and block further shortlisting
             this.syncClientDataToEnquiryById(enquiryData.enquiry_id, {
               legal_name: this.step1Form.get('legal_name')?.value,
               business_type: this.step1Form.get('constitution_type')?.value,
-              gst_status: this.step1Form.get('gst_status')?.value
+              gst_status: this.step1Form.get('gst_status')?.value,
+              shortlisted: true,
+              shortlisted_at: new Date()
             });
           }
         }
@@ -939,16 +942,18 @@ export class NewClientComponent implements OnInit {
 
   // New method to sync client data back to enquiry records using enquiry ID
   syncClientDataToEnquiryById(enquiryId: string, clientData: any): void {
-    // Update the enquiry with legal name and other data
+    // Update the enquiry with legal name, shortlisted status and other data
     const updateData = {
       legal_name: clientData.legal_name,
       business_type: clientData.business_type,
-      gst_status: clientData.gst_status
+      gst_status: clientData.gst_status,
+      shortlisted: clientData.shortlisted || false,
+      shortlisted_at: clientData.shortlisted_at || null
     };
     
     this.enquiryService.updateEnquiry(enquiryId, updateData).subscribe({
       next: (updatedEnquiry: any) => {
-        console.log('Enquiry updated with client data using ID:', updatedEnquiry);
+        console.log('Enquiry updated with client data and shortlisted status using ID:', updatedEnquiry);
       },
       error: (error: any) => {
         console.error('Error updating enquiry by ID:', error);

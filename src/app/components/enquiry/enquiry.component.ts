@@ -1053,6 +1053,15 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     console.log('Mobile parts:', mobileParts);
     console.log('Mobile without country code:', mobileWithoutCountryCode);
     
+    // Extract secondary mobile number without country code if it exists
+    let secondaryMobileWithoutCountryCode = '';
+    if (enquiry.secondary_mobile_number) {
+      const secondaryMobileParts = this.splitMobileNumber(enquiry.secondary_mobile_number);
+      secondaryMobileWithoutCountryCode = secondaryMobileParts.number;
+      console.log('Secondary mobile parts:', secondaryMobileParts);
+      console.log('Secondary mobile without country code:', secondaryMobileWithoutCountryCode);
+    }
+
     // Navigate to new client page with enquiry data
     this.router.navigate(['/new-client'], { 
       state: { 
@@ -1060,6 +1069,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
           legal_name: enquiry.legal_name || enquiry.wati_name,
           user_name: enquiry.wati_name,
           mobile_number: mobileWithoutCountryCode, // Mobile number without country code
+          secondary_mobile_number: secondaryMobileWithoutCountryCode, // Secondary mobile without country code
           gst: enquiry.gst,
           gst_status: enquiry.gst_status,
           enquiry_id: enquiry._id

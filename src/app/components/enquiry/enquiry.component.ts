@@ -4,34 +4,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EnquiryService } from '../../services/enquiry.service';
 import { UserService, User } from '../../services/user.service';
-import { ClientService } from '../../services/client.service';
-import { Enquiry } from '../../models/enquiry.interface';
-import { Subject, forkJoin, of } from 'rxjs';
-import { takeUntil, switchMap, catchError } from 'rxjs/operators';
-import { Router } from '@angular/router';
-
-// Define COMMENT_OPTIONS locally since it's not exported from the interface
-const COMMENT_OPTIONS = [
-  'Will share Doc',
-  'Doc Shared(Yet to Verify)',
-  'Verified(Shortlisted)',
-  'Not Eligible',
-  'No MSME',
-  'No GST',
-  'Aadhar/PAN name mismatch',
-  'MSME/GST Address Different',
-  'Will call back',
-  'Personal Loan',
-  'Start Up',
-  'Asking Less than 5 Laks',
-  '1st call completed',
-  '2nd call completed',
-  '3rd call completed',
-  'Switch off',
-  'Not connected',
-  'By Mistake',
-  'GST Cancelled'
-];
+import { Enquiry, COMMENT_OPTIONS } from '../../models/enquiry.interface';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-enquiry',
@@ -42,9 +17,9 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   enquiries: Enquiry[] = [];
   filteredEnquiries: Enquiry[] = [];
   displayedColumns: string[] = [
-    'sno', 'date', 'wati_name', 'legal_name', 'mobile_number', 
-    'secondary_mobile_number', 'gst', 'business_nature', 'staff', 
-    'comments', 'whatsapp_status', 'additional_comments', 'shortlist', 'actions'
+    'sno', 'date', 'wati_name', 'user_name', 'mobile_number', 
+    'secondary_mobile_number', 'gst', 'business_type', 'business_nature', 'staff', 
+    'comments', 'whatsapp_status', 'additional_comments', 'actions'
   ];
   
   staffMembers: User[] = [];
@@ -108,7 +83,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   // Interest level categorization
   interestComments = [
     'Will share Doc',
-    'Doc Shared(Yet to Verify',
+    'Doc Shared(Yet to Verify)',
     'Verified(Shortlisted)'
   ];
 
@@ -157,10 +132,8 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private enquiryService: EnquiryService,
     private userService: UserService,
-    private clientService: ClientService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog,
-    private router: Router
+    private dialog: MatDialog
   ) {
     this.registrationForm = this.createRegistrationForm();
   }
@@ -168,14 +141,6 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadEnquiries();
     this.loadStaffMembers();
-    
-    // Listen for client updates to refresh the enquiry list
-    this.clientService.clientUpdated$.subscribe(clientId => {
-      if (clientId) {
-        // A client was updated/created, refresh enquiries to update clientExists status
-        this.loadEnquiries();
-      }
-    });
   }
 
   ngOnDestroy(): void {
@@ -187,12 +152,13 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     const form = this.fb.group({
       date: [new Date(), Validators.required],
       wati_name: ['', Validators.required],
-      legal_name: [''],
+      user_name: [''],
       country_code: ['+91', Validators.required], // Default to India
       mobile_number: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       secondary_mobile_number: [''],
       gst: [''], // Optional - user can leave this unselected
       gst_status: [''],
+      business_type: [''],
       business_nature: [''],
       staff: ['', Validators.required],
       comments: [''], // Made optional - removed Validators.required
@@ -223,39 +189,9 @@ export class EnquiryComponent implements OnInit, OnDestroy {
             ...enquiry,
             sno: index + 1
           }));
-          
-          // Check if clients exist for each enquiry to properly disable shortlist buttons
-          const clientCheckObservables = this.enquiries.map(enquiry => 
-            this.clientService.checkClientExistsByMobile(enquiry.mobile_number)
-              .pipe(
-                catchError(error => {
-                  console.error(`Error checking client for enquiry ${enquiry._id}:`, error);
-                  return of({ exists: false });
-                })
-              )
-          );
-          
-          // Wait for all client checks to complete
-          forkJoin(clientCheckObservables).subscribe({
-            next: (clientExistsResults) => {
-              // Update enquiries with client existence info
-              this.enquiries = this.enquiries.map((enquiry, index) => ({
-                ...enquiry,
-                clientExists: clientExistsResults[index].exists
-              }));
-              
-              this.extractUniqueStaffMembers();
-              this.applyFilters();
-              this.loading = false;
-            },
-            error: (error) => {
-              console.error('Error checking client existence:', error);
-              // Proceed with enquiries as is if client check fails
-              this.extractUniqueStaffMembers();
-              this.applyFilters();
-              this.loading = false;
-            }
-          });
+          this.extractUniqueStaffMembers();
+          this.applyFilters();
+          this.loading = false;
         },
         error: (error) => {
           console.error('Error loading enquiries:', error);
@@ -354,6 +290,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       const searchLower = this.searchTerm.toLowerCase();
       filtered = filtered.filter(enquiry =>
         enquiry.wati_name.toLowerCase().includes(searchLower) ||
+        enquiry.user_name?.toLowerCase().includes(searchLower) ||
         enquiry.mobile_number.includes(searchLower) ||
         enquiry.business_type?.toLowerCase().includes(searchLower) ||
         enquiry.staff.toLowerCase().includes(searchLower) ||
@@ -535,11 +472,6 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       return 'row-light-red';
     }
     
-    // Check for GST Not Active
-    if (enquiry.gst === 'Yes' && enquiry.gst_status === 'Not Active') {
-      return 'row-light-orange';
-    }
-    
     // Check for GST Cancelled comment
     if (enquiry.comments === 'GST Cancelled') {
       return 'row-light-red';
@@ -603,38 +535,41 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       
       // Clean up GST status if GST is Yes
       if (formData.gst === 'Yes') {
-        // Ensure GST status is provided when GST is Yes
-        if (!formData.gst_status) {
-          this.snackBar.open('GST status is required when GST is Yes', 'Close', { duration: 5000 });
-          return;
-        }
+        // GST status is already handled by the form validation
       } else {
-        // Clear GST status if GST is not Yes
+        // For No or empty GST, clear the GST status
         formData.gst_status = '';
       }
+
+      // Combine country code with mobile numbers FIRST
+      const countryCodeDigits = formData.country_code.replace('+', ''); // Remove + sign
+      const fullMobileNumber = countryCodeDigits + formData.mobile_number;
       
-      // Handle "Not Eligible" comment validation
-      if (formData.comments === 'Not Eligible' && !formData.business_nature?.trim()) {
-        this.snackBar.open('Business Nature is required when "Not Eligible" comment is selected', 'Close', { duration: 5000 });
+      console.log('📱 Country code digits:', countryCodeDigits);
+      console.log('📱 Mobile number digits:', formData.mobile_number);
+      console.log('📱 Full mobile number:', fullMobileNumber);
+      
+      // Check for duplicate mobile number AFTER combining with country code
+      if (this.checkMobileNumberExists(fullMobileNumber)) {
+        this.snackBar.open('Mobile number already exists! Please use a different mobile number.', 'Close', { 
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
         return;
       }
-
-      // Split the mobile number into country code and number for storage
-      const countryCode = formData.country_code;
-      const mobileNumber = formData.mobile_number;
-      const fullMobileNumber = countryCode.replace('+', '') + mobileNumber;
       
-      // Handle secondary mobile number
-      let fullSecondaryMobileNumber = null;
+      // Set the combined mobile number
+      formData.mobile_number = fullMobileNumber;
+
+      // Handle secondary mobile number - use the same country code as primary
       if (formData.secondary_mobile_number && formData.secondary_mobile_number.trim() !== '') {
-        fullSecondaryMobileNumber = countryCode.replace('+', '') + formData.secondary_mobile_number;
+        formData.secondary_mobile_number = countryCodeDigits + formData.secondary_mobile_number;
+        console.log('📱 Secondary full mobile number:', formData.secondary_mobile_number);
+      } else {
+        formData.secondary_mobile_number = null;
       }
 
-      // Set the combined mobile numbers
-      formData.mobile_number = fullMobileNumber;
-      formData.secondary_mobile_number = fullSecondaryMobileNumber;
-
-      // Remove country code field (don't send to backend)
+      // Remove country code fields from form data (don't send to backend)
       delete formData.country_code;
 
       // Set default comment if empty
@@ -642,24 +577,65 @@ export class EnquiryComponent implements OnInit, OnDestroy {
         formData.comments = 'No comment provided';
       }
 
+      // Handle GST field - preserve empty values for optional GST selection
+      // Backend will store empty values as "Not Selected" for display purposes
+      if (!formData.gst || formData.gst.trim() === '') {
+        formData.gst = ''; // Send empty string to backend to indicate "Not Selected"
+      }
+
+      // Log the form data being sent for debugging
+      console.log('📤 Form data being sent to backend:', formData);
+      console.log('📤 Form validation status:', this.registrationForm.valid);
+      console.log('📤 Form errors:', this.registrationForm.errors);
+
       if (this.isEditMode && this.editingEnquiryId) {
-        // Update existing enquiry
-        this.enquiryService.updateEnquiry(this.editingEnquiryId, formData).subscribe({
-          next: (updatedEnquiry) => {
-            this.snackBar.open('Enquiry updated successfully!', 'Close', { duration: 3000 });
+        this.enquiryService.updateEnquiry(this.editingEnquiryId, formData)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+          next: (updatedEnquiry: any) => {
+            let message = 'Enquiry updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            // Add WhatsApp status to notification
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp status message sent!';
+              // Show additional notification if available
+              if (updatedEnquiry.whatsapp_notification) {
+                this.snackBar.open(updatedEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 10000,
+                  panelClass: ['success-snackbar']
+                });
+              }
+            } else if (updatedEnquiry.whatsapp_sent === false) {
+              // Show specific error message if available
+              const whatsappError = updatedEnquiry.whatsapp_error || 'WhatsApp message failed to send';
+              message += ` ⚠️ ${whatsappError}`;
+              panelClass = ['error-snackbar'];
+              
+              // Show quota exceeded notification if applicable
+              if (updatedEnquiry.whatsapp_notification) {
+                this.snackBar.open(updatedEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 15000,
+                  panelClass: ['warning-snackbar']
+                });
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
             this.hideAddForm();
             this.loadEnquiries();
           },
           error: (error) => {
             console.error('Error updating enquiry:', error);
-            let errorMessage = 'Error updating enquiry. Please try again.';
+            console.error('Error response body:', error.error);
+            console.error('Error status:', error.status);
+            console.error('Error message:', error.message);
             
-            // Handle specific error cases
-            if (error.status === 400) {
-              errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
-            } else if (error.status === 500) {
-              errorMessage = 'Server error. Please try again later.';
-            } else if (error.error && error.error.error) {
+            let errorMessage = 'Error updating enquiry';
+            if (error.error && error.error.error) {
               errorMessage = error.error.error;
             }
             
@@ -667,23 +643,53 @@ export class EnquiryComponent implements OnInit, OnDestroy {
           }
         });
       } else {
-        // Create new enquiry
-        this.enquiryService.createEnquiry(formData).subscribe({
-          next: (newEnquiry) => {
-            this.snackBar.open('Enquiry created successfully!', 'Close', { duration: 3000 });
+        this.enquiryService.createEnquiry(formData)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+          next: (newEnquiry: any) => {
+            let message = 'Enquiry added successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            // Add WhatsApp status to notification
+            if (newEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp welcome message sent!';
+              // Show additional notification if available
+              if (newEnquiry.whatsapp_notification) {
+                this.snackBar.open(newEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 10000,
+                  panelClass: ['success-snackbar']
+                });
+              }
+            } else if (newEnquiry.whatsapp_sent === false) {
+              // Show specific error message if available
+              const whatsappError = newEnquiry.whatsapp_error || 'WhatsApp message failed to send';
+              message += ` ⚠️ ${whatsappError}`;
+              panelClass = ['error-snackbar'];
+              
+              // Show quota exceeded notification if applicable
+              if (newEnquiry.whatsapp_notification) {
+                this.snackBar.open(newEnquiry.whatsapp_notification, 'Close', { 
+                  duration: 15000,
+                  panelClass: ['warning-snackbar']
+                });
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
             this.hideAddForm();
             this.loadEnquiries();
           },
           error: (error) => {
             console.error('Error creating enquiry:', error);
-            let errorMessage = 'Error creating enquiry. Please try again.';
+            console.error('Error response body:', error.error);
+            console.error('Error status:', error.status);
+            console.error('Error message:', error.message);
             
-            // Handle specific error cases
-            if (error.status === 400) {
-              errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
-            } else if (error.status === 500) {
-              errorMessage = 'Server error. Please try again later.';
-            } else if (error.error && error.error.error) {
+            let errorMessage = 'Error adding enquiry';
+            if (error.error && error.error.error) {
               errorMessage = error.error.error;
             }
             
@@ -915,8 +921,6 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       return { countryCode: '+91', number: '' }; // Default to India
     }
     
-    console.log('Splitting mobile number:', mobileNumber);
-    
     // Check for different country codes in order of length (longest first)
     const countryCodes = ['971', '966', '65', '61', '60', '49', '44', '33', '91', '1'];
     
@@ -924,13 +928,11 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       if (mobileNumber.startsWith(code)) {
         const number = mobileNumber.substring(code.length);
         const countryCode = `+${code}`;
-        console.log('Found country code:', code, 'Extracted number:', number);
         return { countryCode, number };
       }
     }
     
-    // If no country code matches, return the number as is with default India code
-    console.log('No country code found, returning number as is');
+    // If no country code matches, default to India
     return { countryCode: '+91', number: mobileNumber };
   }
 
@@ -957,123 +959,4 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       }
     );
   }
-
-  // Update enquiry staff assignment
-  updateEnquiryStaff(enquiry: Enquiry, staffValue: string): void {
-    if (!enquiry._id || !staffValue) return;
-    
-    const updateData = { staff: staffValue };
-    
-    this.enquiryService.updateEnquiry(enquiry._id, updateData)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (updatedEnquiry) => {
-          this.snackBar.open(`Staff assigned successfully to ${enquiry.wati_name}`, 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.loadEnquiries(); // Refresh the list
-        },
-        error: (error) => {
-          console.error('Error updating enquiry staff:', error);
-          this.snackBar.open('Error assigning staff', 'Close', {
-            duration: 3000,
-            panelClass: ['error-snackbar']
-          });
-          // Reset the select value on error
-          enquiry.staff = '';
-        }
-      });
-  }
-
-  // Reassign staff (allow changing existing assignment)
-  reassignStaff(enquiry: Enquiry): void {
-    // Check if staff is already assigned - if so, don't allow reassignment
-    if (enquiry.staff && enquiry.staff !== '') {
-      this.snackBar.open('Staff is already assigned and cannot be changed', 'Close', {
-        duration: 3000,
-        panelClass: ['error-snackbar']
-      });
-      return;
-    }
-    
-    // Temporarily clear the staff to show the dropdown
-    const originalStaff = enquiry.staff;
-    enquiry.staff = '';
-    
-    // If user doesn't select anything, restore original staff after a delay
-    setTimeout(() => {
-      if (!enquiry.staff || enquiry.staff === '') {
-        enquiry.staff = originalStaff;
-      }
-    }, 10000); // 10 seconds timeout
-  }
-
-  // New method to handle shortlisting an enquiry
-  shortlistEnquiry(enquiry: Enquiry): void {
-    console.log('Shortlisting enquiry:', enquiry);
-    // Extract mobile number without country code for new client page
-    const mobileParts = this.splitMobileNumber(enquiry.mobile_number);
-    const mobileWithoutCountryCode = mobileParts.number;
-    
-    console.log('Mobile parts:', mobileParts);
-    console.log('Mobile without country code:', mobileWithoutCountryCode);
-    
-    // Extract secondary mobile number without country code if it exists
-    let secondaryMobileWithoutCountryCode = '';
-    if (enquiry.secondary_mobile_number) {
-      const secondaryMobileParts = this.splitMobileNumber(enquiry.secondary_mobile_number);
-      secondaryMobileWithoutCountryCode = secondaryMobileParts.number;
-      console.log('Secondary mobile parts:', secondaryMobileParts);
-      console.log('Secondary mobile without country code:', secondaryMobileWithoutCountryCode);
-    }
-
-    // Navigate to new client page with enquiry data
-    this.router.navigate(['/new-client'], { 
-      state: { 
-        enquiryData: {
-          legal_name: enquiry.legal_name || enquiry.wati_name,
-          user_name: enquiry.wati_name,
-          mobile_number: mobileWithoutCountryCode, // Mobile number without country code
-          secondary_mobile_number: secondaryMobileWithoutCountryCode, // Secondary mobile without country code
-          gst: enquiry.gst,
-          gst_status: enquiry.gst_status,
-          enquiry_id: enquiry._id
-        }
-      }
-    });
-  }
-
-  // Method to check if shortlist button should be enabled
-  isShortlistEnabled(enquiry: Enquiry): boolean {
-    // Check if already shortlisted
-    if (enquiry.shortlisted) {
-      return false;
-    }
-    
-    // Check if a client already exists for this mobile number
-    if (enquiry.clientExists) {
-      return false;
-    }
-    
-    // Check if mobile number exists
-    if (!enquiry.mobile_number) {
-      return false;
-    }
-    
-    // Check if comments are "Verified(Shortlisted)"
-    const isVerified = enquiry.comments === 'Verified(Shortlisted)';
-    
-    // Check if GST is "Yes" and status is "Active"
-    const hasActiveGst = enquiry.gst === 'Yes' && enquiry.gst_status === 'Active';
-    
-    // Enable shortlist button only if both conditions are met
-    return isVerified && hasActiveGst;
-  }
-
-  // Method to refresh enquiries after client creation
-  refreshEnquiries(): void {
-    this.loadEnquiries();
-  }
-
 }

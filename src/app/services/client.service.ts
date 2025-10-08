@@ -167,14 +167,7 @@ export class ClientService implements OnDestroy {
     return this.http.post<any>(`${environment.apiUrl}/clients`, formData, {
       headers: this.getFormHeaders(),
       withCredentials: true
-    }).pipe(
-      tap(response => {
-        // Notify other components about client creation
-        if (response && response.client_id) {
-          this.clientUpdatedSubject.next(response.client_id);
-        }
-      })
-    );
+    });
   }
 
   getClients(): Observable<{ clients: Client[] }> {
@@ -338,12 +331,6 @@ export class ClientService implements OnDestroy {
         if (response && (response.success !== false)) {
           this.clientUpdatedSubject.next(clientId);
         }
-        
-        // Also notify about any WhatsApp messages sent
-        if (response && response.whatsapp_sent !== undefined) {
-          // This will trigger any WhatsApp-related UI updates
-          console.log('WhatsApp notification status:', response.whatsapp_sent);
-        }
       })
     );
   }
@@ -366,28 +353,6 @@ export class ClientService implements OnDestroy {
     });
 
     return changes;
-  }
-
-  // New method to check if a client exists for a given mobile number
-  checkClientExistsByMobile(mobileNumber: string): Observable<{ exists: boolean }> {
-    const url = `${environment.apiUrl}/chatbot/lookup/mobile/${mobileNumber}`;
-    return this.http.get<any>(url, {
-      headers: this.getHeaders(),
-      withCredentials: true
-    }).pipe(
-      map(response => ({
-        exists: response.success === true
-      })),
-      catchError(error => {
-        // If client not found (404), return exists: false
-        if (error.status === 404) {
-          return of({ exists: false });
-        }
-        // For other errors, still return exists: false but log the error
-        console.error('Error checking client existence:', error);
-        return of({ exists: false });
-      })
-    );
   }
 
   updateClient(clientId: string, clientData: any): Observable<any> {

@@ -3,12 +3,12 @@ export interface Client {
   user_name?: string;
   email?: string;
   mobile_number?: string;
-  optional_mobile_number?: string; // Secondary mobile number
   legal_name?: string;
   date_of_birth?: string;
   gender?: string;
   address?: string;
   district?: string;
+  state?: string;
   pincode?: string;
   business_name?: string;
   business_type?: string;
@@ -60,6 +60,7 @@ export interface Client {
   gst_status?: string;
   registration_number?: string;
   company_email?: string;
+  optional_mobile_number?: string;
   website?: string;
   
   // Owner/Partner information

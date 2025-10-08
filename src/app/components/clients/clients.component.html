@@ -49,6 +49,9 @@
           <button mat-icon-button (click)="toggleView()" class="view-toggle-btn" [matTooltip]="viewMode === 'table' ? 'Switch to Card View' : 'Switch to Table View'">
             <mat-icon>{{ viewMode === 'table' ? 'view_module' : 'table_rows' }}</mat-icon>
           </button>
+          <button mat-icon-button color="primary" routerLink="/new-client" class="add-client-btn" matTooltip="Add New Client">
+            <mat-icon>person_add</mat-icon>
+          </button>
         </div>
       </div>
     </mat-card-content>
@@ -86,6 +89,9 @@
         <h3>No clients found</h3>
         <p *ngIf="searchTerm || statusFilter !== 'all'">Try adjusting your search or filters</p>
         <p *ngIf="!searchTerm && statusFilter === 'all'">Start by adding your first client</p>
+        <button mat-raised-button color="primary" routerLink="/new-client">
+          Add New Client
+        </button>
       </div>
 
       <!-- Table View -->

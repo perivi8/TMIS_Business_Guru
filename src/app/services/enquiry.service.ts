@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpBackend } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Enquiry } from '../models/enquiry.interface';
@@ -12,12 +12,8 @@ export class EnquiryService {
   private apiUrl = `${environment.apiUrl}/enquiries`;
   private enquiriesSubject = new BehaviorSubject<Enquiry[]>([]);
   public enquiries$ = this.enquiriesSubject.asObservable();
-  private httpWithoutInterceptor: HttpClient;
 
-  constructor(private http: HttpClient, private httpBackend: HttpBackend) {
-    // Create HTTP client that bypasses interceptors
-    this.httpWithoutInterceptor = new HttpClient(httpBackend);
-  }
+  constructor(private http: HttpClient) {}
 
   private getHeaders(): HttpHeaders {
     const token = localStorage.getItem('token');
@@ -108,43 +104,7 @@ export class EnquiryService {
   }
 
   updateEnquiry(id: string, enquiry: Partial<Enquiry>): Observable<Enquiry> {
-    console.log(`Updating enquiry ${id} with data:`, enquiry);
-    
-    return this.http.put<Enquiry>(`${this.apiUrl}/${id}`, enquiry, { headers: this.getHeaders() }).pipe(
-      tap(response => {
-        console.log('Enquiry update successful:', response);
-      }),
-      catchError((error: any) => {
-        console.error('Error updating enquiry:', error);
-        console.error('Error details:', {
-          status: error.status,
-          statusText: error.statusText,
-          message: error.message,
-          url: error.url,
-          body: error.error
-        });
-        
-        let errorMessage = 'Failed to update enquiry. Please try again later.';
-        
-        if (error.status === 0) {
-          errorMessage = 'Cannot connect to server. Please check your internet connection.';
-        } else if (error.status === 400) {
-          errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
-        } else if (error.status === 401) {
-          errorMessage = 'Authentication failed. Please login again.';
-        } else if (error.status === 403) {
-          errorMessage = 'Access denied. You do not have permission to update this enquiry.';
-        } else if (error.status === 404) {
-          errorMessage = 'Enquiry not found. It may have been deleted.';
-        } else if (error.status === 500) {
-          // Provide more specific error message for 500 errors
-          const serverError = error.error?.error || error.error?.message || 'Internal server error';
-          errorMessage = `Server error: ${serverError}. Please try again later or contact support.`;
-        }
-        
-        return throwError(() => new Error(errorMessage));
-      })
-    );
+    return this.http.put<Enquiry>(`${this.apiUrl}/${id}`, enquiry, { headers: this.getHeaders() });
   }
 
   deleteEnquiry(id: string): Observable<any> {
@@ -212,60 +172,5 @@ export class EnquiryService {
   getWhatsAppTemplates(): Observable<any> {
     const templatesUrl = `${environment.apiUrl}/whatsapp/templates`;
     return this.http.get<any>(templatesUrl, { headers: this.getHeaders() });
-  }
-
-  // Check if mobile number already exists - public endpoint
-  checkMobileExists(mobileNumber: string): Observable<any> {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-    
-    const checkUrl = `${environment.apiUrl}/public/check-mobile`;
-    
-    return this.httpWithoutInterceptor.post<any>(checkUrl, { mobile_number: mobileNumber }, { headers }).pipe(
-      catchError((error: any) => {
-        console.error('Mobile check failed:', error);
-        // Return a safe default response on error
-        return of({
-          exists: false,
-          message: 'Unable to check mobile number',
-          error: true
-        });
-      })
-    );
-  }
-
-  // Public enquiry method - uses dedicated public endpoint
-  createPublicEnquiry(enquiry: any): Observable<any> {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json'
-    });
-    
-    // Use the public endpoint that doesn't require authentication
-    const publicUrl = `${environment.apiUrl}/public/enquiries`;
-    
-    console.log('Submitting to public endpoint:', publicUrl);
-    console.log('Enquiry data:', enquiry);
-    
-    return this.httpWithoutInterceptor.post<any>(publicUrl, enquiry, { headers }).pipe(
-      tap(response => {
-        console.log('Public enquiry submitted successfully:', response);
-      }),
-      catchError((error: any) => {
-        console.error('Public enquiry submission failed:', error);
-        
-        let errorMessage = 'Failed to submit enquiry. Please try again.';
-        
-        if (error.status === 0) {
-          errorMessage = 'Cannot connect to server. Please check your internet connection.';
-        } else if (error.status === 400) {
-          errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
-        } else if (error.status === 500) {
-          errorMessage = 'Server error. Please try again later or contact support.';
-        }
-        
-        return throwError(() => new Error(errorMessage));
-      })
-    );
   }
 }

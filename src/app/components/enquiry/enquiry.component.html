@@ -122,10 +122,9 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Legal Name (Optional)</mat-label>
-            <input matInput formControlName="legal_name">
+            <mat-label>User Name (Optional)</mat-label>
+            <input matInput formControlName="user_name">
           </mat-form-field>
-
 
           <!-- Row 2 - Mobile Number with Country Code -->
           <div class="mobile-number-container">
@@ -173,6 +172,16 @@
             </mat-form-field>
           </div>
 
+          <mat-form-field appearance="outline">
+            <mat-label>Business Type (Optional)</mat-label>
+            <mat-select formControlName="business_type">
+              <mat-option value="">Select Business Type</mat-option>
+              <mat-option *ngFor="let type of businessTypeOptions" [value]="type">
+                {{ type }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
           <!-- Business Nature Field -->
           <mat-form-field appearance="outline">
             <mat-label>Business Nature <span *ngIf="isEditMode && registrationForm.get('comments')?.value === 'Not Eligible'" class="required-asterisk">*</span></mat-label>
@@ -198,7 +207,6 @@
               <mat-select formControlName="gst_status">
                 <mat-option value="Active">Active</mat-option>
                 <mat-option value="Cancel">Cancel</mat-option>
-                <mat-option value="Not Active">Not Active</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -256,9 +264,12 @@
       <div class="header-actions">
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search enquiries...</mat-label>
-          <input matInput [(ngModel)]="searchTerm" (keyup)="applyFilters()" placeholder="Search by client name, mobile, staff...">
+          <input matInput [(ngModel)]="searchTerm" (keyup)="applyFilters()" placeholder="Search by name, mobile, staff...">
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
+        <button mat-icon-button class="add-icon-button" (click)="showAddForm()" matTooltip="Add New Enquiry">
+          <mat-icon>add</mat-icon>
+        </button>
       </div>
     </mat-card-header>
     <mat-card-content>
@@ -277,16 +288,16 @@
           <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ formatDate(enquiry.date) }}</td>
         </ng-container>
 
-        <!-- Client Name Column -->
+        <!-- Wati Name Column -->
         <ng-container matColumnDef="wati_name">
-          <th mat-header-cell *matHeaderCellDef class="header-cell">Client Name</th>
+          <th mat-header-cell *matHeaderCellDef class="header-cell">Wati Name</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.wati_name }}</td>
         </ng-container>
 
-        <!-- Legal Name Column -->
-        <ng-container matColumnDef="legal_name">
-          <th mat-header-cell *matHeaderCellDef class="header-cell">Legal Name</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.legal_name || '-' }}</td>
+        <!-- User Name Column -->
+        <ng-container matColumnDef="user_name">
+          <th mat-header-cell *matHeaderCellDef class="header-cell">User Name</th>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.user_name || '-' }}</td>
         </ng-container>
 
         <!-- Mobile Number Column -->
@@ -318,6 +329,12 @@
           </td>
         </ng-container>
 
+        <!-- Business Type Column -->
+        <ng-container matColumnDef="business_type">
+          <th mat-header-cell *matHeaderCellDef class="header-cell">Business Type</th>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.business_type || '-' }}</td>
+        </ng-container>
+
         <!-- Business Nature Column -->
         <ng-container matColumnDef="business_nature">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Business Nature</th>
@@ -327,21 +344,7 @@
         <!-- Staff Column -->
         <ng-container matColumnDef="staff">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Staff</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <mat-form-field appearance="outline" class="staff-select-field" *ngIf="!enquiry.staff || enquiry.staff === ''">
-              <mat-select [(value)]="enquiry.staff" (selectionChange)="updateEnquiryStaff(enquiry, $event.value)" placeholder="Assign Staff">
-                <mat-option *ngFor="let staff of staffMembers" [value]="staff.username || staff.email">
-                  {{ staff.username || staff.email }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-            <div class="assigned-staff" *ngIf="enquiry.staff && enquiry.staff !== ''">
-              <span class="staff-name">{{ enquiry.staff }}</span>
-              <button mat-icon-button class="reassign-btn" (click)="reassignStaff(enquiry)" matTooltip="Reassign Staff">
-                <mat-icon>edit</mat-icon>
-              </button>
-            </div>
-          </td>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.staff }}</td>
         </ng-container>
 
         <!-- Comments Column -->
@@ -384,19 +387,6 @@
           </td>
         </ng-container>
 
-        <!-- Shortlist Column -->
-        <ng-container matColumnDef="shortlist">
-          <th mat-header-cell *matHeaderCellDef class="header-cell">Shortlist</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <button mat-raised-button 
-                    [color]="enquiry.shortlisted ? 'accent' : (enquiry.clientExists ? 'warn' : 'primary')" 
-                    (click)="shortlistEnquiry(enquiry)" 
-                    [disabled]="!isShortlistEnabled(enquiry) || enquiry.shortlisted || enquiry.clientExists">
-              {{ enquiry.shortlisted ? 'Shortlisted' : (enquiry.clientExists ? 'Client Created' : 'Shortlist') }}
-            </button>
-          </td>
-        </ng-container>
-
         <!-- Actions Column -->
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Actions</th>
@@ -428,6 +418,10 @@
       <mat-icon>inbox</mat-icon>
       <h3>No Enquiries Found</h3>
       <p>{{ searchTerm ? 'No enquiries match your search criteria.' : 'Start by adding your first enquiry.' }}</p>
+      <button mat-raised-button color="primary" (click)="showAddForm()" *ngIf="!searchTerm">
+        <mat-icon>add</mat-icon>
+        Add First Enquiry
+      </button>
     </div>
     </mat-card-content>
   </mat-card>

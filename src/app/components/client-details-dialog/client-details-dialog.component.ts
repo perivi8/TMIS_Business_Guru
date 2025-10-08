@@ -69,7 +69,7 @@ export class ClientDetailsDialogComponent implements OnInit {
   hasPersonalInfo(): boolean {
     return !!(this.client.legal_name || this.client.email || 
              this.client.mobile_number || this.client['optional_mobile_number'] || this.client.date_of_birth || this.client.gender ||
-             this.client.address || this.client.district || this.client['state'] || this.client.pincode);
+             this.client.address || this.client.district || this.client.state || this.client.pincode);
   }
 
   // Check if business information exists
@@ -128,7 +128,7 @@ export class ClientDetailsDialogComponent implements OnInit {
     const parts = [
       this.client.address,
       this.client.district,
-      this.client['state'],
+      this.client.state,
       this.client.pincode
     ].filter(part => this.hasValue(part));
     
@@ -144,7 +144,7 @@ export class ClientDetailsDialogComponent implements OnInit {
           { label: 'Legal Name', value: this.client['legal_name'] || 'Not provided' },
           { label: 'Email', value: this.client['email'] || 'Not provided' },
           { label: 'Mobile Number', value: this.client.mobile_number || 'Not provided' },
-          { label: 'Secondary Mobile', value: this.client['optional_mobile_number'] || 'Not provided' },
+          { label: 'Optional Mobile', value: this.client['optional_mobile_number'] || 'Not provided' },
           { 
             label: 'Date of Birth', 
             value: this.client.date_of_birth ? this.formatDate(this.client.date_of_birth) : 'Not provided' 
@@ -152,7 +152,7 @@ export class ClientDetailsDialogComponent implements OnInit {
           { label: 'Gender', value: this.client.gender || 'Not provided' },
           { label: 'Address', value: this.client.address || 'Not provided' },
           { label: 'District', value: this.client.district || 'Not provided' },
-          { label: 'State', value: this.client['state'] || 'Not provided' },
+          { label: 'State', value: this.client.state || 'Not provided' },
           { label: 'Pincode', value: this.client.pincode || 'Not provided' }
         ]
       },

@@ -132,24 +132,6 @@
             </div>
           </div>
         </div>
-        
-        <!-- Profile Dropdown for User -->
-        <div class="profile-dropdown">
-          <button mat-icon-button [matMenuTriggerFor]="userProfileMenu" class="nav-link profile-btn" matTooltip="Profile">
-            <mat-icon>account_circle</mat-icon>
-          </button>
-          <mat-menu #userProfileMenu="matMenu" class="profile-menu">
-            <div class="profile-header">
-              <mat-icon>person</mat-icon>
-              <span class="username">{{ currentUser.username || 'User' }}</span>
-            </div>
-            <mat-divider></mat-divider>
-            <button mat-menu-item (click)="logout()" class="logout-item">
-              <mat-icon>logout</mat-icon>
-              <span>Logout</span>
-            </button>
-          </mat-menu>
-        </div>
       </ng-container>
 
       <!-- User Navigation -->
@@ -169,6 +151,10 @@
         <a routerLink="/enquiry" routerLinkActive="active" class="nav-link">
           <mat-icon>assignment</mat-icon>
           Enquiry
+        </a>
+        <a routerLink="/new-client" routerLinkActive="active" class="nav-link">
+          <mat-icon>person_add</mat-icon>
+          New Client
         </a>
         <a routerLink="/contact-us" routerLinkActive="active" class="nav-link">
           <mat-icon>contact_mail</mat-icon>
@@ -271,26 +257,24 @@
             </div>
           </div>
         </div>
-        
-        <!-- Profile Dropdown for Admin -->
-        <div class="profile-dropdown">
-          <button mat-icon-button [matMenuTriggerFor]="adminProfileMenu" class="nav-link profile-btn" matTooltip="Profile">
-            <mat-icon>account_circle</mat-icon>
-          </button>
-          <mat-menu #adminProfileMenu="matMenu" class="profile-menu">
-            <div class="profile-header">
-              <mat-icon>person</mat-icon>
-              <span class="username">{{ currentUser.username || 'Admin' }}</span>
-            </div>
-            <mat-divider></mat-divider>
-            <button mat-menu-item (click)="logout()" class="logout-item">
-              <mat-icon>logout</mat-icon>
-              <span>Logout</span>
-            </button>
-          </mat-menu>
-        </div>
       </ng-container>
 
-    </div>
-  </div>
+      <!-- User Menu -->
+      <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <div class="user-info">
+          <p><strong>{{ currentUser && currentUser.username }}</strong></p>
+          <p>{{ currentUser && currentUser.email }}</p>
+          <p><span class="role-badge" [ngClass]="currentUser && currentUser.role">{{ currentUser && currentUser.role }}</span></p>
+        </div>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          Logout
+        </button>
+      </mat-menu>
+    </div> <!-- Close nav-menu -->
+  </div> <!-- Close nav-container -->
 </mat-toolbar>

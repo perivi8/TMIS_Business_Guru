@@ -1,47 +1,4 @@
 <app-navbar *ngIf="showNavbar"></app-navbar>
-
-<!-- Public Header for Public Enquiry Page -->
-<mat-toolbar color="primary" class="public-header" *ngIf="showPublicHeader">
-  <div class="nav-container">
-    <a routerLink="/" class="nav-brand">
-      <mat-icon>business</mat-icon>
-      TMIS Business Guru
-    </a>
-    
-    <div class="public-nav-actions">
-      <!-- Show profile dropdown if user is authenticated -->
-      <div class="profile-dropdown" *ngIf="isAuthenticated()">
-        <button mat-icon-button [matMenuTriggerFor]="profileMenu" class="profile-btn">
-          <mat-icon>account_circle</mat-icon>
-        </button>
-        <mat-menu #profileMenu="matMenu" class="profile-menu">
-          <div class="profile-header">
-            <mat-icon>person</mat-icon>
-            <span class="username">{{ getCurrentUser()?.username || 'User' }}</span>
-          </div>
-          <mat-divider></mat-divider>
-          <button mat-menu-item (click)="logout()" class="logout-item">
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </button>
-        </mat-menu>
-      </div>
-      
-      <!-- Show login/register buttons if user is not authenticated -->
-      <ng-container *ngIf="!isAuthenticated()">
-        <button mat-raised-button color="accent" routerLink="/login" class="login-btn">
-          <mat-icon>login</mat-icon>
-          Login
-        </button>
-        <button mat-raised-button color="warn" routerLink="/register" class="register-btn">
-          <mat-icon>person_add</mat-icon>
-          Register
-        </button>
-      </ng-container>
-    </div>
-  </div>
-</mat-toolbar>
-
 <router-outlet></router-outlet>
 <app-admin-approval-popup></app-admin-approval-popup>
 <app-chatbot *ngIf="showNavbar"></app-chatbot>

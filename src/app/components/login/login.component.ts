@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
@@ -18,14 +19,6 @@ export class LoginComponent implements OnInit {
   statusMessage = '';
   statusError = '';
   showStatusCheck = false;
-  
-  // New UI properties
-  showPassword = false;
-  rememberMe = false;
-  
-  // Multi-step interface
-  currentStep = 1; // 1 = Login, 2 = Status Check
-  statusCheckEmail = '';
 
   constructor(
     private formBuilder: FormBuilder,
@@ -72,11 +65,6 @@ export class LoginComponent implements OnInit {
 
   get f() { return this.loginForm.controls; }
 
-  // Toggle password visibility
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
-  }
-
   onSubmit(): void {
     if (this.loginForm.invalid) {
       return;
@@ -110,21 +98,7 @@ export class LoginComponent implements OnInit {
       });
   }
 
-  // Navigate to status check step
-  goToStatusCheck(): void {
-    this.currentStep = 2;
-    this.statusMessage = '';
-    this.statusError = '';
-  }
-  
-  // Go back to login step
-  goBackToLogin(): void {
-    this.currentStep = 1;
-    this.statusMessage = '';
-    this.statusError = '';
-  }
-  
-  // Toggle registration status check section (legacy method)
+  // Toggle registration status check section
   toggleStatusCheck(): void {
     this.showStatusCheck = !this.showStatusCheck;
     this.statusMessage = '';
@@ -133,7 +107,7 @@ export class LoginComponent implements OnInit {
 
   // Check registration status
   checkRegistrationStatus(): void {
-    const email = this.currentStep === 2 ? this.statusCheckEmail : this.loginForm.get('email')?.value;
+    const email = this.loginForm.get('email')?.value;
     
     if (!email) {
       this.statusError = 'Please enter your email address first';

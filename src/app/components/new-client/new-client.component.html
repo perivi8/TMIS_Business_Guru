@@ -2,12 +2,6 @@
   <div *ngIf="error" class="error">{{ error }}</div>
   <div *ngIf="success" class="success">{{ success }}</div>
 
-  <!-- Show client name from enquiry data -->
-  <div *ngIf="extractedData.enquiryData" class="enquiry-header">
-    <h2>Creating Client from Enquiry: {{ extractedData.enquiryData.legal_name || extractedData.enquiryData.user_name }}</h2>
-    <p><strong>Mobile:</strong> {{ extractedData.enquiryData.mobile_number }}</p>
-  </div>
-
   <mat-card>
     <div *ngIf="!formsInitialized" class="loading-forms">
       <mat-spinner diameter="40"></mat-spinner>
@@ -58,14 +52,22 @@
                 </div>
               </div>
 
+              <!-- Registration Number -->
               <div class="form-group">
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Registration Number *</mat-label>
                   <input matInput formControlName="registration_number" placeholder="Enter registration number">
+                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
+                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
+                  </button>
                   <mat-error *ngIf="step1Form.get('registration_number')?.invalid && step1Form.get('registration_number')?.touched">
                     Registration number is required
                   </mat-error>
                 </mat-form-field>
+                <div *ngIf="isExtractingData" class="extracting-indicator">
+                  <mat-spinner diameter="20"></mat-spinner>
+                  <span>Extracting data from GST document...</span>
+                </div>
               </div>
 
               <!-- Legal Name -->
@@ -73,6 +75,9 @@
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Legal Name *</mat-label>
                   <input matInput formControlName="legal_name" placeholder="Enter legal business name">
+                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
+                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
+                  </button>
                   <mat-error *ngIf="step1Form.get('legal_name')?.invalid && step1Form.get('legal_name')?.touched">
                     Legal name is required
                   </mat-error>
@@ -84,6 +89,9 @@
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Trade Name / Business Name *</mat-label>
                   <input matInput formControlName="trade_name" placeholder="Enter trade or business name">
+                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
+                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
+                  </button>
                   <mat-error *ngIf="step1Form.get('trade_name')?.invalid && step1Form.get('trade_name')?.touched">
                     Trade name is required
                   </mat-error>
@@ -100,6 +108,9 @@
                 <mat-form-field appearance="outline" style="width: 100%;">
                   <mat-label>Address *</mat-label>
                   <textarea matInput formControlName="address" rows="2" placeholder="Enter complete address"></textarea>
+                  <button mat-icon-button matSuffix (click)="extractGstData()" [disabled]="isExtractingData" title="Extract data from GST document">
+                    <mat-icon [ngClass]="{'rotating': isExtractingData}">auto_fix_high</mat-icon>
+                  </button>
                   <mat-error *ngIf="step1Form.get('address')?.invalid && step1Form.get('address')?.touched">
                     Address is required
                   </mat-error>
@@ -179,20 +190,20 @@
                 <div class="form-group">
                   <mat-form-field appearance="outline">
                     <mat-label>Primary Mobile Number *</mat-label>
-                    <input matInput formControlName="mobile_number" placeholder="9876543210" maxlength="15">
+                    <input matInput formControlName="mobile_number" placeholder="9876543210" maxlength="10">
                     <mat-icon matSuffix>phone</mat-icon>
                     <mat-error *ngIf="step1Form.get('mobile_number')?.invalid && step1Form.get('mobile_number')?.touched">
-                      Please enter a valid mobile number (10-15 digits)
+                      Please enter a valid 10-digit mobile number
                     </mat-error>
                   </mat-form-field>
                 </div>
                 <div class="form-group">
                   <mat-form-field appearance="outline">
                     <mat-label>Secondary Mobile (Optional)</mat-label>
-                    <input matInput formControlName="optional_mobile_number" placeholder="9876543210" maxlength="15">
+                    <input matInput formControlName="optional_mobile_number" placeholder="9876543210" maxlength="10">
                     <mat-icon matSuffix>phone_android</mat-icon>
                     <mat-error *ngIf="step1Form.get('optional_mobile_number')?.invalid && step1Form.get('optional_mobile_number')?.touched">
-                      Please enter a valid mobile number (10-15 digits)
+                      Please enter a valid 10-digit mobile number
                     </mat-error>
                   </mat-form-field>
                 </div>

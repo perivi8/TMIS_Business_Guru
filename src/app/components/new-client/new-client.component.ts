@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ClientService } from '../../services/client.service';
 import { UserService, User } from '../../services/user.service';
-import { EnquiryService } from '../../services/enquiry.service';
 
 @Component({
   selector: 'app-new-client',
@@ -122,90 +121,19 @@ export class NewClientComponent implements OnInit {
   transactionMonths = 6;
   
   extractedData: any = {};
+  isExtractingData = false;
 
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
     private clientService: ClientService,
-    private userService: UserService,
-    private enquiryService: EnquiryService
+    private userService: UserService
   ) { }
 
   ngOnInit(): void {
-    // Initialize forms first
     this.initializeForms();
-    console.log('Forms initialized');
-    
-    // Check if there's enquiry data passed from the enquiry page
-    if (history.state && history.state.enquiryData) {
-      const enquiryData = history.state.enquiryData;
-      console.log('Found enquiry data in history state:', enquiryData);
-      // Store enquiry data for later use
-      this.extractedData.enquiryData = enquiryData;
-      // Pre-fill the form with enquiry data
-      this.prefillEnquiryData(enquiryData);
-    } else {
-      console.log('No enquiry data found in history state');
-    }
-    
     this.loadStaffMembers();
     this.filteredBankNames = [];
-  }
-
-  // New method to pre-fill form with enquiry data
-  prefillEnquiryData(enquiryData: any): void {
-    console.log('Prefilling enquiry data:', enquiryData);
-    if (enquiryData) {
-      // Pre-fill step 1 form
-      if (this.step1Form) {
-        // Format mobile number to ensure it's valid
-        let mobileNumber = enquiryData.mobile_number || '';
-        console.log('Original mobile number:', mobileNumber);
-        
-        // Remove any non-digit characters
-        mobileNumber = mobileNumber.replace(/\D/g, '');
-        console.log('Cleaned mobile number:', mobileNumber);
-        
-        this.step1Form.patchValue({
-          legal_name: enquiryData.legal_name || '',
-          trade_name: enquiryData.legal_name || '',
-          mobile_number: mobileNumber,
-          optional_mobile_number: enquiryData.secondary_mobile_number || ''
-        });
-        
-        // Log the form values after patching
-        console.log('Form values after patching mobile:', this.step1Form.value);
-      }
-      
-      // Pre-fill step 1 form with GST status mapping
-      if (this.step1Form) {
-        let gstStatusValue = '';
-        
-        // Map enquiry GST data to new client GST status
-        if (enquiryData.gst === 'Yes') {
-          if (enquiryData.gst_status === 'Active') {
-            gstStatusValue = 'Active';
-          } else if (enquiryData.gst_status === 'Cancel') {
-            gstStatusValue = 'Cancelled';
-          } else if (enquiryData.gst_status === 'Not Active') {
-            gstStatusValue = 'Not Active';
-          } else {
-            gstStatusValue = 'Not Active'; // Default for any other status when GST is Yes
-          }
-        } else if (enquiryData.gst === 'No') {
-          gstStatusValue = 'No GST';
-        }
-        
-        console.log('Mapping GST status - enquiry gst:', enquiryData.gst, 'enquiry gst_status:', enquiryData.gst_status, 'mapped value:', gstStatusValue);
-        
-        this.step1Form.patchValue({
-          gst_status: gstStatusValue
-        });
-        
-        // Log the form values after patching GST status
-        console.log('Form values after patching GST status:', this.step1Form.value);
-      }
-    }
   }
 
   initializeForms(): void {
@@ -220,8 +148,8 @@ export class NewClientComponent implements OnInit {
       trade_name: ['', Validators.required],
       user_email: ['', [Validators.email]], // Made optional
       company_email: ['', [Validators.email]], // New optional field
-      mobile_number: ['', [Validators.required, Validators.pattern(/^\d{10,15}$/)]], // Allow 10-15 digits for international numbers
-      optional_mobile_number: ['', [Validators.pattern(/^\d{10,15}$/)]], // Optional mobile number
+      mobile_number: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      optional_mobile_number: ['', [Validators.pattern(/^\d{10}$/)]], // Optional mobile number
       gst_status: ['', Validators.required],
       constitution_type: ['', Validators.required]
     });
@@ -539,22 +467,6 @@ export class NewClientComponent implements OnInit {
     this.clientService.createClient(formData).subscribe({
       next: (response) => {
         this.success = 'Client created successfully!';
-        
-        // If there was enquiry data, sync back to enquiry records and mark as shortlisted
-        if (this.extractedData.enquiryData) {
-          const enquiryData = this.extractedData.enquiryData;
-          if (enquiryData.enquiry_id) {
-            // Update enquiry record with legal name, mark as shortlisted, and block further shortlisting
-            this.syncClientDataToEnquiryById(enquiryData.enquiry_id, {
-              legal_name: this.step1Form.get('legal_name')?.value,
-              business_type: this.step1Form.get('constitution_type')?.value,
-              gst_status: this.step1Form.get('gst_status')?.value,
-              shortlisted: true,
-              shortlisted_at: new Date()
-            });
-          }
-        }
-        
         setTimeout(() => {
           this.router.navigate(['/clients']);
         }, 2000);
@@ -859,6 +771,47 @@ export class NewClientComponent implements OnInit {
   }
 
   /**
+   * Extract data from GST document and fill form fields
+   */
+  extractGstData(): void {
+    if (this.isExtractingData) {
+      return; // Prevent multiple simultaneous requests
+    }
+    
+    if (!this.uploadedFiles['gst_document']) {
+      this.error = 'Please upload a GST document first';
+      return;
+    }
+    
+    this.isExtractingData = true;
+    this.error = '';
+    this.success = '';
+    
+    // Create FormData with the GST document
+    const formData = new FormData();
+    formData.append('gst_document', this.uploadedFiles['gst_document']);
+    
+    // Extract data directly from the document
+    this.clientService.extractGstDataDirect(formData).subscribe({
+      next: (response) => {
+        this.isExtractingData = false;
+        if (response.success && response.extracted_data) {
+          this.extractedData = response.extracted_data;
+          this.fillFormWithExtractedData(response.extracted_data);
+          this.success = 'GST data extracted successfully!';
+        } else {
+          this.error = response.error || 'Failed to extract GST data';
+        }
+      },
+      error: (error) => {
+        this.isExtractingData = false;
+        this.error = error.message || 'Failed to extract GST data. Please make sure the backend service is running and try again.';
+        console.error('Error extracting GST data:', error);
+      }
+    });
+  }
+  
+  /**
    * Fill form fields with extracted data
    */
   fillFormWithExtractedData(data: any): void {
@@ -912,52 +865,5 @@ export class NewClientComponent implements OnInit {
     
     // Force validation update
     this.step1Form.updateValueAndValidity();
-  }
-
-  // New method to sync client data back to enquiry records
-  syncClientDataToEnquiry(mobileNumber: string, clientData: any): void {
-    this.enquiryService.getAllEnquiries().subscribe((enquiries: any[]) => {
-      // Find the enquiry with matching mobile number
-      const matchingEnquiry = enquiries.find(enquiry => enquiry.mobile_number === mobileNumber);
-      
-      if (matchingEnquiry && matchingEnquiry._id) {
-        // Update the enquiry with legal name and other data
-        const updateData = {
-          legal_name: clientData.legal_name,
-          business_type: clientData.business_type,
-          gst_status: clientData.gst_status
-        };
-        
-        this.enquiryService.updateEnquiry(matchingEnquiry._id, updateData).subscribe({
-          next: (updatedEnquiry: any) => {
-            console.log('Enquiry updated with client data:', updatedEnquiry);
-          },
-          error: (error: any) => {
-            console.error('Error updating enquiry:', error);
-          }
-        });
-      }
-    });
-  }
-
-  // New method to sync client data back to enquiry records using enquiry ID
-  syncClientDataToEnquiryById(enquiryId: string, clientData: any): void {
-    // Update the enquiry with legal name, shortlisted status and other data
-    const updateData = {
-      legal_name: clientData.legal_name,
-      business_type: clientData.business_type,
-      gst_status: clientData.gst_status,
-      shortlisted: clientData.shortlisted || false,
-      shortlisted_at: clientData.shortlisted_at || null
-    };
-    
-    this.enquiryService.updateEnquiry(enquiryId, updateData).subscribe({
-      next: (updatedEnquiry: any) => {
-        console.log('Enquiry updated with client data and shortlisted status using ID:', updatedEnquiry);
-      },
-      error: (error: any) => {
-        console.error('Error updating enquiry by ID:', error);
-      }
-    });
   }
 }

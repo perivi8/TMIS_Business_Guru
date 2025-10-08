@@ -51,7 +51,6 @@ import { EnquiryComponent } from './components/enquiry/enquiry.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { AdminApprovalPopupComponent } from './components/admin-approval-popup/admin-approval-popup.component';
 import { ChatbotComponent } from './components/chatbot/chatbot.component';
-import { PublicEnquiryComponent } from './components/public-enquiry/public-enquiry.component';
 
 // Interceptors
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -79,8 +78,7 @@ import { SocketService } from './services/socket.service';
     EnquiryComponent,
     ForgotPasswordComponent,
     AdminApprovalPopupComponent,
-    ChatbotComponent,
-    PublicEnquiryComponent
+    ChatbotComponent
   ],
   imports: [
     BrowserModule,

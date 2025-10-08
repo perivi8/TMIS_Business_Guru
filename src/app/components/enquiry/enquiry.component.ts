@@ -168,6 +168,14 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadEnquiries();
     this.loadStaffMembers();
+    
+    // Listen for client updates to refresh the enquiry list
+    this.clientService.clientUpdated$.subscribe(clientId => {
+      if (clientId) {
+        // A client was updated/created, refresh enquiries to update clientExists status
+        this.loadEnquiries();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -1061,6 +1069,11 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     
     // Enable shortlist button only if both conditions are met
     return isVerified && hasActiveGst;
+  }
+
+  // Method to refresh enquiries after client creation
+  refreshEnquiries(): void {
+    this.loadEnquiries();
   }
 
 }

@@ -113,27 +113,47 @@ export class EditClientComponent implements OnInit {
       console.log('✅ ClientForm initialized successfully:', !!this.clientForm);
     } catch (error) {
       console.error('❌ Error initializing clientForm:', error);
-      // Fallback initialization
-      this.clientForm = this.fb.group({});
+      // Fallback initialization with basic controls to prevent missingFormException
+      this.clientForm = this.fb.group({
+        legal_name: [''],
+        mobile_number: ['']
+      });
     }
   }
 
   ngOnInit(): void {
     // Ensure form is initialized before proceeding
-    if (!this.clientForm) {
+    if (!this.clientForm || !this.clientForm.controls) {
       console.error('❌ ClientForm not initialized in ngOnInit, attempting to reinitialize...');
-      this.clientForm = this.initForm();
+      try {
+        this.clientForm = this.initForm();
+        console.log('✅ ClientForm reinitialized successfully');
+      } catch (error) {
+        console.error('❌ Failed to reinitialize clientForm:', error);
+        // Create a minimal form as fallback
+        this.clientForm = this.fb.group({
+          legal_name: [''],
+          mobile_number: ['']
+        });
+      }
     }
     
     console.log('🔍 NgOnInit - ClientForm status:', !!this.clientForm);
+    console.log('🔍 NgOnInit - ClientForm controls:', this.clientForm ? Object.keys(this.clientForm.controls).length : 0);
     
-    this.loadClientDetails();
+    // Force change detection to ensure form is ready
+    this.cdr.detectChanges();
     
-    // Initialize partner arrays
-    for (let i = 0; i < 10; i++) {
-      this.partnerNames[i] = '';
-      this.partnerDobs[i] = '';
-    }
+    // Add a small delay to ensure form is fully initialized
+    setTimeout(() => {
+      this.loadClientDetails();
+      
+      // Initialize partner arrays
+      for (let i = 0; i < 10; i++) {
+        this.partnerNames[i] = '';
+        this.partnerDobs[i] = '';
+      }
+    }, 0);
   }
 
   private initForm(): FormGroup {
@@ -223,9 +243,15 @@ export class EditClientComponent implements OnInit {
     for (let i = 0; i < 10; i++) {
       const nameControl = `partner_name_${i}`;
       const dobControl = `partner_dob_${i}`;
-      form.addControl(nameControl, this.fb.control(''));
-      form.addControl(dobControl, this.fb.control(''));
-      console.log(`Added form controls: ${nameControl}, ${dobControl}`);
+      
+      // Only add control if it doesn't already exist
+      if (!form.get(nameControl)) {
+        form.addControl(nameControl, this.fb.control(''));
+      }
+      if (!form.get(dobControl)) {
+        form.addControl(dobControl, this.fb.control(''));
+      }
+      console.log(`Ensured form controls exist: ${nameControl}, ${dobControl}`);
     }
     console.log('All partner controls initialized. Form controls:', Object.keys(form.controls));
   }
@@ -265,7 +291,32 @@ export class EditClientComponent implements OnInit {
             console.log(`Found partner document reference in client: ${key}`, (response.client as any)[key]);
           }
         });
-        this.populateForm(response.client);
+        // Ensure form is ready before populating
+        if (!this.clientForm || !this.clientForm.controls) {
+          console.warn('⚠️ ClientForm not ready, reinitializing before population...');
+          try {
+            this.clientForm = this.initForm();
+          } catch (initError) {
+            console.error('❌ Error reinitializing form:', initError);
+            // Create minimal form as fallback
+            this.clientForm = this.fb.group({
+              legal_name: [''],
+              mobile_number: ['']
+            });
+          }
+        }
+        
+        // Add a small delay to ensure form is fully ready
+        setTimeout(() => {
+          this.populateForm(response.client);
+          
+          // Force change detection after population
+          this.cdr.detectChanges();
+        }, 0);
+        
+        // Force change detection after population
+        this.cdr.detectChanges();
+        
         this.loading = false;
       },
       error: (error) => {
@@ -280,6 +331,12 @@ export class EditClientComponent implements OnInit {
     console.log('Client data:', client);
     console.log('Website value:', client.website);
     
+    // Safety check - ensure form exists
+    if (!this.clientForm) {
+      console.error('❌ Form not initialized, cannot populate');
+      return;
+    }
+    
     // Determine Business PAN status based on existing documents and constitution type
     const hasBusinessPanDocument = this.hasExistingDocument('business_pan_document');
     const isPrivateLimited = client.constitution_type === 'Private Limited';
@@ -288,7 +345,11 @@ export class EditClientComponent implements OnInit {
     // Set IE Code status based on document existence
     const ieCodeStatus = this.getIECodeDocument() ? 'Yes' : 'No';
     
-    this.clientForm.patchValue({
+    // Create a safe patch value object with only existing controls
+    const patchData: any = {};
+    const formControls = this.clientForm.controls;
+    
+    const clientData = {
       legal_name: client.legal_name || '',
       trade_name: client.trade_name || '',
       user_name: client.user_name || '',
@@ -349,7 +410,17 @@ export class EditClientComponent implements OnInit {
       // Owner Details
       owner_name: client.owner_name || '',
       owner_dob: client.owner_dob || ''
+    };
+    
+    // Only add fields that exist in the form
+    Object.keys(clientData).forEach(key => {
+      if (formControls[key]) {
+        patchData[key] = (clientData as any)[key];
+      }
     });
+    
+    console.log('Patching form with data:', patchData);
+    this.clientForm.patchValue(patchData);
     
     // Initialize payment gateways - handle both array and JSON string formats
     const paymentGateways = (client as any).payment_gateways;
@@ -778,43 +849,18 @@ export class EditClientComponent implements OnInit {
     console.log('company_email from form:', formValue.company_email);
     console.log('optional_mobile_number from form:', formValue.optional_mobile_number);
     
-    // Fields that should always be included, even if empty
-    const alwaysIncludeFields = ['account_name', 'registration_number', 'company_email', 'optional_mobile_number'];
-    
-    // Only send fields that have actually changed or are in the always include list
+    // Send all form fields to ensure proper WhatsApp message triggering
     Object.keys(formValue).forEach(key => {
       const value = formValue[key];
       
-      // Check if this is a field that should always be included
-      const isAlwaysIncludeField = alwaysIncludeFields.includes(key);
+      // Debug the specific fields we're tracking
+      console.log(`Adding field to FormData - ${key}: ${value}`);
       
-      // For always include fields, send them even if empty
-      if (isAlwaysIncludeField) {
-        // Debug the specific fields we're tracking
-        console.log(`Adding always include field to FormData - ${key}: ${value}`);
-        
-        // For nested objects, stringify them
-        if (typeof value === 'object' && value !== null) {
-          formData.append(key, JSON.stringify(value));
-        } else {
-          formData.append(key, value ? value.toString() : '');
-        }
+      // For nested objects, stringify them
+      if (typeof value === 'object' && value !== null) {
+        formData.append(key, JSON.stringify(value));
       } else {
-        // For other fields, only send them if they have a value
-        if (value !== null && value !== undefined && value !== '') {
-          // Debug the specific fields we're tracking
-          console.log(`Adding non-empty field to FormData - ${key}: ${value}`);
-          
-          // For nested objects, stringify them
-          if (typeof value === 'object' && value !== null) {
-            formData.append(key, JSON.stringify(value));
-          } else {
-            formData.append(key, value.toString());
-          }
-        } else {
-          // Log when fields are empty/null/undefined and not in always include list
-          console.log(`NOT adding to FormData - ${key}: ${value} (empty/null/undefined)`);
-        }
+        formData.append(key, value !== null && value !== undefined ? value.toString() : '');
       }
     });
 
@@ -840,36 +886,86 @@ export class EditClientComponent implements OnInit {
       next: (response: any) => {
         this.saving = false;
         
+        console.log('✅ Client update response:', response);
+        console.log('📱 WhatsApp status in response:', {
+          whatsapp_sent: response.whatsapp_sent,
+          whatsapp_quota_exceeded: response.whatsapp_quota_exceeded,
+          whatsapp_error: response.whatsapp_error
+        });
+        
         // Check if this was a comment update and handle WhatsApp status
         const isCommentUpdate = formValue.comments !== undefined;
         
         if (isCommentUpdate) {
           // Handle comment update with WhatsApp status
-          if (response.whatsapp_sent) {
-            this.snackBar.open('Comment updated successfully, WhatsApp message sent', 'Close', { duration: 4000 });
-          } else if (response.whatsapp_quota_exceeded) {
-            this.snackBar.open('Comment updated successfully, WhatsApp message not sent due to limit reached', 'Close', { duration: 5000 });
+          if (response.whatsapp_sent === true) {
+            this.snackBar.open('✅ Comment updated successfully, WhatsApp message sent!', 'Close', { 
+              duration: 4000,
+              panelClass: ['success-snackbar']
+            });
+          } else if (response.whatsapp_quota_exceeded === true) {
+            this.snackBar.open('⚠️ Comment updated successfully, WhatsApp limit reached - upgrade plan to send more messages', 'Close', { 
+              duration: 6000,
+              panelClass: ['warning-snackbar']
+            });
           } else if (response.whatsapp_error) {
-            this.snackBar.open('Comment updated successfully, WhatsApp message failed', 'Close', { duration: 4000 });
+            this.snackBar.open(`❌ Comment updated successfully, WhatsApp error: ${response.whatsapp_error}`, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          } else if (response.whatsapp_sent === false) {
+            this.snackBar.open('⚠️ Comment updated successfully, WhatsApp message failed to send', 'Close', { 
+              duration: 4000,
+              panelClass: ['warning-snackbar']
+            });
           } else {
-            this.snackBar.open('Comment updated successfully', 'Close', { duration: 3000 });
+            this.snackBar.open('✅ Comment updated successfully', 'Close', { duration: 3000 });
           }
         } else {
-          // Handle regular update
-          if (response.whatsapp_sent) {
-            this.snackBar.open('Client updated successfully, WhatsApp message sent', 'Close', { duration: 4000 });
-          } else if (response.whatsapp_quota_exceeded) {
-            this.snackBar.open('Client updated successfully, WhatsApp message not sent due to limit reached', 'Close', { duration: 5000 });
+          // Handle regular update with enhanced WhatsApp feedback
+          if (response.whatsapp_sent === true) {
+            this.snackBar.open('✅ Client updated successfully, WhatsApp notifications sent!', 'Close', { 
+              duration: 4000,
+              panelClass: ['success-snackbar']
+            });
+          } else if (response.whatsapp_quota_exceeded === true) {
+            this.snackBar.open('⚠️ Client updated successfully, WhatsApp limit reached - upgrade plan to send more messages', 'Close', { 
+              duration: 6000,
+              panelClass: ['warning-snackbar']
+            });
+          } else if (response.whatsapp_error) {
+            this.snackBar.open(`❌ Client updated successfully, WhatsApp error: ${response.whatsapp_error}`, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          } else if (response.whatsapp_sent === false) {
+            this.snackBar.open('⚠️ Client updated successfully, WhatsApp messages failed to send', 'Close', { 
+              duration: 4000,
+              panelClass: ['warning-snackbar']
+            });
           } else {
-            this.snackBar.open('Client updated successfully', 'Close', { duration: 3000 });
+            this.snackBar.open('✅ Client updated successfully', 'Close', { duration: 3000 });
           }
         }
         
         this.router.navigate(['/client-detail', this.clientId]);
       },
       error: (error) => {
-        console.error('Error updating client:', error);
-        this.snackBar.open('Error updating client', 'Close', { duration: 3000 });
+        console.error('❌ Error updating client:', error);
+        console.error('Error details:', error);
+        
+        // Handle specific error cases
+        if (error.status === 466 || (error.error && error.error.includes && error.error.includes('quota exceeded'))) {
+          this.snackBar.open('⚠️ Client update failed: WhatsApp quota exceeded - upgrade plan', 'Close', { 
+            duration: 5000,
+            panelClass: ['warning-snackbar']
+          });
+        } else {
+          this.snackBar.open('❌ Error updating client: ' + (error.message || 'Unknown error'), 'Close', { 
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+        }
         this.saving = false;
       }
     });

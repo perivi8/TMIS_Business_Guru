@@ -167,7 +167,14 @@ export class ClientService implements OnDestroy {
     return this.http.post<any>(`${environment.apiUrl}/clients`, formData, {
       headers: this.getFormHeaders(),
       withCredentials: true
-    });
+    }).pipe(
+      tap(response => {
+        // Notify other components about client creation
+        if (response && response.client_id) {
+          this.clientUpdatedSubject.next(response.client_id);
+        }
+      })
+    );
   }
 
   getClients(): Observable<{ clients: Client[] }> {
@@ -330,6 +337,12 @@ export class ClientService implements OnDestroy {
         // Notify other components about client update if successful
         if (response && (response.success !== false)) {
           this.clientUpdatedSubject.next(clientId);
+        }
+        
+        // Also notify about any WhatsApp messages sent
+        if (response && response.whatsapp_sent !== undefined) {
+          // This will trigger any WhatsApp-related UI updates
+          console.log('WhatsApp notification status:', response.whatsapp_sent);
         }
       })
     );

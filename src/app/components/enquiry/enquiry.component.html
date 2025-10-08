@@ -267,9 +267,7 @@
           <input matInput [(ngModel)]="searchTerm" (keyup)="applyFilters()" placeholder="Search by name, mobile, staff...">
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
-        <button mat-icon-button class="add-icon-button" (click)="showAddForm()" matTooltip="Add New Enquiry">
-          <mat-icon>add</mat-icon>
-        </button>
+
       </div>
     </mat-card-header>
     <mat-card-content>
@@ -320,38 +318,65 @@
         <ng-container matColumnDef="gst">
           <th mat-header-cell *matHeaderCellDef class="header-cell">GST</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <span class="gst-badge" [class.gst-yes]="enquiry.gst === 'Yes'" [class.gst-no]="enquiry.gst === 'No'" [class.gst-not-selected]="enquiry.gst === 'Not Selected' || !enquiry.gst">
-              {{ enquiry.gst || 'Not Selected' }}
-              <span *ngIf="enquiry.gst === 'Yes' && enquiry.gst_status" class="gst-status">
-                ({{ enquiry.gst_status }})
-              </span>
-            </span>
+            <div class="gst-container">
+              <mat-select [(value)]="enquiry.gst" placeholder="Select GST (Optional)" (selectionChange)="onGstChangeForEnquiry(enquiry, $event.value)">
+                <mat-option value="">Select GST</mat-option>
+                <mat-option value="Yes">Yes</mat-option>
+                <mat-option value="No">No</mat-option>
+              </mat-select>
+              <mat-select *ngIf="enquiry.gst === 'Yes'" [(value)]="enquiry.gst_status" placeholder="Select Status">
+                <mat-option value="Active">Active</mat-option>
+                <mat-option value="Cancel">Cancel</mat-option>
+                <mat-option value="In Active">In Active</mat-option>
+              </mat-select>
+            </div>
           </td>
         </ng-container>
 
         <!-- Business Type Column -->
         <ng-container matColumnDef="business_type">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Business Type</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.business_type || '-' }}</td>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">
+            <mat-select [(value)]="enquiry.business_type" placeholder="Select Business Type (Optional)">
+              <mat-option value="">Select Business Type</mat-option>
+              <mat-option *ngFor="let type of businessTypeOptions" [value]="type">
+                {{ type }}
+              </mat-option>
+            </mat-select>
+          </td>
         </ng-container>
 
         <!-- Business Nature Column -->
         <ng-container matColumnDef="business_nature">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Business Nature</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.business_nature || '-' }}</td>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">
+            <mat-form-field appearance="outline" class="business-nature-field">
+              <input matInput [(ngModel)]="enquiry.business_nature" placeholder="Enter business nature (optional)" />
+            </mat-form-field>
+          </td>
         </ng-container>
 
         <!-- Staff Column -->
         <ng-container matColumnDef="staff">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Staff</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.staff }}</td>
+          <td mat-cell *matCellDef="let enquiry" class="data-cell">
+            <mat-select [(value)]="enquiry.staff" placeholder="Select Staff">
+              <mat-option *ngFor="let staff of staffMembers" [value]="staff.username || staff.email">
+                {{ staff.username || staff.email }}
+              </mat-option>
+            </mat-select>
+          </td>
         </ng-container>
 
         <!-- Comments Column -->
         <ng-container matColumnDef="comments">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Comments</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <span class="comment-badge">{{ enquiry.comments }}</span>
+            <mat-select [(value)]="enquiry.comments" placeholder="Select Comment">
+              <mat-option *ngFor="let comment of commentOptions" [value]="comment">
+                {{ comment }}
+              </mat-option>
+            </mat-select>
           </td>
         </ng-container>
 
@@ -381,9 +406,9 @@
         <ng-container matColumnDef="additional_comments">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Additional Comments</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <span class="additional-comment" [title]="enquiry.additional_comments">
-              {{ enquiry.additional_comments || '-' }}
-            </span>
+            <mat-form-field appearance="outline" class="additional-comments-field">
+              <textarea matInput [(ngModel)]="enquiry.additional_comments" placeholder="Enter additional comments (optional)" rows="3"></textarea>
+            </mat-form-field>
           </td>
         </ng-container>
 
@@ -392,9 +417,6 @@
           <th mat-header-cell *matHeaderCellDef class="header-cell">Actions</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
             <div class="action-buttons">
-              <button mat-icon-button color="primary" (click)="editEnquiry(enquiry)" matTooltip="Edit">
-                <mat-icon>edit</mat-icon>
-              </button>
               <button mat-icon-button color="warn" (click)="deleteEnquiry(enquiry)" matTooltip="Delete">
                 <mat-icon>delete</mat-icon>
               </button>
@@ -418,10 +440,7 @@
       <mat-icon>inbox</mat-icon>
       <h3>No Enquiries Found</h3>
       <p>{{ searchTerm ? 'No enquiries match your search criteria.' : 'Start by adding your first enquiry.' }}</p>
-      <button mat-raised-button color="primary" (click)="showAddForm()" *ngIf="!searchTerm">
-        <mat-icon>add</mat-icon>
-        Add First Enquiry
-      </button>
+
     </div>
     </mat-card-content>
   </mat-card>

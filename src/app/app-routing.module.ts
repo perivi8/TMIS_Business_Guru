@@ -13,6 +13,9 @@ import { ContactUsComponent } from './components/contact-us/contact-us.component
 import { NotificationsComponent } from './components/notifications/notifications.component';
 import { EnquiryComponent } from './components/enquiry/enquiry.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
+import { WhatsappLinkComponent } from './components/whatsapp-link/whatsapp-link.component';
+import { WhatsappPublicComponent } from './components/whatsapp-public/whatsapp-public.component';
+import { WhatsappTestComponent } from './components/whatsapp-test/whatsapp-test.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 
@@ -70,6 +73,18 @@ const routes: Routes = [
     path: 'notifications', 
     component: NotificationsComponent, 
     canActivate: [AuthGuard] 
+  },
+  { 
+    path: 'whatsapp-link', 
+    component: WhatsappLinkComponent 
+  },
+  { 
+    path: 'whatsapp-public', 
+    component: WhatsappPublicComponent 
+  },
+  { 
+    path: 'whatsapp-test', 
+    component: WhatsappTestComponent 
   },
   { path: '**', redirectTo: '/login' }
 ];

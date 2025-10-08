@@ -17,7 +17,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   enquiries: Enquiry[] = [];
   filteredEnquiries: Enquiry[] = [];
   displayedColumns: string[] = [
-    'sno', 'date', 'wati_name', 'user_name', 'mobile_number', 
+    'sno', 'date', 'wati_name', 'mobile_number', 
     'secondary_mobile_number', 'gst', 'business_type', 'business_nature', 'staff', 
     'comments', 'whatsapp_status', 'additional_comments', 'actions'
   ];
@@ -276,6 +276,58 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     
     // For new enquiries, check all existing mobile numbers
     return this.enquiries.some(enquiry => enquiry.mobile_number === mobileNumber);
+  }
+
+  // Update business type for an enquiry
+  updateBusinessType(enquiry: Enquiry, businessType: string): void {
+    enquiry.business_type = businessType;
+    // Here you would typically call a service to update the enquiry in the backend
+    // For now, we'll just log the change
+    console.log(`Business type updated for enquiry ${enquiry._id}: ${businessType}`);
+  }
+
+  // Update business nature for an enquiry
+  updateBusinessNature(enquiry: Enquiry, businessNature: string): void {
+    enquiry.business_nature = businessNature;
+    // Here you would typically call a service to update the enquiry in the backend
+    // For now, we'll just log the change
+    console.log(`Business nature updated for enquiry ${enquiry._id}: ${businessNature}`);
+  }
+
+  // Update staff for an enquiry
+  updateStaff(enquiry: Enquiry, staff: string): void {
+    enquiry.staff = staff;
+    // Here you would typically call a service to update the enquiry in the backend
+    // For now, we'll just log the change
+    console.log(`Staff updated for enquiry ${enquiry._id}: ${staff}`);
+  }
+
+  // Update comments for an enquiry
+  updateComments(enquiry: Enquiry, comments: string): void {
+    enquiry.comments = comments;
+    // Here you would typically call a service to update the enquiry in the backend
+    // For now, we'll just log the change
+    console.log(`Comments updated for enquiry ${enquiry._id}: ${comments}`);
+  }
+
+  // Update additional comments for an enquiry
+  updateAdditionalComments(enquiry: Enquiry, additionalComments: string): void {
+    enquiry.additional_comments = additionalComments;
+    // Here you would typically call a service to update the enquiry in the backend
+    // For now, we'll just log the change
+    console.log(`Additional comments updated for enquiry ${enquiry._id}: ${additionalComments}`);
+  }
+
+  // Handle GST change for an enquiry
+  onGstChangeForEnquiry(enquiry: Enquiry, gstValue: 'Yes' | 'No' | 'Not Selected' | ''): void {
+    enquiry.gst = gstValue;
+    // If GST is not 'Yes', clear the GST status
+    if (gstValue !== 'Yes') {
+      enquiry.gst_status = undefined;
+    }
+    // Here you would typically call a service to update the enquiry in the backend
+    // For now, we'll just log the change
+    console.log(`GST updated for enquiry ${enquiry._id}: ${gstValue}`);
   }
 
   onSortChange(): void {

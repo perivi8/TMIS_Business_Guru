@@ -141,7 +141,7 @@
           <mat-menu #userProfileMenu="matMenu" class="profile-menu">
             <div class="profile-header">
               <mat-icon>person</mat-icon>
-              <span class="username">{{ currentUser?.username || 'User' }}</span>
+              <span class="username">{{ currentUser.username || 'User' }}</span>
             </div>
             <mat-divider></mat-divider>
             <button mat-menu-item (click)="logout()" class="logout-item">
@@ -280,7 +280,7 @@
           <mat-menu #adminProfileMenu="matMenu" class="profile-menu">
             <div class="profile-header">
               <mat-icon>person</mat-icon>
-              <span class="username">{{ currentUser?.username || 'Admin' }}</span>
+              <span class="username">{{ currentUser.username || 'Admin' }}</span>
             </div>
             <mat-divider></mat-divider>
             <button mat-menu-item (click)="logout()" class="logout-item">

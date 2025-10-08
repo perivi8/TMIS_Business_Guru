@@ -35,9 +35,6 @@
           <mat-icon>pie_chart</mat-icon>
           Status
         </a>
-        <button mat-icon-button class="nav-link chatbot-button" (click)="openChatbot()" matTooltip="Gemini AI Assistant" type="button">
-          <mat-icon>auto_awesome</mat-icon>
-        </button>
         <div class="notifications-wrapper">
           <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" (dblclick)="navigateToNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications (Double-click to view all)" type="button">
             <mat-icon [class.shake]="hasUnreadNotifications">notifications_active</mat-icon>
@@ -160,9 +157,6 @@
           <mat-icon>contact_mail</mat-icon>
           Contact Us
         </a>
-        <button mat-icon-button class="nav-link chatbot-button" (click)="openChatbot()" matTooltip="Gemini AI Assistant" type="button">
-          <mat-icon>auto_awesome</mat-icon>
-        </button>
         <div class="notifications-wrapper">
           <button mat-icon-button class="nav-link notifications-button" (click)="toggleNotifications()" (dblclick)="navigateToNotifications()" [class.has-notifications]="hasUnreadNotifications" matTooltip="Notifications (Double-click to view all)" type="button">
             <mat-icon [class.shake]="hasUnreadNotifications">notifications_active</mat-icon>

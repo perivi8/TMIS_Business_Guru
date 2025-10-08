@@ -7,7 +7,6 @@ import { Location } from '@angular/common';
 import { AuthService, User } from '../../services/auth.service';
 import { ClientService, Client } from '../../services/client.service';
 import { NotificationService, Notification } from '../../services/notification.service';
-import { ChatbotService } from '../../services/chatbot.service';
 
 @Component({
   selector: 'app-navbar',
@@ -61,8 +60,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private clientService: ClientService,
     private notificationService: NotificationService,
-    private snackBar: MatSnackBar,
-    private chatbotService: ChatbotService
+    private snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
@@ -554,11 +552,5 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showNotifications = false;
     // Navigate to notifications page
     this.router.navigate(['/notifications']);
-  }
-
-  // Open chatbot dialog
-  openChatbot(): void {
-    console.log('Opening AI chatbot...');
-    this.chatbotService.openChatbot();
   }
 }

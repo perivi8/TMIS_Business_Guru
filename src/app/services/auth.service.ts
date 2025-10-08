@@ -4,28 +4,24 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-// Simplified interfaces with common properties and flexible typing
 export interface User {
-  id?: string;
-  username?: string;
-  email?: string;
-  role?: string;
-  [key: string]: any;
+  id: string;
+  username: string;
+  email: string;
+  role: string;
 }
 
 export interface AuthResponse {
-  access_token?: string;
-  user?: User;
-  [key: string]: any;
+  access_token: string;
+  user: User;
 }
 
 export interface RegistrationStatusResponse {
-  status?: string;
-  message?: string;
+  status: string;
+  message: string;
   username?: string;
   email?: string;
   created_at?: string;
-  [key: string]: any;
 }
 
 @Injectable({
@@ -72,13 +68,13 @@ export class AuthService {
       .pipe(map(response => {
         // Store user details and jwt token in local storage
         localStorage.setItem('currentUser', JSON.stringify(response.user));
-        localStorage.setItem('token', response.access_token || '');
-        this.currentUserSubject.next(response.user || null);
+        localStorage.setItem('token', response.access_token);
+        this.currentUserSubject.next(response.user);
         
         // Start monitoring user status for automatic logout
         this.startUserStatusMonitoring();
         
-        return response.user || {} as User;
+        return response.user;
       }));
   }
 

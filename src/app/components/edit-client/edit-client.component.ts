@@ -157,21 +157,22 @@ export class EditClientComponent implements OnInit {
   }
 
   private initForm(): FormGroup {
+    // Create form with basic controls first to avoid _rawValidators error
     const form = this.fb.group({
       // Personal Information
       legal_name: [''],
       trade_name: [''],
       user_name: [''],
-      user_email: ['', Validators.email],
-      company_email: ['', Validators.email],
-      mobile_number: ['', Validators.pattern('^[0-9]{10}$')],
-      optional_mobile_number: ['', Validators.pattern('^[0-9]{10}$')],
+      user_email: [''],
+      company_email: [''],
+      mobile_number: [''],
+      optional_mobile_number: [''],
       
       // Address Information
       address: [''],
       district: [''],
       state: [''],
-      pincode: ['', Validators.pattern('^[0-9]{6}$')],
+      pincode: [''],
       business_address: [''],
       
       // Business Information
@@ -181,31 +182,31 @@ export class EditClientComponent implements OnInit {
       has_business_pan: [''],
       gst_number: [''],
       gst_status: [''],
-      business_pan: ['', Validators.pattern('^[A-Z]{5}[0-9]{4}[A-Z]{1}$')],
+      business_pan: [''],
       ie_code: [''],
       ie_code_status: [''],
-      website: ['', Validators.pattern('https?://.+')],
+      website: [''],
       business_url: [''],
       
       // Financial Information
-      required_loan_amount: [0, Validators.min(0)],
+      required_loan_amount: [0],
       loan_purpose: [''],
       repayment_period: [''],
-      monthly_income: [0, Validators.min(0)],
+      monthly_income: [0],
       existing_loans: [''],
       
       // Bank Information
       bank_name: [''],
       account_name: [''],
       account_number: [''],
-      ifsc_code: ['', Validators.pattern('^[A-Z]{4}0[A-Z0-9]{6}$')],
+      ifsc_code: [''],
       bank_type: [''],
       new_current_account: [''],
       gateway: [''],
-      transaction_done_by_client: [0, Validators.min(0)],
-      total_credit_amount: [0, Validators.min(0)],
-      average_monthly_balance: [0, Validators.min(0)],
-      transaction_months: [1, Validators.min(1)],
+      transaction_done_by_client: [0],
+      total_credit_amount: [0],
+      average_monthly_balance: [0],
+      transaction_months: [1],
       new_business_account: [''],
       
       // New bank details fields (conditional)
@@ -215,7 +216,7 @@ export class EditClientComponent implements OnInit {
       new_bank_name: [''],
       
       // Partnership Information
-      number_of_partners: [0, Validators.min(0)],
+      number_of_partners: [0],
       
       // GST Details
       registration_number: [''],
@@ -231,8 +232,107 @@ export class EditClientComponent implements OnInit {
       owner_dob: ['']
     });
 
-    // Initialize partner form controls
-    this.initializePartnerControls(form);
+    // Add validators after form creation to avoid _rawValidators error
+    setTimeout(() => {
+      if (form && form.controls) {
+        // Email validators
+        const userEmailControl = form.get('user_email');
+        if (userEmailControl) {
+          userEmailControl.setValidators([Validators.email]);
+        }
+        
+        const companyEmailControl = form.get('company_email');
+        if (companyEmailControl) {
+          companyEmailControl.setValidators([Validators.email]);
+        }
+        
+        // Mobile number validators
+        const mobileNumberControl = form.get('mobile_number');
+        if (mobileNumberControl) {
+          mobileNumberControl.setValidators([Validators.pattern('^[0-9]{10}$')]);
+        }
+        
+        const optionalMobileNumberControl = form.get('optional_mobile_number');
+        if (optionalMobileNumberControl) {
+          optionalMobileNumberControl.setValidators([Validators.pattern('^[0-9]{10}$')]);
+        }
+        
+        // Pincode validator
+        const pincodeControl = form.get('pincode');
+        if (pincodeControl) {
+          pincodeControl.setValidators([Validators.pattern('^[0-9]{6}$')]);
+        }
+        
+        // Business PAN validator
+        const businessPanControl = form.get('business_pan');
+        if (businessPanControl) {
+          businessPanControl.setValidators([Validators.pattern('^[A-Z]{5}[0-9]{4}[A-Z]{1}$')]);
+        }
+        
+        // IFSC code validator
+        const ifscCodeControl = form.get('ifsc_code');
+        if (ifscCodeControl) {
+          ifscCodeControl.setValidators([Validators.pattern('^[A-Z]{4}0[A-Z0-9]{6}$')]);
+        }
+        
+        // Financial validators
+        const requiredLoanAmountControl = form.get('required_loan_amount');
+        if (requiredLoanAmountControl) {
+          requiredLoanAmountControl.setValidators([Validators.min(0)]);
+        }
+        
+        const monthlyIncomeControl = form.get('monthly_income');
+        if (monthlyIncomeControl) {
+          monthlyIncomeControl.setValidators([Validators.min(0)]);
+        }
+        
+        const transactionDoneByClientControl = form.get('transaction_done_by_client');
+        if (transactionDoneByClientControl) {
+          transactionDoneByClientControl.setValidators([Validators.min(0)]);
+        }
+        
+        const totalCreditAmountControl = form.get('total_credit_amount');
+        if (totalCreditAmountControl) {
+          totalCreditAmountControl.setValidators([Validators.min(0)]);
+        }
+        
+        const averageMonthlyBalanceControl = form.get('average_monthly_balance');
+        if (averageMonthlyBalanceControl) {
+          averageMonthlyBalanceControl.setValidators([Validators.min(0)]);
+        }
+        
+        const transactionMonthsControl = form.get('transaction_months');
+        if (transactionMonthsControl) {
+          transactionMonthsControl.setValidators([Validators.min(1)]);
+        }
+        
+        const numberOfPartnersControl = form.get('number_of_partners');
+        if (numberOfPartnersControl) {
+          numberOfPartnersControl.setValidators([Validators.min(0)]);
+        }
+        
+        // Website validator
+        const websiteControl = form.get('website');
+        if (websiteControl) {
+          websiteControl.setValidators([Validators.pattern('https?://.+')]);
+        }
+        
+        // Update validity for all controls
+        Object.keys(form.controls).forEach(key => {
+          const control = form.get(key);
+          if (control) {
+            control.updateValueAndValidity();
+          }
+        });
+      }
+    }, 0);
+
+    // Initialize partner form controls with safety checks
+    setTimeout(() => {
+      if (form && form.controls) {
+        this.initializePartnerControls(form);
+      }
+    }, 0);
     
     return form;
   }
@@ -245,15 +345,15 @@ export class EditClientComponent implements OnInit {
       const dobControl = `partner_dob_${i}`;
       
       // Only add control if it doesn't already exist
-      if (!form.get(nameControl)) {
+      if (form && !form.get(nameControl)) {
         form.addControl(nameControl, this.fb.control(''));
       }
-      if (!form.get(dobControl)) {
+      if (form && !form.get(dobControl)) {
         form.addControl(dobControl, this.fb.control(''));
       }
       console.log(`Ensured form controls exist: ${nameControl}, ${dobControl}`);
     }
-    console.log('All partner controls initialized. Form controls:', Object.keys(form.controls));
+    console.log('All partner controls initialized. Form controls:', form ? Object.keys(form.controls) : []);
   }
 
   private loadClientDetails(): void {
@@ -337,90 +437,97 @@ export class EditClientComponent implements OnInit {
       return;
     }
     
-    // Determine Business PAN status based on existing documents and constitution type
-    const hasBusinessPanDocument = this.hasExistingDocument('business_pan_document');
-    const isPrivateLimited = client.constitution_type === 'Private Limited';
-    const hasBusinessPan = isPrivateLimited ? 'yes' : (client.has_business_pan || (hasBusinessPanDocument ? 'yes' : ''));
-    
-    // Set IE Code status based on document existence
-    const ieCodeStatus = this.getIECodeDocument() ? 'Yes' : 'No';
-    
-    // Create a safe patch value object with only existing controls
-    const patchData: any = {};
-    const formControls = this.clientForm.controls;
-    
-    const clientData = {
-      legal_name: client.legal_name || '',
-      trade_name: client.trade_name || '',
-      user_name: client.user_name || '',
-      user_email: client.user_email || client.email || '',
-      company_email: client.company_email || '',
-      mobile_number: client.mobile_number || '',
-      optional_mobile_number: client.optional_mobile_number || '',
-      address: client.address || '',
-      district: client.district || '',
-      state: client.state || '',
-      pincode: client.pincode || '',
-      business_address: client.business_address || '',
-      business_name: client.business_name || '',
-      business_type: client.business_type || '',
-      constitution_type: client.constitution_type || '',
-      has_business_pan: hasBusinessPan,
-      gst_number: client.gst_number || '',
-      gst_status: client.gst_status || '',
-      business_pan: client.business_pan || '',
-      ie_code: client.ie_code || '',
-      ie_code_status: ieCodeStatus,
-      website: client.website || '',
-      business_url: client.business_url || '',
-      required_loan_amount: client.required_loan_amount || 0,
-      loan_purpose: client.loan_purpose || '',
-      repayment_period: client.repayment_period || '',
-      monthly_income: client.monthly_income || 0,
-      existing_loans: client.existing_loans || '',
-      bank_name: client.bank_name || '',
-      account_name: client.account_name || '',
-      account_number: client.account_number || '',
-      ifsc_code: client.ifsc_code || '',
-      bank_type: client.bank_type || '',
-      new_current_account: client.new_current_account || '',
-      gateway: client.gateway || '',
+    // Add a small delay to ensure form is fully initialized
+    setTimeout(() => {
+      // Determine Business PAN status based on existing documents and constitution type
+      const hasBusinessPanDocument = this.hasExistingDocument('business_pan_document');
+      const isPrivateLimited = client.constitution_type === 'Private Limited';
+      const hasBusinessPan = isPrivateLimited ? 'yes' : (client.has_business_pan || (hasBusinessPanDocument ? 'yes' : ''));
       
-      // New bank details
-      new_bank_account_number: (client as any).new_bank_account_number || '',
-      new_ifsc_code: (client as any).new_ifsc_code || '',
-      new_account_name: (client as any).new_account_name || '',
-      new_bank_name: (client as any).new_bank_name || '',
-      transaction_done_by_client: client.transaction_done_by_client || 0,
-      total_credit_amount: client.total_credit_amount || 0,
-      average_monthly_balance: client.average_monthly_balance || 0,
-      transaction_months: client.transaction_months || 1,
-      new_business_account: client.new_business_account || '',
-      number_of_partners: client.number_of_partners || 0,
+      // Set IE Code status based on document existence
+      const ieCodeStatus = this.getIECodeDocument() ? 'Yes' : 'No';
       
-      // GST Details - Fixed field mapping
-      registration_number: client.registration_number || '',
-      gst_legal_name: client.gst_legal_name || '',
-      gst_trade_name: client.gst_trade_name || '',
+      // Create a safe patch value object with only existing controls
+      const patchData: any = {};
+      const formControls = this.clientForm.controls;
       
-      // Business PAN Details
-      business_pan_name: client.business_pan_name || '',
-      business_pan_date: client.business_pan_date || '',
+      const clientData = {
+        legal_name: client.legal_name || '',
+        trade_name: client.trade_name || '',
+        user_name: client.user_name || '',
+        user_email: client.user_email || client.email || '',
+        company_email: client.company_email || '',
+        mobile_number: client.mobile_number || '',
+        optional_mobile_number: client.optional_mobile_number || '',
+        address: client.address || '',
+        district: client.district || '',
+        state: client.state || '',
+        pincode: client.pincode || '',
+        business_address: client.business_address || '',
+        business_name: client.business_name || '',
+        business_type: client.business_type || '',
+        constitution_type: client.constitution_type || '',
+        has_business_pan: hasBusinessPan,
+        gst_number: client.gst_number || '',
+        gst_status: client.gst_status || '',
+        business_pan: client.business_pan || '',
+        ie_code: client.ie_code || '',
+        ie_code_status: ieCodeStatus,
+        website: client.website || '',
+        business_url: client.business_url || '',
+        required_loan_amount: client.required_loan_amount || 0,
+        loan_purpose: client.loan_purpose || '',
+        repayment_period: client.repayment_period || '',
+        monthly_income: client.monthly_income || 0,
+        existing_loans: client.existing_loans || '',
+        bank_name: client.bank_name || '',
+        account_name: client.account_name || '',
+        account_number: client.account_number || '',
+        ifsc_code: client.ifsc_code || '',
+        bank_type: client.bank_type || '',
+        new_current_account: client.new_current_account || '',
+        gateway: client.gateway || '',
+        
+        // New bank details
+        new_bank_account_number: (client as any).new_bank_account_number || '',
+        new_ifsc_code: (client as any).new_ifsc_code || '',
+        new_account_name: (client as any).new_account_name || '',
+        new_bank_name: (client as any).new_bank_name || '',
+        transaction_done_by_client: client.transaction_done_by_client || 0,
+        total_credit_amount: client.total_credit_amount || 0,
+        average_monthly_balance: client.average_monthly_balance || 0,
+        transaction_months: client.transaction_months || 1,
+        new_business_account: client.new_business_account || '',
+        number_of_partners: client.number_of_partners || 0,
+        
+        // GST Details - Fixed field mapping
+        registration_number: client.registration_number || '',
+        gst_legal_name: client.gst_legal_name || '',
+        gst_trade_name: client.gst_trade_name || '',
+        
+        // Business PAN Details
+        business_pan_name: client.business_pan_name || '',
+        business_pan_date: client.business_pan_date || '',
+        
+        // Owner Details
+        owner_name: client.owner_name || '',
+        owner_dob: client.owner_dob || ''
+      };
       
-      // Owner Details
-      owner_name: client.owner_name || '',
-      owner_dob: client.owner_dob || ''
-    };
-    
-    // Only add fields that exist in the form
-    Object.keys(clientData).forEach(key => {
-      if (formControls[key]) {
-        patchData[key] = (clientData as any)[key];
+      // Only add fields that exist in the form
+      Object.keys(clientData).forEach(key => {
+        if (formControls[key]) {
+          patchData[key] = (clientData as any)[key];
+        }
+      });
+      
+      console.log('Patching form with data:', patchData);
+      
+      // Safety check before patching
+      if (this.clientForm) {
+        this.clientForm.patchValue(patchData);
       }
-    });
-    
-    console.log('Patching form with data:', patchData);
-    this.clientForm.patchValue(patchData);
+    }, 0);
     
     // Initialize payment gateways - handle both array and JSON string formats
     const paymentGateways = (client as any).payment_gateways;
@@ -536,11 +643,15 @@ export class EditClientComponent implements OnInit {
     }
     
     // Apply all partner data at once
-    this.clientForm.patchValue(patchData);
+    if (this.clientForm) {
+      this.clientForm.patchValue(patchData);
+    }
     console.log('Patched all partner data:', patchData);
     
     // Force form update and change detection
-    this.clientForm.updateValueAndValidity();
+    if (this.clientForm) {
+      this.clientForm.updateValueAndValidity();
+    }
     
     // Trigger change detection to ensure form controls update in view
     this.cdr.detectChanges();
@@ -570,18 +681,20 @@ export class EditClientComponent implements OnInit {
   // Debug method to check partner form controls
   debugPartnerFormControls(): void {
     console.log('=== DEBUGGING PARTNER FORM CONTROLS ===');
-    console.log('All form controls:', Object.keys(this.clientForm.controls));
-    
-    for (let i = 0; i < 10; i++) {
-      const nameControlName = `partner_name_${i}`;
-      const dobControlName = `partner_dob_${i}`;
+    if (this.clientForm) {
+      console.log('All form controls:', Object.keys(this.clientForm.controls));
       
-      const nameControl = this.clientForm.get(nameControlName);
-      const dobControl = this.clientForm.get(dobControlName);
-      
-      console.log(`Partner ${i}:`);
-      console.log(`  - ${nameControlName} exists:`, !!nameControl, 'value:', nameControl?.value);
-      console.log(`  - ${dobControlName} exists:`, !!dobControl, 'value:', dobControl?.value);
+      for (let i = 0; i < 10; i++) {
+        const nameControlName = `partner_name_${i}`;
+        const dobControlName = `partner_dob_${i}`;
+        
+        const nameControl = this.clientForm.get(nameControlName);
+        const dobControl = this.clientForm.get(dobControlName);
+        
+        console.log(`Partner ${i}:`);
+        console.log(`  - ${nameControlName} exists:`, !!nameControl, 'value:', nameControl?.value);
+        console.log(`  - ${dobControlName} exists:`, !!dobControl, 'value:', dobControl?.value);
+      }
     }
     console.log('=== END DEBUGGING ===');
   }
@@ -590,19 +703,21 @@ export class EditClientComponent implements OnInit {
   private ensurePartnerControlsExist(): void {
     console.log('=== ENSURING PARTNER CONTROLS EXIST ===');
     
-    for (let i = 0; i < 10; i++) {
-      const nameControlName = `partner_name_${i}`;
-      const dobControlName = `partner_dob_${i}`;
-      
-      // Check if controls exist, if not create them
-      if (!this.clientForm.get(nameControlName)) {
-        console.log(`Creating missing control: ${nameControlName}`);
-        this.clientForm.addControl(nameControlName, this.fb.control(''));
-      }
-      
-      if (!this.clientForm.get(dobControlName)) {
-        console.log(`Creating missing control: ${dobControlName}`);
-        this.clientForm.addControl(dobControlName, this.fb.control(''));
+    if (this.clientForm) {
+      for (let i = 0; i < 10; i++) {
+        const nameControlName = `partner_name_${i}`;
+        const dobControlName = `partner_dob_${i}`;
+        
+        // Check if controls exist, if not create them
+        if (!this.clientForm.get(nameControlName)) {
+          console.log(`Creating missing control: ${nameControlName}`);
+          this.clientForm.addControl(nameControlName, this.fb.control(''));
+        }
+        
+        if (!this.clientForm.get(dobControlName)) {
+          console.log(`Creating missing control: ${dobControlName}`);
+          this.clientForm.addControl(dobControlName, this.fb.control(''));
+        }
       }
     }
     
@@ -616,12 +731,12 @@ export class EditClientComponent implements OnInit {
     console.log(`getPartnerControlName called - type: ${type}, index: ${index}, controlName: ${controlName}`);
     
     // Ensure the control exists
-    if (!this.clientForm.get(controlName)) {
+    if (this.clientForm && !this.clientForm.get(controlName)) {
       console.warn(`Form control ${controlName} does not exist, creating it...`);
       this.clientForm.addControl(controlName, this.fb.control(''));
     }
     
-    const control = this.clientForm.get(controlName);
+    const control = this.clientForm ? this.clientForm.get(controlName) : null;
     console.log(`Form control exists:`, !!control, 'Value:', control?.value);
     
     return controlName;
@@ -629,19 +744,21 @@ export class EditClientComponent implements OnInit {
 
   // Helper method to create array for partner iteration
   getPartnerArray(): number[] {
-    const numPartners = this.clientForm.get('number_of_partners')?.value || 0;
-    const constitutionType = this.clientForm.get('constitution_type')?.value;
+    const numPartners = this.clientForm && this.clientForm.get('number_of_partners') ? this.clientForm.get('number_of_partners')?.value : 0;
+    const constitutionType = this.clientForm && this.clientForm.get('constitution_type') ? this.clientForm.get('constitution_type')?.value : '';
     
     console.log('getPartnerArray called - number_of_partners:', numPartners);
     console.log('Constitution type:', constitutionType);
-    console.log('Form value:', this.clientForm.value);
+    if (this.clientForm) {
+      console.log('Form value:', this.clientForm.value);
+    }
     
     // Check if we have actual partner data
     let actualPartners = 0;
     console.log('Checking for actual partner data:');
     for (let i = 0; i < 10; i++) {
-      const nameValue = this.clientForm.get(`partner_name_${i}`)?.value;
-      const dobValue = this.clientForm.get(`partner_dob_${i}`)?.value;
+      const nameValue = this.clientForm && this.clientForm.get(`partner_name_${i}`) ? this.clientForm.get(`partner_name_${i}`)?.value : '';
+      const dobValue = this.clientForm && this.clientForm.get(`partner_dob_${i}`) ? this.clientForm.get(`partner_dob_${i}`)?.value : '';
       const aadharDoc = this.existingDocuments[`partner_aadhar_${i}`];
       const panDoc = this.existingDocuments[`partner_pan_${i}`];
       
@@ -682,7 +799,7 @@ export class EditClientComponent implements OnInit {
   // Helper methods for safe partner input handling
   getPartnerNameValue(index: number): string {
     const controlName = `partner_name_${index}`;
-    const control = this.clientForm.get(controlName);
+    const control = this.clientForm ? this.clientForm.get(controlName) : null;
     const value = control?.value || '';
     console.log(`getPartnerNameValue(${index}): controlName=${controlName}, controlExists=${!!control}, value='${value}'`);
     return value;
@@ -690,7 +807,7 @@ export class EditClientComponent implements OnInit {
 
   getPartnerDobValue(index: number): string {
     const controlName = `partner_dob_${index}`;
-    const control = this.clientForm.get(controlName);
+    const control = this.clientForm ? this.clientForm.get(controlName) : null;
     const value = control?.value || '';
     console.log(`getPartnerDobValue(${index}): controlName=${controlName}, controlExists=${!!control}, value='${value}'`);
     return value;
@@ -698,14 +815,14 @@ export class EditClientComponent implements OnInit {
 
   onPartnerNameChange(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
-    if (input) {
+    if (input && this.clientForm) {
       this.clientForm.get(`partner_name_${index}`)?.setValue(input.value);
     }
   }
 
   onPartnerDobChange(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
-    if (input) {
+    if (input && this.clientForm) {
       this.clientForm.get(`partner_dob_${index}`)?.setValue(input.value);
     }
   }
@@ -761,7 +878,7 @@ export class EditClientComponent implements OnInit {
 
   onFileSelected(event: Event, documentType: string): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
+    if (input && input.files && input.files[0]) {
       this.documents[documentType] = input.files[0];
     }
   }
@@ -830,7 +947,7 @@ export class EditClientComponent implements OnInit {
   }
 
   saveClient(): void {
-    if (this.clientForm.invalid) {
+    if (this.clientForm && this.clientForm.invalid) {
       this.snackBar.open('Please fill all required fields', 'Close', { duration: 3000 });
       return;
     }
@@ -839,11 +956,11 @@ export class EditClientComponent implements OnInit {
     const formData = new FormData();
 
     // Add form fields
-    const formValue = this.clientForm.getRawValue();
+    const formValue = this.clientForm ? this.clientForm.getRawValue() : {};
     
     // Debug the specific fields we're having issues with
     console.log('=== SAVE CLIENT DEBUGGING ===');
-    console.log('Form is valid:', this.clientForm.valid);
+    console.log('Form is valid:', this.clientForm ? this.clientForm.valid : false);
     console.log('Full form value:', formValue);
     console.log('registration_number from form:', formValue.registration_number);
     console.log('company_email from form:', formValue.company_email);
@@ -1147,132 +1264,41 @@ export class EditClientComponent implements OnInit {
     'Jio Payments Bank', 'NSDL Payments Bank'
   ];
 
-  // New Current Account Management
+  // Payment gateway methods and properties
+  availableGateways = ['Cashfree', 'Easebuzz', 'Razorpay', 'Paytm', 'Stripe'];
+
   onNewCurrentAccountChange(value: string): void {
-    this.hasNewCurrentAccount = value === 'yes';
-    
-    if (this.hasNewCurrentAccount) {
-      // Set validators for new bank details fields
-      this.clientForm.get('new_bank_account_number')?.setValidators([Validators.required]);
-      this.clientForm.get('new_ifsc_code')?.setValidators([Validators.required]);
-      this.clientForm.get('new_account_name')?.setValidators([Validators.required]);
-      this.clientForm.get('new_bank_name')?.setValidators([Validators.required]);
-    } else {
-      // Clear validators and values for new bank details fields
-      this.clientForm.get('new_bank_account_number')?.clearValidators();
-      this.clientForm.get('new_ifsc_code')?.clearValidators();
-      this.clientForm.get('new_account_name')?.clearValidators();
-      this.clientForm.get('new_bank_name')?.clearValidators();
-      
-      this.clientForm.get('new_bank_account_number')?.setValue('');
-      this.clientForm.get('new_ifsc_code')?.setValue('');
-      this.clientForm.get('new_account_name')?.setValue('');
-      this.clientForm.get('new_bank_name')?.setValue('');
+    console.log('New current account changed to:', value);
+    // Handle new current account change if needed
+  }
+
+  onNewBankNameInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input) {
+      const value = input.value.toLowerCase();
+      if (value.length > 2) {
+        this.filteredNewBankNames = this.bankNames.filter(bank => 
+          bank.toLowerCase().includes(value)
+        );
+      } else {
+        this.filteredNewBankNames = [];
+      }
     }
-    
-    // Update validity
-    this.clientForm.get('new_bank_account_number')?.updateValueAndValidity();
-    this.clientForm.get('new_ifsc_code')?.updateValueAndValidity();
-    this.clientForm.get('new_account_name')?.updateValueAndValidity();
-    this.clientForm.get('new_bank_name')?.updateValueAndValidity();
   }
 
-  onNewBankNameInput(event: any): void {
-    const value = event.target.value;
-    this.filterNewBankNames(value);
-  }
-
-  filterNewBankNames(searchTerm: string): void {
-    if (!searchTerm || searchTerm.trim() === '' || searchTerm.length < 2) {
+  selectNewBank(bank: string): void {
+    if (this.clientForm) {
+      this.clientForm.get('new_bank_name')?.setValue(bank);
       this.filteredNewBankNames = [];
-    } else {
-      this.filteredNewBankNames = this.bankNames.filter(bank =>
-        bank.toLowerCase().includes(searchTerm.toLowerCase().trim())
-      ).slice(0, 10);
     }
-  }
-
-  selectNewBank(bankName: string): void {
-    this.clientForm.get('new_bank_name')?.setValue(bankName);
-    this.filteredNewBankNames = [];
-  }
-
-  // Payment Gateway Management
-  availableGateways = [
-    'Razorpay',
-    'PayU',
-    'CCAvenue',
-    'Paytm',
-    'Instamojo',
-    'PayPal',
-    'Stripe',
-    'Cashfree',
-    'PayKun',
-    'EBS',
-    'Atom',
-    'BillDesk',
-    'Easebuzz',
-    'HDFC Payment Gateway',
-    'ICICI Payment Gateway',
-    'SBI ePay',
-    'Axis Bank Payment Gateway'
-  ];
-
-  // Get appropriate icon for each payment gateway
-  getGatewayIcon(gateway: string): string {
-    const iconMap: { [key: string]: string } = {
-      'Razorpay': 'credit_card',
-      'PayU': 'payment',
-      'CCAvenue': 'account_balance_wallet',
-      'Paytm': 'mobile_friendly',
-      'Instamojo': 'storefront',
-      'PayPal': 'account_balance',
-      'Stripe': 'credit_score',
-      'Cashfree': 'monetization_on',
-      'PayKun': 'local_atm',
-      'EBS': 'account_balance_wallet',
-      'Atom': 'payments',
-      'BillDesk': 'receipt_long',
-      'Easebuzz': 'flash_on',
-      'HDFC Payment Gateway': 'account_balance',
-      'ICICI Payment Gateway': 'account_balance',
-      'SBI ePay': 'account_balance',
-      'Axis Bank Payment Gateway': 'account_balance'
-    };
-    return iconMap[gateway] || 'payment';
-  }
-
-  // Get gateway color theme
-  getGatewayColor(gateway: string): string {
-    const colorMap: { [key: string]: string } = {
-      'Razorpay': '#3395ff',
-      'PayU': '#17b978',
-      'CCAvenue': '#ff6b35',
-      'Paytm': '#00baf2',
-      'Instamojo': '#3d5afe',
-      'PayPal': '#0070ba',
-      'Stripe': '#635bff',
-      'Cashfree': '#0d47a1',
-      'PayKun': '#f57c00',
-      'EBS': '#4caf50',
-      'Atom': '#9c27b0',
-      'BillDesk': '#ff5722',
-      'Easebuzz': '#ff9800',
-      'HDFC Payment Gateway': '#004c8f',
-      'ICICI Payment Gateway': '#b8860b',
-      'SBI ePay': '#1976d2',
-      'Axis Bank Payment Gateway': '#8e24aa'
-    };
-    return colorMap[gateway] || 'var(--primary)';
   }
 
   isGatewaySelected(gateway: string): boolean {
     return this.selectedPaymentGateways.includes(gateway);
   }
 
-  onGatewayChange(gateway: string, isSelected: boolean): void {
-    console.log(`Gateway change: ${gateway} - ${isSelected ? 'selected' : 'deselected'}`);
-    if (isSelected) {
+  onGatewayChange(gateway: string, selected: boolean): void {
+    if (selected) {
       if (!this.selectedPaymentGateways.includes(gateway)) {
         this.selectedPaymentGateways.push(gateway);
       }
@@ -1282,111 +1308,32 @@ export class EditClientComponent implements OnInit {
         this.selectedPaymentGateways.splice(index, 1);
       }
     }
-    console.log('Updated payment gateways:', this.selectedPaymentGateways);
+    console.log('Selected payment gateways:', this.selectedPaymentGateways);
+  }
+
+  getGatewayColor(gateway: string): string {
+    const colors: { [key: string]: string } = {
+      'Cashfree': '#16D07A',
+      'Easebuzz': '#FF6B35',
+      'Razorpay': '#0C2E61',
+      'Paytm': '#00B9F5',
+      'Stripe': '#635BFF'
+    };
+    return colors[gateway] || '#635BFF';
+  }
+
+  getGatewayIcon(gateway: string): string {
+    const icons: { [key: string]: string } = {
+      'Cashfree': 'account_balance',
+      'Easebuzz': 'flash_on',
+      'Razorpay': 'payment',
+      'Paytm': 'smartphone',
+      'Stripe': 'credit_card'
+    };
+    return icons[gateway] || 'payment';
   }
 
   getSelectedGateways(): string[] {
     return this.selectedPaymentGateways;
-  }
-
-  // Step Navigation Methods
-  goToStep(stepIndex: number): void {
-    if (stepIndex >= 0 && stepIndex < this.totalSteps) {
-      this.currentStep = stepIndex;
-    }
-  }
-
-  nextStep(): void {
-    if (this.currentStep < this.totalSteps - 1) {
-      // Mark current step as completed
-      this.steps[this.currentStep].completed = this.isStepValid(this.currentStep);
-      this.currentStep++;
-    }
-  }
-
-  previousStep(): void {
-    if (this.currentStep > 0) {
-      this.currentStep--;
-    }
-  }
-
-  isStepValid(stepIndex: number): boolean {
-    // Validate each step based on required fields
-    switch (stepIndex) {
-      case 0: // Personal Info
-        return (this.clientForm.get('legal_name')?.valid ?? false) && 
-               (this.clientForm.get('mobile_number')?.valid ?? false);
-      case 1: // GST Details
-        return true; // Optional fields
-      case 2: // Address
-        return this.clientForm.get('address')?.valid ?? false;
-      case 3: // Business
-        return this.clientForm.get('constitution_type')?.valid ?? false;
-      case 4: // Partnership
-        const constitutionType = this.clientForm.get('constitution_type')?.value;
-        if (constitutionType === 'Partnership') {
-          return this.clientForm.get('number_of_partners')?.valid ?? false;
-        }
-        return true;
-      case 5: // Financial
-        return this.clientForm.get('required_loan_amount')?.valid ?? false;
-      case 6: // Banking
-        return (this.clientForm.get('bank_name')?.valid ?? false) && 
-               (this.clientForm.get('account_number')?.valid ?? false);
-      case 7: // Documents
-        return true; // Optional files
-      default:
-        return true;
-    }
-  }
-
-  isCurrentStepValid(): boolean {
-    return this.isStepValid(this.currentStep);
-  }
-
-  canProceedToNext(): boolean {
-    return this.isCurrentStepValid() && this.currentStep < this.totalSteps - 1;
-  }
-
-  canGoBack(): boolean {
-    return this.currentStep > 0;
-  }
-
-  isLastStep(): boolean {
-    return this.currentStep === this.totalSteps - 1;
-  }
-
-  getStepTitle(): string {
-    return this.steps[this.currentStep]?.title || 'Unknown Step';
-  }
-
-  getStepDescription(): string {
-    return this.steps[this.currentStep]?.description || '';
-  }
-
-  // Check if we should show Partnership step
-  shouldShowPartnershipStep(): boolean {
-    return this.clientForm.get('constitution_type')?.value === 'Partnership';
-  }
-
-  // Check if we should show Business PAN step
-  shouldShowBusinessPANStep(): boolean {
-    const constitutionType = this.clientForm.get('constitution_type')?.value;
-    const hasBusinessPan = this.clientForm.get('has_business_pan')?.value;
-    return (constitutionType === 'Proprietorship' || 
-            constitutionType === 'Partnership' || 
-            constitutionType === 'Private Limited') && 
-           (hasBusinessPan === 'yes' || this.hasExistingDocument('business_pan_document'));
-  }
-
-  // Check if we should show Owner Details step
-  shouldShowOwnerDetailsStep(): boolean {
-    const constitutionType = this.clientForm.get('constitution_type')?.value;
-    const hasBusinessPan = this.clientForm.get('has_business_pan')?.value;
-    return constitutionType === 'Private Limited' || 
-           (constitutionType === 'Proprietorship' && 
-            (hasBusinessPan === 'yes' || 
-             this.hasExistingDocument('owner_aadhar') || 
-             this.hasExistingDocument('owner_pan')));
   }
 }

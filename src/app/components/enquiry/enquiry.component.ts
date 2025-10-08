@@ -563,41 +563,38 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       
       // Clean up GST status if GST is Yes
       if (formData.gst === 'Yes') {
-        // GST status is already handled by the form validation
+        // Ensure GST status is provided when GST is Yes
+        if (!formData.gst_status) {
+          this.snackBar.open('GST status is required when GST is Yes', 'Close', { duration: 5000 });
+          return;
+        }
       } else {
-        // For No or empty GST, clear the GST status
+        // Clear GST status if GST is not Yes
         formData.gst_status = '';
       }
-
-      // Combine country code with mobile numbers FIRST
-      const countryCodeDigits = formData.country_code.replace('+', ''); // Remove + sign
-      const fullMobileNumber = countryCodeDigits + formData.mobile_number;
       
-      console.log('📱 Country code digits:', countryCodeDigits);
-      console.log('📱 Mobile number digits:', formData.mobile_number);
-      console.log('📱 Full mobile number:', fullMobileNumber);
-      
-      // Check for duplicate mobile number AFTER combining with country code
-      if (this.checkMobileNumberExists(fullMobileNumber)) {
-        this.snackBar.open('Mobile number already exists! Please use a different mobile number.', 'Close', { 
-          duration: 5000,
-          panelClass: ['error-snackbar']
-        });
+      // Handle "Not Eligible" comment validation
+      if (formData.comments === 'Not Eligible' && !formData.business_nature?.trim()) {
+        this.snackBar.open('Business Nature is required when "Not Eligible" comment is selected', 'Close', { duration: 5000 });
         return;
       }
-      
-      // Set the combined mobile number
-      formData.mobile_number = fullMobileNumber;
 
-      // Handle secondary mobile number - use the same country code as primary
+      // Split the mobile number into country code and number for storage
+      const countryCode = formData.country_code;
+      const mobileNumber = formData.mobile_number;
+      const fullMobileNumber = countryCode.replace('+', '') + mobileNumber;
+      
+      // Handle secondary mobile number
+      let fullSecondaryMobileNumber = null;
       if (formData.secondary_mobile_number && formData.secondary_mobile_number.trim() !== '') {
-        formData.secondary_mobile_number = countryCodeDigits + formData.secondary_mobile_number;
-        console.log('📱 Secondary full mobile number:', formData.secondary_mobile_number);
-      } else {
-        formData.secondary_mobile_number = null;
+        fullSecondaryMobileNumber = countryCode.replace('+', '') + formData.secondary_mobile_number;
       }
 
-      // Remove country code fields from form data (don't send to backend)
+      // Set the combined mobile numbers
+      formData.mobile_number = fullMobileNumber;
+      formData.secondary_mobile_number = fullSecondaryMobileNumber;
+
+      // Remove country code field (don't send to backend)
       delete formData.country_code;
 
       // Set default comment if empty
@@ -605,65 +602,24 @@ export class EnquiryComponent implements OnInit, OnDestroy {
         formData.comments = 'No comment provided';
       }
 
-      // Handle GST field - preserve empty values for optional GST selection
-      // Backend will store empty values as "Not Selected" for display purposes
-      if (!formData.gst || formData.gst.trim() === '') {
-        formData.gst = ''; // Send empty string to backend to indicate "Not Selected"
-      }
-
-      // Log the form data being sent for debugging
-      console.log('📤 Form data being sent to backend:', formData);
-      console.log('📤 Form validation status:', this.registrationForm.valid);
-      console.log('📤 Form errors:', this.registrationForm.errors);
-
       if (this.isEditMode && this.editingEnquiryId) {
-        this.enquiryService.updateEnquiry(this.editingEnquiryId, formData)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-          next: (updatedEnquiry: any) => {
-            let message = 'Enquiry updated successfully!';
-            let panelClass = ['success-snackbar'];
-            
-            // Add WhatsApp status to notification
-            if (updatedEnquiry.whatsapp_sent === true) {
-              message += ' 📱 WhatsApp status message sent!';
-              // Show additional notification if available
-              if (updatedEnquiry.whatsapp_notification) {
-                this.snackBar.open(updatedEnquiry.whatsapp_notification, 'Close', { 
-                  duration: 10000,
-                  panelClass: ['success-snackbar']
-                });
-              }
-            } else if (updatedEnquiry.whatsapp_sent === false) {
-              // Show specific error message if available
-              const whatsappError = updatedEnquiry.whatsapp_error || 'WhatsApp message failed to send';
-              message += ` ⚠️ ${whatsappError}`;
-              panelClass = ['error-snackbar'];
-              
-              // Show quota exceeded notification if applicable
-              if (updatedEnquiry.whatsapp_notification) {
-                this.snackBar.open(updatedEnquiry.whatsapp_notification, 'Close', { 
-                  duration: 15000,
-                  panelClass: ['warning-snackbar']
-                });
-              }
-            }
-            
-            this.snackBar.open(message, 'Close', { 
-              duration: 5000,
-              panelClass: panelClass
-            });
+        // Update existing enquiry
+        this.enquiryService.updateEnquiry(this.editingEnquiryId, formData).subscribe({
+          next: (updatedEnquiry) => {
+            this.snackBar.open('Enquiry updated successfully!', 'Close', { duration: 3000 });
             this.hideAddForm();
             this.loadEnquiries();
           },
           error: (error) => {
             console.error('Error updating enquiry:', error);
-            console.error('Error response body:', error.error);
-            console.error('Error status:', error.status);
-            console.error('Error message:', error.message);
+            let errorMessage = 'Error updating enquiry. Please try again.';
             
-            let errorMessage = 'Error updating enquiry';
-            if (error.error && error.error.error) {
+            // Handle specific error cases
+            if (error.status === 400) {
+              errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
+            } else if (error.status === 500) {
+              errorMessage = 'Server error. Please try again later.';
+            } else if (error.error && error.error.error) {
               errorMessage = error.error.error;
             }
             
@@ -671,53 +627,23 @@ export class EnquiryComponent implements OnInit, OnDestroy {
           }
         });
       } else {
-        this.enquiryService.createEnquiry(formData)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-          next: (newEnquiry: any) => {
-            let message = 'Enquiry added successfully!';
-            let panelClass = ['success-snackbar'];
-            
-            // Add WhatsApp status to notification
-            if (newEnquiry.whatsapp_sent === true) {
-              message += ' 📱 WhatsApp welcome message sent!';
-              // Show additional notification if available
-              if (newEnquiry.whatsapp_notification) {
-                this.snackBar.open(newEnquiry.whatsapp_notification, 'Close', { 
-                  duration: 10000,
-                  panelClass: ['success-snackbar']
-                });
-              }
-            } else if (newEnquiry.whatsapp_sent === false) {
-              // Show specific error message if available
-              const whatsappError = newEnquiry.whatsapp_error || 'WhatsApp message failed to send';
-              message += ` ⚠️ ${whatsappError}`;
-              panelClass = ['error-snackbar'];
-              
-              // Show quota exceeded notification if applicable
-              if (newEnquiry.whatsapp_notification) {
-                this.snackBar.open(newEnquiry.whatsapp_notification, 'Close', { 
-                  duration: 15000,
-                  panelClass: ['warning-snackbar']
-                });
-              }
-            }
-            
-            this.snackBar.open(message, 'Close', { 
-              duration: 5000,
-              panelClass: panelClass
-            });
+        // Create new enquiry
+        this.enquiryService.createEnquiry(formData).subscribe({
+          next: (newEnquiry) => {
+            this.snackBar.open('Enquiry created successfully!', 'Close', { duration: 3000 });
             this.hideAddForm();
             this.loadEnquiries();
           },
           error: (error) => {
             console.error('Error creating enquiry:', error);
-            console.error('Error response body:', error.error);
-            console.error('Error status:', error.status);
-            console.error('Error message:', error.message);
+            let errorMessage = 'Error creating enquiry. Please try again.';
             
-            let errorMessage = 'Error adding enquiry';
-            if (error.error && error.error.error) {
+            // Handle specific error cases
+            if (error.status === 400) {
+              errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
+            } else if (error.status === 500) {
+              errorMessage = 'Server error. Please try again later.';
+            } else if (error.error && error.error.error) {
               errorMessage = error.error.error;
             }
             

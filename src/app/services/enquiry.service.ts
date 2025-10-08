@@ -108,7 +108,27 @@ export class EnquiryService {
   }
 
   updateEnquiry(id: string, enquiry: Partial<Enquiry>): Observable<Enquiry> {
-    return this.http.put<Enquiry>(`${this.apiUrl}/${id}`, enquiry, { headers: this.getHeaders() });
+    return this.http.put<Enquiry>(`${this.apiUrl}/${id}`, enquiry, { headers: this.getHeaders() }).pipe(
+      catchError((error: any) => {
+        console.error('Error updating enquiry:', error);
+        
+        let errorMessage = 'Failed to update enquiry. Please try again later.';
+        
+        if (error.status === 0) {
+          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        } else if (error.status === 400) {
+          errorMessage = error.error?.error || 'Invalid enquiry data. Please check all fields.';
+        } else if (error.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied. You do not have permission to update this enquiry.';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        }
+        
+        return throwError(() => new Error(errorMessage));
+      })
+    );
   }
 
   deleteEnquiry(id: string): Observable<any> {

@@ -781,15 +781,17 @@ export class EditClientComponent implements OnInit {
     // Fields that should always be included, even if empty
     const alwaysIncludeFields = ['account_name', 'registration_number', 'company_email', 'optional_mobile_number'];
     
+    // Only send fields that have actually changed or are in the always include list
     Object.keys(formValue).forEach(key => {
       const value = formValue[key];
-      const shouldInclude = value !== null && value !== undefined && value !== '' || alwaysIncludeFields.includes(key);
       
-      if (shouldInclude) {
+      // Check if this is a field that should always be included
+      const isAlwaysIncludeField = alwaysIncludeFields.includes(key);
+      
+      // For always include fields, send them even if empty
+      if (isAlwaysIncludeField) {
         // Debug the specific fields we're tracking
-        if (key === 'registration_number' || key === 'company_email' || key === 'optional_mobile_number' || key === 'account_name') {
-          console.log(`Adding to FormData - ${key}: ${value}`);
-        }
+        console.log(`Adding always include field to FormData - ${key}: ${value}`);
         
         // For nested objects, stringify them
         if (typeof value === 'object' && value !== null) {
@@ -798,8 +800,19 @@ export class EditClientComponent implements OnInit {
           formData.append(key, value ? value.toString() : '');
         }
       } else {
-        // Log when fields are empty/null/undefined and not in always include list
-        if (key === 'registration_number' || key === 'company_email' || key === 'optional_mobile_number' || key === 'account_name') {
+        // For other fields, only send them if they have a value
+        if (value !== null && value !== undefined && value !== '') {
+          // Debug the specific fields we're tracking
+          console.log(`Adding non-empty field to FormData - ${key}: ${value}`);
+          
+          // For nested objects, stringify them
+          if (typeof value === 'object' && value !== null) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, value.toString());
+          }
+        } else {
+          // Log when fields are empty/null/undefined and not in always include list
           console.log(`NOT adding to FormData - ${key}: ${value} (empty/null/undefined)`);
         }
       }

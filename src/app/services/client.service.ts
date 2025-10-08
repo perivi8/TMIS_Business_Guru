@@ -355,6 +355,28 @@ export class ClientService implements OnDestroy {
     return changes;
   }
 
+  // New method to check if a client exists for a given mobile number
+  checkClientExistsByMobile(mobileNumber: string): Observable<{ exists: boolean }> {
+    const url = `${environment.apiUrl}/chatbot/lookup/mobile/${mobileNumber}`;
+    return this.http.get<any>(url, {
+      headers: this.getHeaders(),
+      withCredentials: true
+    }).pipe(
+      map(response => ({
+        exists: response.success === true
+      })),
+      catchError(error => {
+        // If client not found (404), return exists: false
+        if (error.status === 404) {
+          return of({ exists: false });
+        }
+        // For other errors, still return exists: false but log the error
+        console.error('Error checking client existence:', error);
+        return of({ exists: false });
+      })
+    );
+  }
+
   updateClient(clientId: string, clientData: any): Observable<any> {
     return this.http.put<any>(`${environment.apiUrl}/clients/${clientId}`, clientData, {
       headers: this.getHeaders(),

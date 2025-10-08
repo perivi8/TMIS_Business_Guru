@@ -19,6 +19,8 @@ export interface Enquiry {
   // Shortlisted status
   shortlisted?: boolean;
   shortlisted_at?: Date;
+  // Client existence check
+  clientExists?: boolean;
   // WhatsApp integration fields
   whatsapp_sent?: boolean;
   whatsapp_message_id?: string;

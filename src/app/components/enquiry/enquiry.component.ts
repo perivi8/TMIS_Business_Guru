@@ -4,9 +4,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EnquiryService } from '../../services/enquiry.service';
 import { UserService, User } from '../../services/user.service';
+import { ClientService } from '../../services/client.service';
 import { Enquiry } from '../../models/enquiry.interface';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, forkJoin, of } from 'rxjs';
+import { takeUntil, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
 // Define COMMENT_OPTIONS locally since it's not exported from the interface
@@ -156,6 +157,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private enquiryService: EnquiryService,
     private userService: UserService,
+    private clientService: ClientService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router
@@ -213,9 +215,39 @@ export class EnquiryComponent implements OnInit, OnDestroy {
             ...enquiry,
             sno: index + 1
           }));
-          this.extractUniqueStaffMembers();
-          this.applyFilters();
-          this.loading = false;
+          
+          // Check if clients exist for each enquiry to properly disable shortlist buttons
+          const clientCheckObservables = this.enquiries.map(enquiry => 
+            this.clientService.checkClientExistsByMobile(enquiry.mobile_number)
+              .pipe(
+                catchError(error => {
+                  console.error(`Error checking client for enquiry ${enquiry._id}:`, error);
+                  return of({ exists: false });
+                })
+              )
+          );
+          
+          // Wait for all client checks to complete
+          forkJoin(clientCheckObservables).subscribe({
+            next: (clientExistsResults) => {
+              // Update enquiries with client existence info
+              this.enquiries = this.enquiries.map((enquiry, index) => ({
+                ...enquiry,
+                clientExists: clientExistsResults[index].exists
+              }));
+              
+              this.extractUniqueStaffMembers();
+              this.applyFilters();
+              this.loading = false;
+            },
+            error: (error) => {
+              console.error('Error checking client existence:', error);
+              // Proceed with enquiries as is if client check fails
+              this.extractUniqueStaffMembers();
+              this.applyFilters();
+              this.loading = false;
+            }
+          });
         },
         error: (error) => {
           console.error('Error loading enquiries:', error);
@@ -1008,6 +1040,11 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   isShortlistEnabled(enquiry: Enquiry): boolean {
     // Check if already shortlisted
     if (enquiry.shortlisted) {
+      return false;
+    }
+    
+    // Check if a client already exists for this mobile number
+    if (enquiry.clientExists) {
       return false;
     }
     

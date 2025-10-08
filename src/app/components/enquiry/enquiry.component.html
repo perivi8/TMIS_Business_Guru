@@ -389,10 +389,10 @@
           <th mat-header-cell *matHeaderCellDef class="header-cell">Shortlist</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
             <button mat-raised-button 
-                    [color]="enquiry.shortlisted ? 'accent' : 'primary'" 
+                    [color]="enquiry.shortlisted ? 'accent' : (enquiry.clientExists ? 'warn' : 'primary')" 
                     (click)="shortlistEnquiry(enquiry)" 
-                    [disabled]="!isShortlistEnabled(enquiry) || enquiry.shortlisted">
-              {{ enquiry.shortlisted ? 'Shortlisted' : 'Shortlist' }}
+                    [disabled]="!isShortlistEnabled(enquiry) || enquiry.shortlisted || enquiry.clientExists">
+              {{ enquiry.shortlisted ? 'Shortlisted' : (enquiry.clientExists ? 'Client Created' : 'Shortlist') }}
             </button>
           </td>
         </ng-container>

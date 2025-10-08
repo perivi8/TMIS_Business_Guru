@@ -44,7 +44,8 @@ export class PublicEnquiryComponent implements OnInit {
   // Status options
   statusOptions = [
     'Active',
-    'Cancel'
+    'Cancel',
+    'Not Active'
   ];
 
   constructor(

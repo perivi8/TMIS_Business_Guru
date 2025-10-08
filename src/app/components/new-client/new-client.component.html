@@ -2,6 +2,12 @@
   <div *ngIf="error" class="error">{{ error }}</div>
   <div *ngIf="success" class="success">{{ success }}</div>
 
+  <!-- Show client name from enquiry data -->
+  <div *ngIf="extractedData.enquiryData" class="enquiry-header">
+    <h2>Creating Client from Enquiry: {{ extractedData.enquiryData.legal_name || extractedData.enquiryData.user_name }}</h2>
+    <p><strong>Mobile:</strong> {{ extractedData.enquiryData.mobile_number }}</p>
+  </div>
+
   <mat-card>
     <div *ngIf="!formsInitialized" class="loading-forms">
       <mat-spinner diameter="40"></mat-spinner>
@@ -173,20 +179,20 @@
                 <div class="form-group">
                   <mat-form-field appearance="outline">
                     <mat-label>Primary Mobile Number *</mat-label>
-                    <input matInput formControlName="mobile_number" placeholder="9876543210" maxlength="10">
+                    <input matInput formControlName="mobile_number" placeholder="9876543210" maxlength="15">
                     <mat-icon matSuffix>phone</mat-icon>
                     <mat-error *ngIf="step1Form.get('mobile_number')?.invalid && step1Form.get('mobile_number')?.touched">
-                      Please enter a valid 10-digit mobile number
+                      Please enter a valid mobile number (10-15 digits)
                     </mat-error>
                   </mat-form-field>
                 </div>
                 <div class="form-group">
                   <mat-form-field appearance="outline">
                     <mat-label>Secondary Mobile (Optional)</mat-label>
-                    <input matInput formControlName="optional_mobile_number" placeholder="9876543210" maxlength="10">
+                    <input matInput formControlName="optional_mobile_number" placeholder="9876543210" maxlength="15">
                     <mat-icon matSuffix>phone_android</mat-icon>
                     <mat-error *ngIf="step1Form.get('optional_mobile_number')?.invalid && step1Form.get('optional_mobile_number')?.touched">
-                      Please enter a valid 10-digit mobile number
+                      Please enter a valid mobile number (10-15 digits)
                     </mat-error>
                   </mat-form-field>
                 </div>

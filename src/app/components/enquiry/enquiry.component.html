@@ -173,16 +173,6 @@
             </mat-form-field>
           </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Business Type (Optional)</mat-label>
-            <mat-select formControlName="business_type">
-              <mat-option value="">Select Business Type</mat-option>
-              <mat-option *ngFor="let type of businessTypeOptions" [value]="type">
-                {{ type }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-
           <!-- Business Nature Field -->
           <mat-form-field appearance="outline">
             <mat-label>Business Nature <span *ngIf="isEditMode && registrationForm.get('comments')?.value === 'Not Eligible'" class="required-asterisk">*</span></mat-label>
@@ -208,6 +198,7 @@
               <mat-select formControlName="gst_status">
                 <mat-option value="Active">Active</mat-option>
                 <mat-option value="Cancel">Cancel</mat-option>
+                <mat-option value="Not Active">Not Active</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -327,12 +318,6 @@
           </td>
         </ng-container>
 
-        <!-- Business Type Column -->
-        <ng-container matColumnDef="business_type">
-          <th mat-header-cell *matHeaderCellDef class="header-cell">Business Type</th>
-          <td mat-cell *matCellDef="let enquiry" class="data-cell">{{ enquiry.business_type || '-' }}</td>
-        </ng-container>
-
         <!-- Business Nature Column -->
         <ng-container matColumnDef="business_nature">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Business Nature</th>
@@ -403,8 +388,11 @@
         <ng-container matColumnDef="shortlist">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Shortlist</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <button mat-raised-button color="primary" (click)="shortlistEnquiry(enquiry)" [disabled]="!enquiry.mobile_number">
-              Shortlist
+            <button mat-raised-button 
+                    [color]="enquiry.shortlisted ? 'accent' : 'primary'" 
+                    (click)="shortlistEnquiry(enquiry)" 
+                    [disabled]="!isShortlistEnabled(enquiry) || enquiry.shortlisted">
+              {{ enquiry.shortlisted ? 'Shortlisted' : 'Shortlist' }}
             </button>
           </td>
         </ng-container>

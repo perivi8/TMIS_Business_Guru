@@ -78,17 +78,6 @@
           </mat-error>
         </mat-form-field>
 
-        <!-- Business Type -->
-        <mat-form-field appearance="outline">
-          <mat-label>Business Type (Optional)</mat-label>
-          <mat-select formControlName="business_type">
-            <mat-option value="">Select Business Type</mat-option>
-            <mat-option *ngFor="let type of businessTypeOptions" [value]="type">
-              {{ type }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
         <!-- Business Nature -->
         <mat-form-field appearance="outline">
           <mat-label>Business Nature (Optional)</mat-label>
@@ -110,6 +99,7 @@
           <mat-select formControlName="gst_status">
             <mat-option value="Active">Active</mat-option>
             <mat-option value="Cancel">Cancel</mat-option>
+            <mat-option value="Not Active">Not Active</mat-option>
           </mat-select>
         </mat-form-field>
 

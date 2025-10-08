@@ -4,10 +4,33 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EnquiryService } from '../../services/enquiry.service';
 import { UserService, User } from '../../services/user.service';
-import { Enquiry, COMMENT_OPTIONS } from '../../models/enquiry.interface';
+import { Enquiry } from '../../models/enquiry.interface';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Router } from '@angular/router';
+
+// Define COMMENT_OPTIONS locally since it's not exported from the interface
+const COMMENT_OPTIONS = [
+  'Will share Doc',
+  'Doc Shared(Yet to Verify)',
+  'Verified(Shortlisted)',
+  'Not Eligible',
+  'No MSME',
+  'No GST',
+  'Aadhar/PAN name mismatch',
+  'MSME/GST Address Different',
+  'Will call back',
+  'Personal Loan',
+  'Start Up',
+  'Asking Less than 5 Laks',
+  '1st call completed',
+  '2nd call completed',
+  '3rd call completed',
+  'Switch off',
+  'Not connected',
+  'By Mistake',
+  'GST Cancelled'
+];
 
 @Component({
   selector: 'app-enquiry',
@@ -19,7 +42,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   filteredEnquiries: Enquiry[] = [];
   displayedColumns: string[] = [
     'sno', 'date', 'wati_name', 'legal_name', 'mobile_number', 
-    'secondary_mobile_number', 'gst', 'business_type', 'business_nature', 'staff', 
+    'secondary_mobile_number', 'gst', 'business_nature', 'staff', 
     'comments', 'whatsapp_status', 'additional_comments', 'shortlist', 'actions'
   ];
   
@@ -160,7 +183,6 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       secondary_mobile_number: [''],
       gst: [''], // Optional - user can leave this unselected
       gst_status: [''],
-      business_type: [''],
       business_nature: [''],
       staff: ['', Validators.required],
       comments: [''], // Made optional - removed Validators.required
@@ -471,6 +493,11 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     // Check for GST Cancelled first
     if (enquiry.gst === 'Yes' && enquiry.gst_status === 'Cancel') {
       return 'row-light-red';
+    }
+    
+    // Check for GST Not Active
+    if (enquiry.gst === 'Yes' && enquiry.gst_status === 'Not Active') {
+      return 'row-light-orange';
     }
     
     // Check for GST Cancelled comment
@@ -922,6 +949,8 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       return { countryCode: '+91', number: '' }; // Default to India
     }
     
+    console.log('Splitting mobile number:', mobileNumber);
+    
     // Check for different country codes in order of length (longest first)
     const countryCodes = ['971', '966', '65', '61', '60', '49', '44', '33', '91', '1'];
     
@@ -929,11 +958,13 @@ export class EnquiryComponent implements OnInit, OnDestroy {
       if (mobileNumber.startsWith(code)) {
         const number = mobileNumber.substring(code.length);
         const countryCode = `+${code}`;
+        console.log('Found country code:', code, 'Extracted number:', number);
         return { countryCode, number };
       }
     }
     
-    // If no country code matches, default to India
+    // If no country code matches, return the number as is with default India code
+    console.log('No country code found, returning number as is');
     return { countryCode: '+91', number: mobileNumber };
   }
 
@@ -991,6 +1022,15 @@ export class EnquiryComponent implements OnInit, OnDestroy {
 
   // Reassign staff (allow changing existing assignment)
   reassignStaff(enquiry: Enquiry): void {
+    // Check if staff is already assigned - if so, don't allow reassignment
+    if (enquiry.staff && enquiry.staff !== '') {
+      this.snackBar.open('Staff is already assigned and cannot be changed', 'Close', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+    
     // Temporarily clear the staff to show the dropdown
     const originalStaff = enquiry.staff;
     enquiry.staff = '';
@@ -1005,18 +1045,49 @@ export class EnquiryComponent implements OnInit, OnDestroy {
 
   // New method to handle shortlisting an enquiry
   shortlistEnquiry(enquiry: Enquiry): void {
+    console.log('Shortlisting enquiry:', enquiry);
+    // Extract mobile number without country code for new client page
+    const mobileParts = this.splitMobileNumber(enquiry.mobile_number);
+    const mobileWithoutCountryCode = mobileParts.number;
+    
+    console.log('Mobile parts:', mobileParts);
+    console.log('Mobile without country code:', mobileWithoutCountryCode);
+    
     // Navigate to new client page with enquiry data
     this.router.navigate(['/new-client'], { 
       state: { 
         enquiryData: {
           legal_name: enquiry.legal_name || enquiry.wati_name,
           user_name: enquiry.wati_name,
-          mobile_number: enquiry.mobile_number,
-          business_type: enquiry.business_type,
-          gst_status: enquiry.gst_status
+          mobile_number: mobileWithoutCountryCode, // Mobile number without country code
+          gst: enquiry.gst,
+          gst_status: enquiry.gst_status,
+          enquiry_id: enquiry._id
         }
       }
     });
+  }
+
+  // Method to check if shortlist button should be enabled
+  isShortlistEnabled(enquiry: Enquiry): boolean {
+    // Check if already shortlisted
+    if (enquiry.shortlisted) {
+      return false;
+    }
+    
+    // Check if mobile number exists
+    if (!enquiry.mobile_number) {
+      return false;
+    }
+    
+    // Check if comments are "Verified(Shortlisted)"
+    const isVerified = enquiry.comments === 'Verified(Shortlisted)';
+    
+    // Check if GST is "Yes" and status is "Active"
+    const hasActiveGst = enquiry.gst === 'Yes' && enquiry.gst_status === 'Active';
+    
+    // Enable shortlist button only if both conditions are met
+    return isVerified && hasActiveGst;
   }
 
 }

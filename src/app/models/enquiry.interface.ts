@@ -11,6 +11,7 @@ export interface Enquiry {
   business_type?: string;
   business_nature?: string;
   staff: string;
+  staff_locked?: boolean; // Add this property to track if staff assignment is locked
   comments: string;
   additional_comments?: string;
   created_at?: Date;

@@ -310,7 +310,9 @@
         <ng-container matColumnDef="secondary_mobile_number">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Secondary Mobile</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <span class="mobile-number">{{ displayMobileNumber(enquiry.secondary_mobile_number) }}</span>
+            <mat-form-field appearance="outline" class="secondary-mobile-field">
+              <input matInput [(ngModel)]="enquiry.secondary_mobile_number" (ngModelChange)="updateSecondaryMobile(enquiry, $event)" placeholder="Enter secondary mobile (optional)" />
+            </mat-form-field>
           </td>
         </ng-container>
 
@@ -319,15 +321,14 @@
           <th mat-header-cell *matHeaderCellDef class="header-cell">GST</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
             <div class="gst-container">
-              <mat-select [(value)]="enquiry.gst" placeholder="Select GST (Optional)" (selectionChange)="onGstChangeForEnquiry(enquiry, $event.value)">
+              <mat-select [(value)]="enquiry.gst" (selectionChange)="onGstChangeForEnquiry(enquiry, $event.value)" placeholder="Select GST (Optional)">
                 <mat-option value="">Select GST</mat-option>
                 <mat-option value="Yes">Yes</mat-option>
                 <mat-option value="No">No</mat-option>
               </mat-select>
-              <mat-select *ngIf="enquiry.gst === 'Yes'" [(value)]="enquiry.gst_status" placeholder="Select Status">
+              <mat-select *ngIf="enquiry.gst === 'Yes'" [(value)]="enquiry.gst_status" (selectionChange)="onGstStatusChangeForEnquiry(enquiry, $event.value)" placeholder="Select Status">
                 <mat-option value="Active">Active</mat-option>
                 <mat-option value="Cancel">Cancel</mat-option>
-                <mat-option value="In Active">In Active</mat-option>
               </mat-select>
             </div>
           </td>
@@ -337,7 +338,7 @@
         <ng-container matColumnDef="business_type">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Business Type</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <mat-select [(value)]="enquiry.business_type" placeholder="Select Business Type (Optional)">
+            <mat-select [(value)]="enquiry.business_type" (selectionChange)="updateBusinessType(enquiry, $event.value)" placeholder="Select Business Type (Optional)">
               <mat-option value="">Select Business Type</mat-option>
               <mat-option *ngFor="let type of businessTypeOptions" [value]="type">
                 {{ type }}
@@ -351,7 +352,7 @@
           <th mat-header-cell *matHeaderCellDef class="header-cell">Business Nature</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
             <mat-form-field appearance="outline" class="business-nature-field">
-              <input matInput [(ngModel)]="enquiry.business_nature" placeholder="Enter business nature (optional)" />
+              <input matInput [(ngModel)]="enquiry.business_nature" (ngModelChange)="updateBusinessNature(enquiry, $event)" placeholder="Enter business nature (optional)" />
             </mat-form-field>
           </td>
         </ng-container>
@@ -360,7 +361,14 @@
         <ng-container matColumnDef="staff">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Staff</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <mat-select [(value)]="enquiry.staff" placeholder="Select Staff">
+            <!-- If staff is assigned and NOT "Public Enquiry", show assigned staff name -->
+            <div *ngIf="enquiry.staff && enquiry.staff !== 'Public Enquiry'" class="staff-assigned">
+              <span class="staff-name">{{ enquiry.staff }}</span>
+              <span class="staff-assigned-badge">Assigned</span>
+              <mat-icon class="info-icon" matTooltip="Staff already added to enquiry. Try another enquiry for new assignment.">info</mat-icon>
+            </div>
+            <!-- If no staff assigned OR staff is "Public Enquiry", show dropdown for selection -->
+            <mat-select *ngIf="!enquiry.staff || enquiry.staff === 'Public Enquiry'" [(value)]="enquiry.staff" (selectionChange)="updateStaff(enquiry, $event.value)" placeholder="Select Staff">
               <mat-option *ngFor="let staff of staffMembers" [value]="staff.username || staff.email">
                 {{ staff.username || staff.email }}
               </mat-option>
@@ -372,7 +380,13 @@
         <ng-container matColumnDef="comments">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Comments</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <mat-select [(value)]="enquiry.comments" placeholder="Select Comment">
+            <!-- Lock comments section when no staff is assigned -->
+            <div *ngIf="shouldLockComments(enquiry)" class="comments-locked">
+              <mat-icon class="lock-icon">lock</mat-icon>
+              <span class="lock-text">Assign staff to enable comments</span>
+            </div>
+            <!-- Show comments dropdown when staff is assigned -->
+            <mat-select *ngIf="!shouldLockComments(enquiry)" [(value)]="enquiry.comments" (selectionChange)="updateComments(enquiry, $event.value)" placeholder="Select Comment">
               <mat-option *ngFor="let comment of commentOptions" [value]="comment">
                 {{ comment }}
               </mat-option>
@@ -407,7 +421,7 @@
           <th mat-header-cell *matHeaderCellDef class="header-cell">Additional Comments</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
             <mat-form-field appearance="outline" class="additional-comments-field">
-              <textarea matInput [(ngModel)]="enquiry.additional_comments" placeholder="Enter additional comments (optional)" rows="3"></textarea>
+              <textarea matInput [(ngModel)]="enquiry.additional_comments" (ngModelChange)="updateAdditionalComments(enquiry, $event)" placeholder="Enter additional comments (optional)" rows="3"></textarea>
             </mat-form-field>
           </td>
         </ng-container>

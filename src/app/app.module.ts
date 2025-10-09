@@ -54,6 +54,7 @@ import { ChatbotComponent } from './components/chatbot/chatbot.component';
 import { WhatsappLinkComponent } from './components/whatsapp-link/whatsapp-link.component';
 import { WhatsappPublicComponent } from './components/whatsapp-public/whatsapp-public.component';
 import { WhatsappTestComponent } from './components/whatsapp-test/whatsapp-test.component';
+import { PublicEnquiryComponent } from './components/public-enquiry/public-enquiry.component';
 
 // Interceptors
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -84,7 +85,8 @@ import { SocketService } from './services/socket.service';
     ChatbotComponent,
     WhatsappLinkComponent,
     WhatsappPublicComponent,
-    WhatsappTestComponent
+    WhatsappTestComponent,
+    PublicEnquiryComponent
   ],
   imports: [
     BrowserModule,

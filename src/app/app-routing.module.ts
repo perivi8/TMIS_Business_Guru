@@ -16,6 +16,7 @@ import { ForgotPasswordComponent } from './components/forgot-password/forgot-pas
 import { WhatsappLinkComponent } from './components/whatsapp-link/whatsapp-link.component';
 import { WhatsappPublicComponent } from './components/whatsapp-public/whatsapp-public.component';
 import { WhatsappTestComponent } from './components/whatsapp-test/whatsapp-test.component';
+import { PublicEnquiryComponent } from './components/public-enquiry/public-enquiry.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 
@@ -85,6 +86,10 @@ const routes: Routes = [
   { 
     path: 'whatsapp-test', 
     component: WhatsappTestComponent 
+  },
+  { 
+    path: 'new-enquiry', 
+    component: PublicEnquiryComponent 
   },
   { path: '**', redirectTo: '/login' }
 ];

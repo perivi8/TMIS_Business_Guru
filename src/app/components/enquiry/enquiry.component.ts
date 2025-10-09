@@ -5,8 +5,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { EnquiryService } from '../../services/enquiry.service';
 import { UserService, User } from '../../services/user.service';
 import { Enquiry, COMMENT_OPTIONS } from '../../models/enquiry.interface';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, timer } from 'rxjs';
+import { takeUntil, switchMap, debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-enquiry',
@@ -43,6 +43,11 @@ export class EnquiryComponent implements OnInit, OnDestroy {
 
   // Cleanup subject for subscriptions
   private destroy$ = new Subject<void>();
+
+  // Add debounce subjects for business nature and additional comments
+  private businessNatureDebounce = new Subject<{enquiry: Enquiry, value: string}>();
+  private additionalCommentsDebounce = new Subject<{enquiry: Enquiry, value: string}>();
+  private secondaryMobileDebounce = new Subject<{enquiry: Enquiry, value: string}>();
 
   // Country codes for mobile numbers
   countryCodes = [
@@ -141,6 +146,75 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadEnquiries();
     this.loadStaffMembers();
+    
+    // Set up debouncing for business nature updates (3 seconds delay)
+    this.businessNatureDebounce.pipe(
+      debounceTime(3000),
+      takeUntil(this.destroy$),
+      switchMap(({enquiry, value}) => {
+        // Update the local value immediately for UI feedback
+        enquiry.business_nature = value;
+        // Call the service to update the enquiry in the backend
+        if (enquiry._id) {
+          return this.enquiryService.updateEnquiry(enquiry._id, { business_nature: value });
+        }
+        return [];
+      })
+    ).subscribe({
+      next: (updatedEnquiry: any) => {
+        this.handleUpdateResponse(updatedEnquiry, 'Business nature');
+      },
+      error: (error: any) => {
+        console.error('Error updating enquiry business nature:', error);
+        this.snackBar.open('Error updating business nature', 'Close', { duration: 3000 });
+      }
+    });
+    
+    // Set up debouncing for additional comments updates (3 seconds delay)
+    this.additionalCommentsDebounce.pipe(
+      debounceTime(3000),
+      takeUntil(this.destroy$),
+      switchMap(({enquiry, value}) => {
+        // Update the local value immediately for UI feedback
+        enquiry.additional_comments = value;
+        // Call the service to update the enquiry in the backend
+        if (enquiry._id) {
+          return this.enquiryService.updateEnquiry(enquiry._id, { additional_comments: value });
+        }
+        return [];
+      })
+    ).subscribe({
+      next: (updatedEnquiry: any) => {
+        this.handleUpdateResponse(updatedEnquiry, 'Additional comment');
+      },
+      error: (error: any) => {
+        console.error('Error updating enquiry additional comments:', error);
+        this.snackBar.open('Error updating additional comment', 'Close', { duration: 3000 });
+      }
+    });
+    
+    // Set up debouncing for secondary mobile updates (3 seconds delay)
+    this.secondaryMobileDebounce.pipe(
+      debounceTime(3000),
+      takeUntil(this.destroy$),
+      switchMap(({enquiry, value}) => {
+        // Update the local value immediately for UI feedback
+        enquiry.secondary_mobile_number = value;
+        // Call the service to update the enquiry in the backend
+        if (enquiry._id) {
+          return this.enquiryService.updateEnquiry(enquiry._id, { secondary_mobile_number: value });
+        }
+        return [];
+      })
+    ).subscribe({
+      next: (updatedEnquiry: any) => {
+        this.handleUpdateResponse(updatedEnquiry, 'Secondary mobile');
+      },
+      error: (error: any) => {
+        console.error('Error updating enquiry secondary mobile:', error);
+        this.snackBar.open('Error updating secondary mobile', 'Close', { duration: 3000 });
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -281,41 +355,161 @@ export class EnquiryComponent implements OnInit, OnDestroy {
   // Update business type for an enquiry
   updateBusinessType(enquiry: Enquiry, businessType: string): void {
     enquiry.business_type = businessType;
-    // Here you would typically call a service to update the enquiry in the backend
-    // For now, we'll just log the change
-    console.log(`Business type updated for enquiry ${enquiry._id}: ${businessType}`);
+    // Call the service to update the enquiry in the backend
+    if (enquiry._id) {
+      this.enquiryService.updateEnquiry(enquiry._id, { business_type: businessType })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEnquiry: any) => {
+            // Update the local enquiry with the response from the server
+            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
+            if (index !== -1) {
+              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+              this.applyFilters();
+            }
+            
+            // Show appropriate notification based on WhatsApp status
+            let message = 'Business type updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp message sent!';
+            } else if (updatedEnquiry.whatsapp_error) {
+              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota')) {
+                message += ' ⚠️ WhatsApp message not sent due to quota reached.';
+              } else {
+                message += ' ❌ WhatsApp message error: ' + updatedEnquiry.whatsapp_error;
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
+          },
+          error: (error) => {
+            console.error('Error updating enquiry business type:', error);
+            this.snackBar.open('Error updating business type', 'Close', { duration: 3000 });
+          }
+        });
+    }
   }
 
-  // Update business nature for an enquiry
+  // Update business nature for an enquiry with debouncing
   updateBusinessNature(enquiry: Enquiry, businessNature: string): void {
-    enquiry.business_nature = businessNature;
-    // Here you would typically call a service to update the enquiry in the backend
-    // For now, we'll just log the change
-    console.log(`Business nature updated for enquiry ${enquiry._id}: ${businessNature}`);
+    // Instead of calling the service directly, emit to the debounce subject
+    // This will trigger the update after a 3-second delay
+    this.businessNatureDebounce.next({enquiry, value: businessNature});
   }
 
   // Update staff for an enquiry
   updateStaff(enquiry: Enquiry, staff: string): void {
+    // Treat 'Public Enquiry' as unassigned
+    const isPreviouslyUnassigned = !enquiry.staff || enquiry.staff === 'Public Enquiry';
     enquiry.staff = staff;
-    // Here you would typically call a service to update the enquiry in the backend
-    // For now, we'll just log the change
-    console.log(`Staff updated for enquiry ${enquiry._id}: ${staff}`);
+    
+    // Call the service to update the enquiry in the backend
+    if (enquiry._id) {
+      this.enquiryService.updateEnquiry(enquiry._id, { staff: staff })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEnquiry: any) => {
+            // Update the local enquiry with the response from the server
+            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
+            if (index !== -1) {
+              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+              this.applyFilters();
+            }
+            
+            // Show appropriate notification based on WhatsApp status
+            let message = 'Staff updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            // Check WhatsApp status for staff assignment
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp message sent!';
+            } else if (updatedEnquiry.whatsapp_error) {
+              // Check for quota or other errors
+              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota') || updatedEnquiry.whatsapp_error.includes('466')) {
+                message += ' ⚠️ Limit Reached';
+                panelClass = ['warning-snackbar'];
+              } else {
+                message += ' ❌ Message not sent - ' + updatedEnquiry.whatsapp_error;
+                panelClass = ['error-snackbar'];
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
+          },
+          error: (error) => {
+            console.error('Error updating enquiry staff:', error);
+            this.snackBar.open('Error updating staff', 'Close', { duration: 3000, panelClass: ['error-snackbar'] });
+          }
+        });
+    }
   }
 
   // Update comments for an enquiry
   updateComments(enquiry: Enquiry, comments: string): void {
     enquiry.comments = comments;
-    // Here you would typically call a service to update the enquiry in the backend
-    // For now, we'll just log the change
-    console.log(`Comments updated for enquiry ${enquiry._id}: ${comments}`);
+    // Call the service to update the enquiry in the backend
+    if (enquiry._id) {
+      this.enquiryService.updateEnquiry(enquiry._id, { comments: comments })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEnquiry: any) => {
+            // Update the local enquiry with the response from the server
+            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
+            if (index !== -1) {
+              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+              this.applyFilters();
+            }
+            
+            // Show appropriate notification based on WhatsApp status
+            let message = 'Comment updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp message sent!';
+            } else if (updatedEnquiry.whatsapp_error) {
+              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota')) {
+                message += ' ⚠️ WhatsApp message not sent due to quota reached.';
+              } else {
+                message += ' ❌ WhatsApp message error: ' + updatedEnquiry.whatsapp_error;
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
+          },
+          error: (error) => {
+            console.error('Error updating enquiry comments:', error);
+            this.snackBar.open('Error updating comment', 'Close', { duration: 3000 });
+          }
+        });
+    }
   }
 
-  // Update additional comments for an enquiry
+  // Update additional comments for an enquiry with debouncing
   updateAdditionalComments(enquiry: Enquiry, additionalComments: string): void {
-    enquiry.additional_comments = additionalComments;
-    // Here you would typically call a service to update the enquiry in the backend
-    // For now, we'll just log the change
-    console.log(`Additional comments updated for enquiry ${enquiry._id}: ${additionalComments}`);
+    // Instead of calling the service directly, emit to the debounce subject
+    // This will trigger the update after a 3-second delay
+    this.additionalCommentsDebounce.next({enquiry, value: additionalComments});
+  }
+
+  // Update secondary mobile number for an enquiry with debouncing
+  updateSecondaryMobile(enquiry: Enquiry, secondaryMobile: string): void {
+    // Update the local value immediately for UI feedback
+    enquiry.secondary_mobile_number = secondaryMobile;
+    
+    // Instead of calling the service directly, emit to the debounce subject
+    // This will trigger the update after a 3-second delay
+    this.secondaryMobileDebounce.next({enquiry, value: secondaryMobile});
   }
 
   // Handle GST change for an enquiry
@@ -325,9 +519,94 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     if (gstValue !== 'Yes') {
       enquiry.gst_status = undefined;
     }
-    // Here you would typically call a service to update the enquiry in the backend
-    // For now, we'll just log the change
-    console.log(`GST updated for enquiry ${enquiry._id}: ${gstValue}`);
+    // Call the service to update the enquiry in the backend
+    if (enquiry._id) {
+      const updateData: any = { gst: gstValue };
+      if (gstValue !== 'Yes') {
+        updateData.gst_status = '';
+      }
+      
+      this.enquiryService.updateEnquiry(enquiry._id, updateData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEnquiry: any) => {
+            // Update the local enquiry with the response from the server
+            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
+            if (index !== -1) {
+              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+              this.applyFilters();
+            }
+            
+            // Show appropriate notification based on WhatsApp status
+            let message = 'GST status updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp message sent!';
+            } else if (updatedEnquiry.whatsapp_error) {
+              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota')) {
+                message += ' ⚠️ WhatsApp message not sent due to quota reached.';
+              } else {
+                message += ' ❌ WhatsApp message error: ' + updatedEnquiry.whatsapp_error;
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
+          },
+          error: (error) => {
+            console.error('Error updating enquiry GST:', error);
+            this.snackBar.open('Error updating GST status', 'Close', { duration: 3000 });
+          }
+        });
+    }
+  }
+
+  // Handle GST status change for an enquiry
+  onGstStatusChangeForEnquiry(enquiry: Enquiry, gstStatus: string): void {
+    // Convert empty string to undefined and ensure valid values
+    const statusValue = gstStatus === '' || gstStatus === 'In Active' ? undefined : (gstStatus as 'Active' | 'Cancel' | undefined);
+    enquiry.gst_status = statusValue;
+    // Call the service to update the enquiry in the backend
+    if (enquiry._id) {
+      this.enquiryService.updateEnquiry(enquiry._id, { gst_status: statusValue })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEnquiry: any) => {
+            // Update the local enquiry with the response from the server
+            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
+            if (index !== -1) {
+              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+              this.applyFilters();
+            }
+            
+            // Show appropriate notification based on WhatsApp status
+            let message = 'GST status updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp message sent!';
+            } else if (updatedEnquiry.whatsapp_error) {
+              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota')) {
+                message += ' ⚠️ WhatsApp message not sent due to quota reached.';
+              } else {
+                message += ' ❌ WhatsApp message error: ' + updatedEnquiry.whatsapp_error;
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
+          },
+          error: (error) => {
+            console.error('Error updating enquiry GST status:', error);
+            this.snackBar.open('Error updating GST status', 'Close', { duration: 3000 });
+          }
+        });
+    }
   }
 
   onSortChange(): void {
@@ -1010,5 +1289,44 @@ export class EnquiryComponent implements OnInit, OnDestroy {
         panelClass: ['success-snackbar']
       }
     );
+  }
+
+  // Handle the response from update operations
+  private handleUpdateResponse(updatedEnquiry: any, fieldName: string): void {
+    // Update the local enquiry with the response from the server
+    const index = this.enquiries.findIndex(e => e._id === updatedEnquiry._id);
+    if (index !== -1) {
+      this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+      this.applyFilters();
+    }
+    
+    // Show appropriate notification based on WhatsApp status
+    let message = `${fieldName} updated successfully!`;
+    let panelClass = ['success-snackbar'];
+    
+    if (updatedEnquiry.whatsapp_sent === true) {
+      message += ' 📱 WhatsApp message sent!';
+    } else if (updatedEnquiry.whatsapp_error) {
+      if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota')) {
+        message += ' ⚠️ WhatsApp message not sent due to quota reached.';
+      } else {
+        message += ' ❌ WhatsApp message error: ' + updatedEnquiry.whatsapp_error;
+      }
+    }
+    
+    this.snackBar.open(message, 'Close', { 
+      duration: 5000,
+      panelClass: panelClass
+    });
+  }
+
+  // Check if staff is assigned to an enquiry
+  isStaffAssigned(enquiry: Enquiry): boolean {
+    return !!enquiry.staff && enquiry.staff !== 'Public Enquiry';
+  }
+
+  // Check if comments should be locked (no staff assigned)
+  shouldLockComments(enquiry: Enquiry): boolean {
+    return !this.isStaffAssigned(enquiry);
   }
 }

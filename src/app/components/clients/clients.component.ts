@@ -188,7 +188,11 @@ export class ClientsComponent implements OnInit {
     this.userService.getUsers().subscribe({
       next: (response) => {
         console.log('Users loaded successfully:', response);
-        this.users = response.users || [];
+        // Filter out paused users and only include active users
+        this.users = (response.users || []).filter((user: any) => 
+          (user.role === 'user' || user.role === 'admin') && 
+          (user.status !== 'paused')
+        );
         this.getUniqueStaffMembers();
       },
       error: (error) => {

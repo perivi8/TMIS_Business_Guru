@@ -10,7 +10,7 @@ export interface User {
   email: string;
   role: string;
   created_at: string;
-  status?: string; // Optional status field (active, pending, rejected)
+  status?: string; // Optional status field (active, pending, rejected, paused)
 }
 
 @Injectable({

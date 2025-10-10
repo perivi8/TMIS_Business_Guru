@@ -188,6 +188,15 @@ export class AuthService {
     return this.http.delete<any>(`${environment.apiUrl}/cleanup/rejected-users`);
   }
 
+  // User pause/resume methods
+  pauseUser(userId: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/pause-user/${userId}`, {});
+  }
+
+  resumeUser(userId: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/resume-user/${userId}`, {});
+  }
+
   // Check registration status
   checkRegistrationStatus(email: string): Observable<RegistrationStatusResponse> {
     return this.http.get<RegistrationStatusResponse>(`${environment.apiUrl}/check-registration-status/${email}`);

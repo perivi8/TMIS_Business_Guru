@@ -204,7 +204,11 @@ export class NewClientComponent implements OnInit {
   loadStaffMembers(): void {
     this.userService.getUsers().subscribe({
       next: (response) => {
-        this.staffMembers = response.users;
+        // Filter out paused users and only include active users
+        this.staffMembers = response.users.filter((user: any) => 
+          (user.role === 'user' || user.role === 'admin') && 
+          (user.status !== 'paused')
+        );
       },
       error: (error) => {
         console.error('Error loading staff members:', error);

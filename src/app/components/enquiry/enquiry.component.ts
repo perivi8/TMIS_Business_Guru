@@ -282,7 +282,11 @@ export class EnquiryComponent implements OnInit, OnDestroy {
         next: (response) => {
           // Handle the response structure properly
           if (response && response.users && Array.isArray(response.users)) {
-            this.staffMembers = response.users.filter((user: User) => user.role === 'user' || user.role === 'admin');
+            // Filter out paused users and only include active users
+            this.staffMembers = response.users.filter((user: User) => 
+              (user.role === 'user' || user.role === 'admin') && 
+              (user.status !== 'paused')
+            );
           } else {
             console.warn('Unexpected response structure from getUsers:', response);
             this.staffMembers = [];

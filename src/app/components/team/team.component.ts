@@ -65,6 +65,54 @@ export class TeamComponent implements OnInit {
     }
   }
 
+  pauseUser(user: User): void {
+    if (!this.isAdmin) {
+      return;
+    }
+
+    const confirmPause = confirm(`Are you sure you want to pause ${user.username}? They will not appear in staff selection dropdowns.`);
+    
+    if (confirmPause) {
+      this.authService.pauseUser(user._id).subscribe({
+        next: (response) => {
+          // Update user status in local array
+          const userIndex = this.users.findIndex(u => u._id === user._id);
+          if (userIndex !== -1) {
+            this.users[userIndex] = {...this.users[userIndex], status: 'paused'};
+          }
+          alert(`${user.username} has been paused successfully.`);
+        },
+        error: (error) => {
+          alert(`Failed to pause user: ${error.error?.error || 'Unknown error'}`);
+        }
+      });
+    }
+  }
+
+  resumeUser(user: User): void {
+    if (!this.isAdmin) {
+      return;
+    }
+
+    const confirmResume = confirm(`Are you sure you want to resume ${user.username}? They will appear in staff selection dropdowns again.`);
+    
+    if (confirmResume) {
+      this.authService.resumeUser(user._id).subscribe({
+        next: (response) => {
+          // Update user status in local array
+          const userIndex = this.users.findIndex(u => u._id === user._id);
+          if (userIndex !== -1) {
+            this.users[userIndex] = {...this.users[userIndex], status: 'active'};
+          }
+          alert(`${user.username} has been resumed successfully.`);
+        },
+        error: (error) => {
+          alert(`Failed to resume user: ${error.error?.error || 'Unknown error'}`);
+        }
+      });
+    }
+  }
+
   goBack(): void {
     window.history.back();
   }

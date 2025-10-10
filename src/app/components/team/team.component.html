@@ -29,12 +29,24 @@
               <p class="email">{{ user.email }}</p>
               <p class="role">
                 <span class="role-badge" [ngClass]="user.role">{{ user.role }}</span>
+                <span *ngIf="user.status === 'paused'" class="status-badge paused">PAUSED</span>
               </p>
               <p class="joined">Joined: {{ user.created_at | date:'mediumDate' }}</p>
             </div>
             
-            <!-- Delete button for admins -->
+            <!-- Action buttons for admins -->
             <div *ngIf="isAdmin && user.role !== 'admin' && user._id !== currentUser?.id" class="user-actions">
+              <!-- Pause/Resume button -->
+              <button *ngIf="user.status !== 'paused'" mat-icon-button color="accent" (click)="pauseUser(user)" 
+                      matTooltip="Pause User" class="pause-btn">
+                <mat-icon>pause</mat-icon>
+              </button>
+              <button *ngIf="user.status === 'paused'" mat-icon-button color="primary" (click)="resumeUser(user)" 
+                      matTooltip="Resume User" class="resume-btn">
+                <mat-icon>play_arrow</mat-icon>
+              </button>
+              
+              <!-- Delete button -->
               <button mat-icon-button color="warn" (click)="deleteUser(user)" 
                       matTooltip="Delete User" class="delete-btn">
                 <mat-icon>delete</mat-icon>

@@ -361,14 +361,16 @@
         <ng-container matColumnDef="staff">
           <th mat-header-cell *matHeaderCellDef class="header-cell">Staff</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
-            <!-- If staff is assigned and NOT "Public Enquiry", show assigned staff name -->
-            <div *ngIf="enquiry.staff && enquiry.staff !== 'Public Enquiry'" class="staff-assigned">
+            <!-- If staff is assigned and NOT "Public Form" or "WhatsApp Bot", show assigned staff name -->
+            <div *ngIf="enquiry.staff && !shouldShowStaffAssignment(enquiry)" class="staff-assigned">
               <span class="staff-name">{{ enquiry.staff }}</span>
               <span class="staff-assigned-badge">Assigned</span>
               <mat-icon class="info-icon" matTooltip="Staff already added to enquiry. Try another enquiry for new assignment.">info</mat-icon>
             </div>
-            <!-- If no staff assigned OR staff is "Public Enquiry", show dropdown for selection -->
-            <mat-select *ngIf="!enquiry.staff || enquiry.staff === 'Public Enquiry'" [(value)]="enquiry.staff" (selectionChange)="updateStaff(enquiry, $event.value)" placeholder="Select Staff">
+            <!-- If staff is "Public Form" or "WhatsApp Bot" or not assigned, show dropdown for selection -->
+            <mat-select *ngIf="shouldShowStaffAssignment(enquiry)" [(value)]="enquiry.staff" (selectionChange)="updateStaff(enquiry, $event.value)" placeholder="Select Staff">
+              <mat-option value="Public Form">Public Form</mat-option>
+              <mat-option value="WhatsApp Bot">WhatsApp Bot</mat-option>
               <mat-option *ngFor="let staff of staffMembers" [value]="staff.username || staff.email">
                 {{ staff.username || staff.email }}
               </mat-option>

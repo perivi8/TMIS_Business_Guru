@@ -404,8 +404,7 @@ export class EnquiryComponent implements OnInit, OnDestroy {
 
   // Update staff for an enquiry
   updateStaff(enquiry: Enquiry, staff: string): void {
-    // Treat 'Public Enquiry' as unassigned
-    const isPreviouslyUnassigned = !enquiry.staff || enquiry.staff === 'Public Enquiry';
+    // Update the enquiry locally first
     enquiry.staff = staff;
     
     // Call the service to update the enquiry in the backend
@@ -1320,13 +1319,70 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Check if staff is assigned to an enquiry
+  // Check if staff is assigned to an enquiry (real staff member, not Public Form or WhatsApp Bot)
   isStaffAssigned(enquiry: Enquiry): boolean {
-    return !!enquiry.staff && enquiry.staff !== 'Public Enquiry';
+    // Staff is considered assigned only if there's a real staff member (not special form values)
+    return !!enquiry.staff && enquiry.staff !== 'Public Form' && enquiry.staff !== 'WhatsApp Bot' && enquiry.staff !== 'WhatsApp Form';
   }
 
-  // Check if comments should be locked (no staff assigned)
+  // Check if comments should be locked (no real staff assigned)
   shouldLockComments(enquiry: Enquiry): boolean {
+    // Comments should be locked if no real staff member is assigned
+    // Only enable comments when a real staff member is assigned (not Public Form or WhatsApp Bot)
     return !this.isStaffAssigned(enquiry);
+  }
+
+  // Check if staff assignment should be available (for Public Form or WhatsApp Bot)
+  shouldShowStaffAssignment(enquiry: Enquiry): boolean {
+    return enquiry.staff === 'Public Form' || enquiry.staff === 'WhatsApp Bot' || enquiry.staff === 'WhatsApp Form' || !enquiry.staff;
+  }
+
+  // Update staff for an enquiry with special handling for Public Form/WhatsApp Bot
+  updateStaffWithSpecialHandling(enquiry: Enquiry, staff: string): void {
+    // Update the enquiry locally first
+    enquiry.staff = staff;
+    
+    // Call the service to update the enquiry in the backend
+    if (enquiry._id) {
+      this.enquiryService.updateEnquiry(enquiry._id, { staff: staff })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEnquiry: any) => {
+            // Update the local enquiry with the response from the server
+            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
+            if (index !== -1) {
+              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+              this.applyFilters();
+            }
+            
+            // Show appropriate notification based on WhatsApp status
+            let message = 'Staff updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            // Check WhatsApp status for staff assignment
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp message sent!';
+            } else if (updatedEnquiry.whatsapp_error) {
+              // Check for quota or other errors
+              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota') || updatedEnquiry.whatsapp_error.includes('466')) {
+                message += ' ⚠️ Limit Reached';
+                panelClass = ['warning-snackbar'];
+              } else {
+                message += ' ❌ Message not sent - ' + updatedEnquiry.whatsapp_error;
+                panelClass = ['error-snackbar'];
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
+          },
+          error: (error) => {
+            console.error('Error updating enquiry staff:', error);
+            this.snackBar.open('Error updating staff', 'Close', { duration: 3000, panelClass: ['error-snackbar'] });
+          }
+        });
+    }
   }
 }

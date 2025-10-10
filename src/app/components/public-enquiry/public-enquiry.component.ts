@@ -56,6 +56,13 @@ export class PublicEnquiryComponent implements OnInit {
             this.submitted = true;
             this.success = true;
             this.submitting = false;
+            
+            // Show WhatsApp status message
+            if (response.whatsapp_sent === true) {
+              console.log('WhatsApp message sent successfully');
+            } else if (response.whatsapp_error) {
+              console.log('WhatsApp message failed:', response.whatsapp_error);
+            }
           },
           error: (error) => {
             console.error('Error submitting enquiry:', error);

@@ -362,19 +362,29 @@
           <th mat-header-cell *matHeaderCellDef class="header-cell">Staff</th>
           <td mat-cell *matCellDef="let enquiry" class="data-cell">
             <!-- If staff is assigned and NOT "Public Form" or "WhatsApp Bot", show assigned staff name -->
-            <div *ngIf="enquiry.staff && !shouldShowStaffAssignment(enquiry)" class="staff-assigned">
+            <div *ngIf="enquiry.staff && !canAssignStaff(enquiry)" class="staff-assigned">
               <span class="staff-name">{{ enquiry.staff }}</span>
               <span class="staff-assigned-badge">Assigned</span>
               <mat-icon class="info-icon" matTooltip="Staff already added to enquiry. Try another enquiry for new assignment.">info</mat-icon>
             </div>
-            <!-- If staff is "Public Form" or "WhatsApp Bot" or not assigned, show dropdown for selection -->
-            <mat-select *ngIf="shouldShowStaffAssignment(enquiry)" [(value)]="enquiry.staff" (selectionChange)="updateStaff(enquiry, $event.value)" placeholder="Select Staff">
+            <!-- If staff assignment is allowed, show dropdown for selection -->
+            <mat-select *ngIf="canAssignStaff(enquiry) || !enquiry.staff || enquiry.staff === 'Public Form' || enquiry.staff === 'WhatsApp Bot' || enquiry.staff === 'WhatsApp Form'" 
+                        [(value)]="enquiry.staff" 
+                        (selectionChange)="updateStaff(enquiry, $event.value)" 
+                        placeholder="Select Staff">
               <mat-option value="Public Form">Public Form</mat-option>
               <mat-option value="WhatsApp Bot">WhatsApp Bot</mat-option>
-              <mat-option *ngFor="let staff of staffMembers" [value]="staff.username || staff.email">
-                {{ staff.username || staff.email }}
+              <!-- Only show regular staff members (not admins) -->
+              <mat-option *ngFor="let staff of getRegularStaffMembers()" [value]="staff">
+                {{ staff }}
+                <span *ngIf="getNextStaffMember() === staff" class="suggested-badge">Next in sequence</span>
               </mat-option>
             </mat-select>
+            <!-- If staff assignment is locked due to sequential rules, show locked message -->
+            <div *ngIf="!canAssignStaff(enquiry) && (enquiry.staff === 'Public Form' || enquiry.staff === 'WhatsApp Bot' || !enquiry.staff)" class="staff-locked">
+              <mat-icon class="lock-icon">lock</mat-icon>
+              <span class="lock-text">Assign staff to older enquiries first</span>
+            </div>
           </td>
         </ng-container>
 

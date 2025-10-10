@@ -282,11 +282,19 @@ export class EnquiryComponent implements OnInit, OnDestroy {
         next: (response) => {
           // Handle the response structure properly
           if (response && response.users && Array.isArray(response.users)) {
-            // Filter out paused users and only include active users
-            this.staffMembers = response.users.filter((user: User) => 
+            // Filter out paused users and only include active users (both admin and regular users)
+            // We'll filter admins out when displaying staff options, but keep them in the list for other purposes
+            const activeUsers = response.users.filter((user: User) => 
               (user.role === 'user' || user.role === 'admin') && 
               (user.status !== 'paused')
             );
+            
+            // Sort staff members alphabetically
+            this.staffMembers = activeUsers.sort((a, b) => {
+              const nameA = a.username || a.email || '';
+              const nameB = b.username || b.email || '';
+              return nameA.localeCompare(nameB);
+            });
           } else {
             console.warn('Unexpected response structure from getUsers:', response);
             this.staffMembers = [];
@@ -320,6 +328,231 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     });
     
     this.uniqueStaffMembers = Array.from(staffSet).sort();
+  }
+
+  /**
+   * Get staff members in ordered sequence for assignment
+   * Special cases (Public Form, WhatsApp Bot) are shown first
+   * Regular staff members are shown in alphabetical order
+   */
+  getOrderedStaffMembers(): any[] {
+    // Return only regular staff members (not admins) sorted alphabetically
+    return this.staffMembers.filter(staff => staff.role === 'user');
+  }
+
+  /**
+   * Get regular staff members (excluding admins) for round-robin assignment
+   */
+  getRegularStaffMembers(): string[] {
+    // Get only regular staff members (role: 'user', exclude admins)
+    const regularStaffMembers = this.staffMembers
+      .filter(staff => staff.role === 'user') // Only regular staff, not admins
+      .map(staff => staff.username || staff.email)
+      .filter(name => name && name !== 'Public Form' && name !== 'WhatsApp Bot' && name !== 'WhatsApp Form');
+    
+    // Sort staff members alphabetically to ensure consistent order
+    return regularStaffMembers.sort();
+  }
+
+  /**
+   * Get the next staff member in round-robin sequence
+   * This implements the round-robin logic where staff are assigned in order:
+   * perivi, dinesh, perivi, dinesh, etc. (only regular staff, not admins)
+   */
+  getNextStaffMember(): string | null {
+    const regularStaffMembers = this.getRegularStaffMembers();
+    
+    if (regularStaffMembers.length === 0) {
+      return null;
+    }
+    
+    // Count how many enquiries have real staff assigned (not special forms)
+    const assignedEnquiries = this.enquiries.filter(enquiry => 
+      enquiry.staff && 
+      enquiry.staff !== 'Public Form' && 
+      enquiry.staff !== 'WhatsApp Bot' && 
+      enquiry.staff !== 'WhatsApp Form'
+    );
+    
+    // Determine the next staff member based on round-robin sequence
+    const nextIndex = assignedEnquiries.length % regularStaffMembers.length;
+    return regularStaffMembers[nextIndex] || null;
+  }
+
+  /**
+   * Check if an enquiry should allow staff assignment based on sequential order
+   * Enquiries must be processed from oldest to newest
+   * Only allow staff assignment for the oldest unassigned enquiry
+   */
+  canAssignStaff(enquiry: Enquiry): boolean {
+    // Always allow assignment for Public Form and WhatsApp Bot
+    if (enquiry.staff === 'Public Form' || enquiry.staff === 'WhatsApp Bot' || enquiry.staff === 'WhatsApp Form') {
+      return true;
+    }
+    
+    // If staff is already assigned and locked, don't allow changes
+    if (enquiry.staff_locked) {
+      return false;
+    }
+    
+    // Sort enquiries by date (oldest first)
+    const sortedEnquiries = [...this.enquiries].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    // Find the index of the current enquiry in the sorted list
+    const enquiryIndex = sortedEnquiries.findIndex(e => e._id === enquiry._id);
+    
+    // If this is the first enquiry, allow assignment
+    if (enquiryIndex === 0) {
+      return true;
+    }
+    
+    // Check if all previous enquiries have staff assigned
+    for (let i = 0; i < enquiryIndex; i++) {
+      const previousEnquiry = sortedEnquiries[i];
+      // If any previous enquiry doesn't have a real staff member assigned, block this one
+      if (!previousEnquiry.staff || 
+          previousEnquiry.staff === 'Public Form' || 
+          previousEnquiry.staff === 'WhatsApp Bot' || 
+          previousEnquiry.staff === 'WhatsApp Form') {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * Check if staff assignment should be available (for Public Form or WhatsApp Bot)
+   * Also check if sequential assignment rules allow it
+   */
+  shouldShowStaffAssignment(enquiry: Enquiry): boolean {
+    // Always show for Public Form, WhatsApp Bot, or unassigned
+    const isSpecialForm = enquiry.staff === 'Public Form' || 
+                         enquiry.staff === 'WhatsApp Bot' || 
+                         enquiry.staff === 'WhatsApp Form' || 
+                         !enquiry.staff;
+    
+    // If it's a special form, always show
+    if (isSpecialForm) {
+      return true;
+    }
+    
+    // For regular staff assignments, check sequential rules
+    return this.canAssignStaff(enquiry);
+  }
+
+  /**
+   * Check if the staff dropdown should be disabled for this enquiry
+   * Returns true if the enquiry should be disabled (locked)
+   */
+  isStaffAssignmentDisabled(enquiry: Enquiry): boolean {
+    // Never disable for special forms
+    if (enquiry.staff === 'Public Form' || enquiry.staff === 'WhatsApp Bot' || enquiry.staff === 'WhatsApp Form' || !enquiry.staff) {
+      return false;
+    }
+    
+    // If already assigned, disable changes
+    if (enquiry.staff) {
+      return true;
+    }
+    
+    // Check if this enquiry can be assigned based on sequential rules
+    return !this.canAssignStaff(enquiry);
+  }
+
+  /**
+   * Auto-select the next staff member in the round-robin sequence
+   * This helps guide users to follow the correct assignment order
+   */
+  autoSelectNextStaff(enquiry: Enquiry): void {
+    // Only auto-select if no staff is currently assigned and the enquiry can be assigned
+    if ((!enquiry.staff || enquiry.staff === 'Public Form' || enquiry.staff === 'WhatsApp Bot' || enquiry.staff === 'WhatsApp Form') 
+        && this.canAssignStaff(enquiry)) {
+      const nextStaff = this.getNextStaffMember();
+      if (nextStaff) {
+        // Automatically select the next staff member in the dropdown
+        enquiry.staff = nextStaff;
+        // Trigger the update immediately
+        this.updateStaff(enquiry, nextStaff);
+      }
+    }
+  }
+
+  // Update staff for an enquiry
+  updateStaff(enquiry: Enquiry, staff: string): void {
+    // Check if this enquiry can be assigned staff
+    if (!this.canAssignStaff(enquiry)) {
+      this.snackBar.open('Please assign staff to older enquiries first', 'Close', { 
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+    
+    // If this is a regular staff member assignment (not special form), 
+    // check if it follows the round-robin sequence
+    if (staff !== 'Public Form' && staff !== 'WhatsApp Bot' && staff !== 'WhatsApp Form') {
+      const nextStaff = this.getNextStaffMember();
+      // If there's a specific next staff member and it doesn't match the selected one,
+      // we show a confirmation dialog to the user
+      if (nextStaff && nextStaff !== staff) {
+        if (!confirm(`The suggested staff member is ${nextStaff}. Are you sure you want to assign ${staff} instead? This breaks the round-robin sequence.`)) {
+          // User cancelled the operation, revert to suggested staff
+          enquiry.staff = nextStaff;
+          // Re-apply filters to update the UI
+          this.applyFilters();
+          return;
+        }
+      }
+    }
+    
+    // Update the enquiry locally first
+    enquiry.staff = staff;
+    
+    // Call the service to update the enquiry in the backend
+    if (enquiry._id) {
+      this.enquiryService.updateEnquiry(enquiry._id, { staff: staff })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (updatedEnquiry: any) => {
+            // Update the local enquiry with the response from the server
+            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
+            if (index !== -1) {
+              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
+              this.applyFilters();
+            }
+            
+            // Show appropriate notification based on WhatsApp status
+            let message = 'Staff updated successfully!';
+            let panelClass = ['success-snackbar'];
+            
+            // Check WhatsApp status for staff assignment
+            if (updatedEnquiry.whatsapp_sent === true) {
+              message += ' 📱 WhatsApp message sent!';
+            } else if (updatedEnquiry.whatsapp_error) {
+              // Check for quota or other errors
+              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota') || updatedEnquiry.whatsapp_error.includes('466')) {
+                message += ' ⚠️ Limit Reached';
+                panelClass = ['warning-snackbar'];
+              } else {
+                message += ' ❌ Message not sent - ' + updatedEnquiry.whatsapp_error;
+                panelClass = ['error-snackbar'];
+              }
+            }
+            
+            this.snackBar.open(message, 'Close', { 
+              duration: 5000,
+              panelClass: panelClass
+            });
+          },
+          error: (error) => {
+            console.error('Error updating enquiry staff:', error);
+            this.snackBar.open('Error updating staff', 'Close', { duration: 3000, panelClass: ['error-snackbar'] });
+          }
+        });
+    }
   }
 
   onGstChange(): void {
@@ -404,55 +637,6 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     // Instead of calling the service directly, emit to the debounce subject
     // This will trigger the update after a 3-second delay
     this.businessNatureDebounce.next({enquiry, value: businessNature});
-  }
-
-  // Update staff for an enquiry
-  updateStaff(enquiry: Enquiry, staff: string): void {
-    // Update the enquiry locally first
-    enquiry.staff = staff;
-    
-    // Call the service to update the enquiry in the backend
-    if (enquiry._id) {
-      this.enquiryService.updateEnquiry(enquiry._id, { staff: staff })
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (updatedEnquiry: any) => {
-            // Update the local enquiry with the response from the server
-            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
-            if (index !== -1) {
-              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
-              this.applyFilters();
-            }
-            
-            // Show appropriate notification based on WhatsApp status
-            let message = 'Staff updated successfully!';
-            let panelClass = ['success-snackbar'];
-            
-            // Check WhatsApp status for staff assignment
-            if (updatedEnquiry.whatsapp_sent === true) {
-              message += ' 📱 WhatsApp message sent!';
-            } else if (updatedEnquiry.whatsapp_error) {
-              // Check for quota or other errors
-              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota') || updatedEnquiry.whatsapp_error.includes('466')) {
-                message += ' ⚠️ Limit Reached';
-                panelClass = ['warning-snackbar'];
-              } else {
-                message += ' ❌ Message not sent - ' + updatedEnquiry.whatsapp_error;
-                panelClass = ['error-snackbar'];
-              }
-            }
-            
-            this.snackBar.open(message, 'Close', { 
-              duration: 5000,
-              panelClass: panelClass
-            });
-          },
-          error: (error) => {
-            console.error('Error updating enquiry staff:', error);
-            this.snackBar.open('Error updating staff', 'Close', { duration: 3000, panelClass: ['error-snackbar'] });
-          }
-        });
-    }
   }
 
   // Update comments for an enquiry
@@ -1334,59 +1518,5 @@ export class EnquiryComponent implements OnInit, OnDestroy {
     // Comments should be locked if no real staff member is assigned
     // Only enable comments when a real staff member is assigned (not Public Form or WhatsApp Bot)
     return !this.isStaffAssigned(enquiry);
-  }
-
-  // Check if staff assignment should be available (for Public Form or WhatsApp Bot)
-  shouldShowStaffAssignment(enquiry: Enquiry): boolean {
-    return enquiry.staff === 'Public Form' || enquiry.staff === 'WhatsApp Bot' || enquiry.staff === 'WhatsApp Form' || !enquiry.staff;
-  }
-
-  // Update staff for an enquiry with special handling for Public Form/WhatsApp Bot
-  updateStaffWithSpecialHandling(enquiry: Enquiry, staff: string): void {
-    // Update the enquiry locally first
-    enquiry.staff = staff;
-    
-    // Call the service to update the enquiry in the backend
-    if (enquiry._id) {
-      this.enquiryService.updateEnquiry(enquiry._id, { staff: staff })
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (updatedEnquiry: any) => {
-            // Update the local enquiry with the response from the server
-            const index = this.enquiries.findIndex(e => e._id === enquiry._id);
-            if (index !== -1) {
-              this.enquiries[index] = { ...this.enquiries[index], ...updatedEnquiry };
-              this.applyFilters();
-            }
-            
-            // Show appropriate notification based on WhatsApp status
-            let message = 'Staff updated successfully!';
-            let panelClass = ['success-snackbar'];
-            
-            // Check WhatsApp status for staff assignment
-            if (updatedEnquiry.whatsapp_sent === true) {
-              message += ' 📱 WhatsApp message sent!';
-            } else if (updatedEnquiry.whatsapp_error) {
-              // Check for quota or other errors
-              if (updatedEnquiry.whatsapp_error.includes('quota') || updatedEnquiry.whatsapp_error.includes('Quota') || updatedEnquiry.whatsapp_error.includes('466')) {
-                message += ' ⚠️ Limit Reached';
-                panelClass = ['warning-snackbar'];
-              } else {
-                message += ' ❌ Message not sent - ' + updatedEnquiry.whatsapp_error;
-                panelClass = ['error-snackbar'];
-              }
-            }
-            
-            this.snackBar.open(message, 'Close', { 
-              duration: 5000,
-              panelClass: panelClass
-            });
-          },
-          error: (error) => {
-            console.error('Error updating enquiry staff:', error);
-            this.snackBar.open('Error updating staff', 'Close', { duration: 3000, panelClass: ['error-snackbar'] });
-          }
-        });
-    }
   }
 }

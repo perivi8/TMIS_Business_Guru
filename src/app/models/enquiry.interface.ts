@@ -21,6 +21,22 @@ export interface Enquiry {
   whatsapp_message_id?: string;
   whatsapp_message_type?: string;
   whatsapp_error?: string;
+  // Staff assignment locking fields from backend
+  staff_assignment_locked?: boolean;
+  can_assign_staff?: boolean;
+  staff_dropdown_enabled?: boolean;
+  staff_dropdown_clickable?: boolean;
+  staff_dropdown_reason?: string;
+  staff_dropdown_ui_state?: 'enabled' | 'enabled_priority' | 'disabled_locked' | 'disabled_error';
+  is_old_enquiry?: boolean;
+  enquiry_age_days?: number;
+}
+
+export interface StaffLockStatus {
+  locked: boolean;
+  reason: string;
+  unassigned_old_enquiries: number;
+  assigned_enquiries: number;
 }
 
 export const COMMENT_OPTIONS = [

@@ -244,6 +244,80 @@ export class ClientService implements OnDestroy {
     );
   }
 
+  getMyClients(): Observable<{ clients: Client[] }> {
+    console.log('=== CLIENT SERVICE DEBUG ===');
+    console.log('Fetching my clients...');
+    console.log('API URL:', environment.apiUrl);
+    console.log('Is authenticated:', this.authService.isAuthenticated());
+    console.log('Current user:', this.authService.currentUserValue);
+    console.log('Token exists:', !!this.authService.getToken());
+    
+    const headers = this.getHeaders();
+    console.log('Headers being sent:', headers);
+    
+    const fullUrl = `${environment.apiUrl}/clients/my`;
+    console.log('Full request URL:', fullUrl);
+    
+    return this.http.get<{ clients: Client[] }>(fullUrl, {
+      headers: headers,
+      withCredentials: true
+    }).pipe(
+      tap({
+        next: (response) => {
+          console.log('=== SUCCESS RESPONSE ===');
+          console.log('My clients received:', response);
+          console.log('Response type:', typeof response);
+          console.log('Has clients property:', 'clients' in response);
+          console.log('Clients count:', response.clients?.length || 0);
+          
+          if (response.clients) {
+            // We don't update the subject here since this is for dashboard only
+          }
+        },
+        error: (error) => {
+          console.error('=== ERROR RESPONSE ===');
+          console.error('Error in getMyClients:', {
+            error: error,
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            url: error.url,
+            headers: error.headers,
+            body: error.error
+          });
+        }
+      }),
+      catchError(error => {
+        console.error('=== CATCH ERROR ===');
+        console.error('Error fetching my clients:', {
+          error: error,
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url,
+          errorBody: error.error
+        });
+        
+        let errorMessage = 'Failed to load clients. Please try again later.';
+        
+        if (error.status === 0) {
+          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        } else if (error.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+        } else if (error.status === 403) {
+          errorMessage = 'Access denied. You do not have permission to view clients.';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        this.notificationService.showError(errorMessage);
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
+
   updateClientStatus(clientId: string, status: string, feedback: string): Observable<any> {
     // First get the current client data to include loan status in the update
     return this.getClientDetails(clientId).pipe(

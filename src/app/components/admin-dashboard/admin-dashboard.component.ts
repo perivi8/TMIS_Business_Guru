@@ -609,6 +609,7 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   private loadClientsAsync(retryCount: number = 0): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log('Admin Dashboard - Starting to load clients... Attempt:', retryCount + 1);
+      // Admin dashboard should still show all clients
       this.clientService.getClients().subscribe({
         next: (response) => {
           console.log('Admin Dashboard - Raw API response:', response);
@@ -1226,23 +1227,36 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   getClientsByUser(email: string): any[] {
     if (!email) return [];
     
-    return this.clients.filter(client => {
+    // First try to get clients by created_by field
+    let userClients = this.clients.filter(client => {
       // Check multiple fields for user association
       return client.created_by === email || 
              client.staff_email === email ||
              (client.created_by && client.created_by.toLowerCase() === email.toLowerCase()) ||
              (client.staff_email && client.staff_email.toLowerCase() === email.toLowerCase());
     });
+    
+    // If no clients found and email is a TMIS email, also check by username
+    if (userClients.length === 0 && email.startsWith('tmis.')) {
+      const username = email.split('.')[1]; // Extract username from tmis.username@domain.com
+      userClients = this.clients.filter(client => {
+        // Check if created_by_name or staff_name matches the username
+        return (client.created_by_name && client.created_by_name.toLowerCase().includes(username.toLowerCase())) ||
+               (client.staff_name && client.staff_name.toLowerCase().includes(username.toLowerCase()));
+      });
+    }
+    
+    return userClients;
   }
 
   getTodayClientsByUser(email: string): number {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return this.clients.filter(client => {
+    return this.getClientsByUser(email).filter(client => {
       if (!client.created_at) return false;
       const createdAt = new Date(client.created_at);
       createdAt.setHours(0, 0, 0, 0);
-      return createdAt.getTime() === today.getTime() && client.created_by === email;
+      return createdAt.getTime() === today.getTime();
     }).length;
   }
 
@@ -1250,10 +1264,10 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
     const thisMonth = new Date();
     thisMonth.setDate(1);
     thisMonth.setHours(0, 0, 0, 0);
-    return this.clients.filter(client => {
+    return this.getClientsByUser(email).filter(client => {
       if (!client.created_at) return false;
       const clientDate = new Date(client.created_at);
-      return clientDate >= thisMonth && client.created_by === email;
+      return clientDate >= thisMonth;
     }).length;
   }
 

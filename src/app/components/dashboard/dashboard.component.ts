@@ -51,7 +51,8 @@ export class DashboardComponent implements OnInit {
   }
 
   loadClients(): void {
-    this.clientService.getClients().subscribe({
+    // Use getMyClients instead of getClients to show only clients created by current user
+    this.clientService.getMyClients().subscribe({
       next: (response) => {
         this.clients = response.clients || [];
         this.calculateStats();
